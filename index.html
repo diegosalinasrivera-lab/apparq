@@ -679,6 +679,48 @@
     }
     .btn-banner:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(-1px); }
 
+    /* ── LEGAL MODALS ──────────────────────── */
+    .legal-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .legal-overlay.open { opacity: 1; pointer-events: all; }
+    .legal-box {
+      background: #fff; border-radius: var(--radius-lg);
+      width: 100%; max-width: 680px; max-height: 85vh;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-lg);
+    }
+    .legal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light);
+      flex-shrink: 0;
+    }
+    .legal-head h3 { font-size: 1.05rem; font-weight: 800; }
+    .legal-head span { font-size: 0.75rem; color: var(--muted); margin-top: 2px; display: block; }
+    .legal-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.1rem; color: var(--muted); padding: 0.25rem;
+    }
+    .legal-body {
+      padding: 1.5rem; overflow-y: auto; flex: 1;
+      font-size: 0.83rem; color: var(--mid); line-height: 1.75;
+    }
+    .legal-body h4 {
+      font-size: 0.88rem; font-weight: 800; color: var(--dark);
+      margin: 1.4rem 0 0.4rem;
+    }
+    .legal-body h4:first-child { margin-top: 0; }
+    .legal-body p { margin-bottom: 0.6rem; }
+    .legal-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .legal-body ul li { margin-bottom: 0.3rem; }
+    .legal-body strong { color: var(--dark); }
+
     /* ── FOOTER ────────────────────────────── */
     footer {
       border-top: 1px solid var(--border-light);
@@ -1667,14 +1709,193 @@
         <span class="logo-wordmark">APPARQ</span>
       </a>
       <div class="footer-links">
-        <a href="#">Términos</a>
-        <a href="#">Privacidad</a>
-        <a href="#">Contacto</a>
+        <a href="#" id="openTerminos">Términos</a>
+        <a href="#" id="openPrivacidad">Privacidad</a>
+        <a href="mailto:hola@apparq.cl">Contacto</a>
       </div>
       <div class="footer-copy">© 2026 APPARQ · Santiago, Chile</div>
     </div>
   </div>
 </footer>
+
+<!-- ── MODAL: TÉRMINOS Y CONDICIONES ──────────────────── -->
+<div class="legal-overlay" id="modalTerminos">
+  <div class="legal-box">
+    <div class="legal-head">
+      <div>
+        <h3>Términos y Condiciones de Uso</h3>
+        <span>Última actualización: marzo 2026 · DSR ARQ SPA · RUT 76.341.206-7</span>
+      </div>
+      <button class="legal-close" id="closeTerminos">✕</button>
+    </div>
+    <div class="legal-body">
+
+      <h4>1. Identificación del prestador</h4>
+      <p><strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", es una plataforma digital de intermediación de servicios de arquitectura domiciliada en Santiago de Chile. Correo de contacto: hola@apparq.cl.</p>
+
+      <h4>2. Objeto y aceptación</h4>
+      <p>El uso de la plataforma <strong>apparq.cl</strong> implica la aceptación plena e irrevocable de estos Términos y Condiciones. Si no está de acuerdo con alguno de ellos, debe abstenerse de utilizar el sitio.</p>
+      <p>APPARQ facilita la conexión entre personas naturales o jurídicas que requieren servicios de arquitectura ("Clientes") y arquitectos independientes inscritos en la red ("Arquitectos"), actuando como intermediario y administrador del proceso.</p>
+
+      <h4>3. Servicios disponibles</h4>
+      <p>La plataforma ofrece gestión y tramitación de los siguientes servicios en la Provincia de Santiago:</p>
+      <ul>
+        <li><strong>Regularización:</strong> legalización de construcciones existentes sin permiso municipal.</li>
+        <li><strong>Ampliación:</strong> desarrollo de proyectos y permisos para aumentar la superficie construida.</li>
+        <li><strong>Obra Nueva:</strong> proyecto arquitectónico completo para nuevas construcciones.</li>
+        <li><strong>Informe de Propiedad:</strong> evaluación técnica del estado legal y municipal de un inmueble.</li>
+      </ul>
+
+      <h4>4. Precios y cotización</h4>
+      <p>Los precios se calculan automáticamente en la plataforma en función de la superficie (m²), materialidad, tipo de trámite y destino del inmueble. Los valores se expresan en Pesos Chilenos (CLP) y tienen como referencia el valor de la Unidad de Fomento (UF) del día de la cotización.</p>
+      <p>El precio informado en la cotización tiene validez de <strong>7 días corridos</strong> desde su generación. Pasado ese plazo, el valor de la UF puede variar y la cotización deberá actualizarse.</p>
+
+      <h4>5. Forma de pago y etapas</h4>
+      <p>El pago del servicio se estructura en cuatro etapas:</p>
+      <ul>
+        <li><strong>E1 – Inicio (20%):</strong> al contratar el servicio, pagadero inmediatamente a través de la plataforma.</li>
+        <li><strong>E2 – Entrega de planos (30%):</strong> al completar la elaboración de planos y documentos técnicos.</li>
+        <li><strong>E3 – Ingreso DOM (20%):</strong> al momento del ingreso formal a la Dirección de Obras Municipales.</li>
+        <li><strong>E4 – Recepción Final (30%):</strong> al obtener la recepción final aprobada por la municipalidad correspondiente.</li>
+      </ul>
+      <p>APPARQ notificará al Cliente por correo electrónico cuando corresponda cada pago. El Cliente dispone de <strong>5 días hábiles</strong> para completar el pago desde la notificación. El incumplimiento faculta a APPARQ a suspender el avance del trámite hasta regularizar el saldo pendiente.</p>
+
+      <h4>6. Obligatoriedad de pago exclusivo por plataforma</h4>
+      <p><strong>Todos los pagos deben realizarse exclusivamente a través de apparq.cl.</strong> Queda estrictamente prohibido efectuar pagos directos al Arquitecto asignado o a terceros vinculados al proyecto. Los pagos realizados fuera de la plataforma:</p>
+      <ul>
+        <li>No serán reconocidos ni imputados al proyecto por APPARQ.</li>
+        <li>No generan obligación de prestación de servicios.</li>
+        <li>Son responsabilidad exclusiva de quien los efectúa.</li>
+      </ul>
+
+      <h4>7. Asignación de arquitecto</h4>
+      <p>APPARQ asignará un Arquitecto de la red según la comuna del proyecto. La asignación se realizará preferentemente con un profesional que opere en la misma comuna; en caso de no disponibilidad, se asignará al más cercano según criterio de proximidad geográfica.</p>
+      <p>El Arquitecto asignado es un profesional independiente que presta servicios a través de la plataforma. APPARQ no es empleador del Arquitecto ni responde por sus actos fuera del marco del servicio contratado.</p>
+
+      <h4>8. Entregas y comunicaciones</h4>
+      <p>Todas las entregas de documentos, planos, informes y avances del proyecto se realizarán <strong>exclusivamente a través de apparq.cl</strong>. El Arquitecto no está autorizado a entregar documentación por medios externos (WhatsApp, correo personal, entrega física directa u otros canales no oficiales). Cualquier entrega fuera de la plataforma no tiene validez contractual.</p>
+
+      <h4>9. Obligaciones del cliente</h4>
+      <ul>
+        <li>Proporcionar información veraz y completa sobre el inmueble y el trámite requerido.</li>
+        <li>Facilitar el acceso a la propiedad para visitas de levantamiento cuando sea necesario.</li>
+        <li>Entregar documentos y antecedentes requeridos por el Arquitecto en los plazos acordados.</li>
+        <li>Cumplir los plazos de pago establecidos en la cláusula 5.</li>
+        <li>Realizar todos los pagos exclusivamente a través de la plataforma.</li>
+      </ul>
+
+      <h4>10. Plazos de ejecución</h4>
+      <p>Los plazos de tramitación son estimativos y dependen de factores externos a APPARQ y al Arquitecto, como los tiempos de respuesta de la Dirección de Obras Municipales (DOM) y otros organismos públicos. APPARQ no garantiza plazos de resolución municipal. El plazo estimado referencial es de <strong>3 a 6 meses</strong> para la mayoría de los trámites, pudiendo extenderse según la complejidad del caso y la carga de trabajo municipal.</p>
+
+      <h4>11. Limitación de responsabilidad</h4>
+      <p>APPARQ actúa como intermediario tecnológico. No será responsable por:</p>
+      <ul>
+        <li>Rechazos, observaciones o denegaciones de permisos por parte de organismos municipales o gubernamentales.</li>
+        <li>Demoras imputables a entidades públicas o a la falta de entrega de documentos por parte del Cliente.</li>
+        <li>Daños emergentes, lucro cesante o perjuicios indirectos derivados del trámite.</li>
+        <li>Pagos realizados fuera de la plataforma.</li>
+        <li>Actos u omisiones del Arquitecto fuera del ámbito del servicio contratado.</li>
+      </ul>
+
+      <h4>12. Desistimiento y reembolsos</h4>
+      <p>El Cliente podrá desistir del servicio notificando a APPARQ por escrito a hola@apparq.cl. Los reembolsos se calcularán según el avance del proyecto al momento del desistimiento:</p>
+      <ul>
+        <li>Desistimiento antes de iniciar el levantamiento: reembolso del 80% del E1 pagado.</li>
+        <li>Desistimiento con levantamiento iniciado: sin reembolso del E1.</li>
+        <li>Desistimiento posterior al pago de E2 o siguientes: no procede reembolso de las etapas completadas.</li>
+      </ul>
+
+      <h4>13. Propiedad intelectual</h4>
+      <p>Los planos, documentos técnicos y diseños elaborados en el marco del servicio son propiedad del Cliente una vez completado el pago total del proyecto. APPARQ se reserva el derecho de uso de imágenes y estadísticas anónimas del proyecto con fines de marketing, salvo oposición expresa del Cliente.</p>
+
+      <h4>14. Protección de datos personales</h4>
+      <p>El tratamiento de datos personales se rige por la <strong>Ley N° 19.628</strong> sobre Protección de la Vida Privada y sus modificaciones. Para mayor detalle, consulta nuestra Política de Privacidad.</p>
+
+      <h4>15. Modificaciones</h4>
+      <p>APPARQ se reserva el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor desde su publicación en apparq.cl. El uso continuado de la plataforma posterior a la modificación implica aceptación de los nuevos términos.</p>
+
+      <h4>16. Resolución de conflictos y ley aplicable</h4>
+      <p>Cualquier controversia derivada del uso de la plataforma o de los servicios contratados se someterá a la jurisdicción de los Tribunales de Justicia de Santiago de Chile, o al arbitraje conforme a las reglas del Centro de Arbitraje y Mediación de Santiago, a elección de APPARQ. La ley aplicable es la legislación chilena vigente.</p>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: POLÍTICA DE PRIVACIDAD ─────────────────── -->
+<div class="legal-overlay" id="modalPrivacidad">
+  <div class="legal-box">
+    <div class="legal-head">
+      <div>
+        <h3>Política de Privacidad</h3>
+        <span>Última actualización: marzo 2026 · DSR ARQ SPA · RUT 76.341.206-7</span>
+      </div>
+      <button class="legal-close" id="closePrivacidad">✕</button>
+    </div>
+    <div class="legal-body">
+
+      <h4>1. Responsable del tratamiento</h4>
+      <p><strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, domiciliada en Santiago de Chile, es responsable del tratamiento de los datos personales recopilados a través de apparq.cl. Contacto: hola@apparq.cl.</p>
+
+      <h4>2. Datos que recopilamos</h4>
+      <p>Al usar la plataforma, recopilamos los siguientes datos:</p>
+      <ul>
+        <li><strong>Datos de identificación:</strong> nombre, apellido, RUT, correo electrónico, teléfono.</li>
+        <li><strong>Datos del inmueble:</strong> dirección, comuna, superficie, materialidad y tipo de trámite.</li>
+        <li><strong>Datos de pago:</strong> método de pago seleccionado. No almacenamos datos de tarjetas de crédito/débito; el procesamiento es realizado por proveedores certificados.</li>
+        <li><strong>Firma digital:</strong> imagen de la firma electrónica del contrato.</li>
+        <li><strong>Datos técnicos:</strong> dirección IP, tipo de navegador, páginas visitadas y tiempo de uso (con fines estadísticos y de mejora del servicio).</li>
+      </ul>
+      <p>Para Arquitectos, adicionalmente recopilamos: patente profesional, años de experiencia, comunas de trabajo y tipos de trámites que realizan.</p>
+
+      <h4>3. Finalidad del tratamiento</h4>
+      <p>Utilizamos sus datos para:</p>
+      <ul>
+        <li>Gestionar el servicio contratado y coordinar con el Arquitecto asignado.</li>
+        <li>Enviar notificaciones de hitos de pago y avances del proyecto.</li>
+        <li>Cumplir obligaciones legales y fiscales.</li>
+        <li>Mejorar la experiencia del usuario y el funcionamiento de la plataforma.</li>
+        <li>Enviar comunicaciones comerciales propias (solo con consentimiento expreso).</li>
+      </ul>
+
+      <h4>4. Base legal del tratamiento</h4>
+      <p>El tratamiento de datos se basa en: (a) la ejecución del contrato de servicios suscrito digitalmente; (b) el cumplimiento de obligaciones legales; y (c) el consentimiento del titular cuando así se solicite expresamente, conforme a la <strong>Ley N° 19.628</strong> sobre Protección de la Vida Privada.</p>
+
+      <h4>5. Almacenamiento y seguridad</h4>
+      <p>Los datos se almacenan en servidores de <strong>Supabase</strong> (infraestructura en São Paulo, Brasil) y <strong>Netlify</strong> (infraestructura en EE.UU.), ambos con certificaciones de seguridad SOC 2 y cifrado en tránsito (TLS) y en reposo. APPARQ aplica medidas técnicas y organizativas para proteger los datos contra acceso no autorizado, pérdida o divulgación indebida.</p>
+
+      <h4>6. Compartición de datos</h4>
+      <p>No vendemos ni cedemos datos personales a terceros con fines comerciales. Compartimos datos únicamente con:</p>
+      <ul>
+        <li><strong>Arquitecto asignado:</strong> nombre, teléfono y dirección del inmueble del Cliente, exclusivamente para ejecutar el servicio.</li>
+        <li><strong>Proveedores de pago:</strong> para procesar transacciones de forma segura.</li>
+        <li><strong>Autoridades competentes:</strong> cuando sea exigido por ley o resolución judicial.</li>
+      </ul>
+
+      <h4>7. Conservación de datos</h4>
+      <p>Los datos se conservan durante la vigencia del contrato y por un período adicional de <strong>5 años</strong> para cumplir obligaciones tributarias y legales. Los datos de usuarios que no hayan completado ningún contrato se eliminan al cabo de <strong>2 años</strong> de inactividad.</p>
+
+      <h4>8. Derechos del titular</h4>
+      <p>Conforme a la Ley N° 19.628, usted tiene derecho a:</p>
+      <ul>
+        <li><strong>Acceso:</strong> conocer qué datos personales suyos son tratados por APPARQ.</li>
+        <li><strong>Rectificación:</strong> solicitar la corrección de datos inexactos o incompletos.</li>
+        <li><strong>Cancelación:</strong> solicitar la eliminación de sus datos cuando no sean necesarios para la finalidad original.</li>
+        <li><strong>Oposición:</strong> oponerse al tratamiento de sus datos para fines de marketing directo.</li>
+      </ul>
+      <p>Para ejercer estos derechos, escríbanos a <strong>hola@apparq.cl</strong> con el asunto "Derechos ARCO". Responderemos en un plazo máximo de <strong>15 días hábiles</strong>.</p>
+
+      <h4>9. Cookies y tecnologías de seguimiento</h4>
+      <p>apparq.cl utiliza únicamente cookies técnicas esenciales para el funcionamiento del sitio. No utilizamos cookies de seguimiento publicitario ni compartimos datos de navegación con redes publicitarias de terceros.</p>
+
+      <h4>10. Cambios en esta política</h4>
+      <p>APPARQ puede actualizar esta Política de Privacidad. Notificaremos cambios relevantes mediante un aviso visible en la plataforma. La versión vigente siempre estará disponible en apparq.cl.</p>
+
+      <h4>11. Contacto</h4>
+      <p>Para consultas sobre privacidad o protección de datos: <strong>hola@apparq.cl</strong> · DSR ARQ SPA · Santiago, Chile.</p>
+
+    </div>
+  </div>
+</div>
 
 <!-- UF chip -->
 <div class="uf-chip">UF hoy: <span id="ufVal">…</span></div>
@@ -2330,6 +2551,38 @@ function markJourneyDone() {
   const style = document.createElement('style');
   style.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }`;
   document.head.appendChild(style);
+})();
+
+/* ══════════════════════════════════════════════════
+   LEGAL MODALS — Términos y Privacidad
+══════════════════════════════════════════════════ */
+(function() {
+  function openLegal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLegal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('openTerminos').addEventListener('click', e => { e.preventDefault(); openLegal('modalTerminos'); });
+  document.getElementById('openPrivacidad').addEventListener('click', e => { e.preventDefault(); openLegal('modalPrivacidad'); });
+  document.getElementById('closeTerminos').addEventListener('click', () => closeLegal('modalTerminos'));
+  document.getElementById('closePrivacidad').addEventListener('click', () => closeLegal('modalPrivacidad'));
+
+  ['modalTerminos','modalPrivacidad'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target === document.getElementById(id)) closeLegal(id);
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeLegal('modalTerminos');
+      closeLegal('modalPrivacidad');
+    }
+  });
 })();
 
 /* ══════════════════════════════════════════════════
