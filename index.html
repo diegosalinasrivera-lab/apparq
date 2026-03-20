@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APPARQ — Arquitectura a tu alcance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange:        #E8503A;
+      --orange-dark:   #C93E2A;
+      --orange-light:  rgba(232, 80, 58, 0.10);
+      --orange-xlight: rgba(232, 80, 58, 0.05);
+      --grad:          linear-gradient(135deg, #E8503A 0%, #FF7255 100%);
+      --grad-soft:     linear-gradient(135deg, #FFF0ED 0%, #FFF8F6 100%);
+      --dark:          #111827;
+      --mid:           #374151;
+      --muted:         #6B7280;
+      --light:         #9CA3AF;
+      --border:        #E5E7EB;
+      --border-light:  #F3F4F6;
+      --bg:            #FFFFFF;
+      --bg-soft:       #FAFAFA;
+      --bg-warm:       #FDF6F4;
+      --shadow-xs:     0 1px 2px rgba(0,0,0,0.05);
+      --shadow-sm:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow:        0 4px 16px rgba(0,0,0,0.08);
+      --shadow-md:     0 8px 32px rgba(0,0,0,0.10);
+      --shadow-lg:     0 20px 48px rgba(0,0,0,0.12);
+      --radius-sm:     8px;
+      --radius:        14px;
+      --radius-lg:     20px;
+      --radius-pill:   999px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--dark);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── UTILS ──────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2.5rem); }
+    .text-orange { color: var(--orange); }
+    img, svg { display: block; }
+
+    /* ── NAV ───────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .nav-inner {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 32px; height: 32px; flex-shrink: 0;
+    }
+    .logo-wordmark {
+      font-size: 1.05rem; font-weight: 900;
+      letter-spacing: 0.08em; color: var(--dark);
+      line-height: 1;
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .nav-link {
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--mid);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-link:hover { background: var(--bg-soft); color: var(--dark); }
+    .nav-cta {
+      margin-left: 0.5rem;
+      padding: 0.5rem 1.25rem;
+      background: var(--grad);
+      color: #fff; text-decoration: none;
+      border-radius: var(--radius-pill);
+      font-size: 0.875rem; font-weight: 700;
+      box-shadow: 0 2px 8px rgba(232,80,58,0.35);
+      transition: opacity 0.15s, box-shadow 0.15s;
+    }
+    .nav-cta:hover { opacity: 0.9; box-shadow: 0 4px 16px rgba(232,80,58,0.4); }
+
+    /* ── HERO ──────────────────────────────── */
+    .hero {
+      background: linear-gradient(180deg, #FEF4F2 0%, #FFF9F8 40%, #FFFFFF 100%);
+      padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(2rem, 5vw, 4rem);
+    }
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: start;
+    }
+    .hero-left { padding-top: 0.5rem; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--orange-light);
+      color: var(--orange);
+      border-radius: var(--radius-pill);
+      padding: 0.3rem 0.85rem;
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .hero h1 {
+      font-size: clamp(2.1rem, 4.5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      color: var(--dark);
+      margin-bottom: 1rem;
+    }
+    .hero h1 span {
+      color: var(--orange);
+      display: block;
+    }
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+    .hero-stats {
+      display: flex; gap: clamp(1.5rem, 3vw, 2.5rem);
+      flex-wrap: wrap;
+    }
+    .stat-num {
+      font-size: 1.6rem; font-weight: 900;
+      color: var(--dark); line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.72rem; font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-top: 3px;
+    }
+    .hero-trust {
+      display: flex; align-items: center; gap: 0.6rem;
+      margin-top: 1.75rem;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .stars { color: #F59E0B; font-size: 0.9rem; letter-spacing: 1px; }
+
+    /* ── CALC CARD ─────────────────────────── */
+    .calc-card {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      padding: 1.75rem;
+      position: relative;
+    }
+    .calc-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 1.5rem; padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .calc-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--grad);
+      flex-shrink: 0;
+    }
+    .calc-title {
+      font-size: 0.95rem; font-weight: 700;
+      color: var(--dark);
+    }
+    .calc-subtitle {
+      font-size: 0.78rem; color: var(--muted);
+      margin-left: auto;
+    }
+
+    .calc-group { margin-bottom: 1.1rem; }
+    .calc-label {
+      display: block;
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--light);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 0.45rem;
+    }
+
+    /* Address */
+    .field-wrap { position: relative; }
+    .field-icon {
+      position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
+      color: var(--light); pointer-events: none;
+      display: flex; align-items: center;
+    }
+    .field-spin {
+      position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);
+      display: none;
+    }
+    .field-spin.on { display: block; }
+    .spin-ring {
+      width: 15px; height: 15px;
+      border: 2px solid var(--border); border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    input[type="text"].field,
+    input[type="number"].field {
+      width: 100%;
+      padding: 0.7rem 0.9rem 0.7rem 2.5rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 0.9rem;
+      color: var(--dark); background: var(--bg-soft);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    input[type="number"].field { padding-right: 2.5rem; }
+    input.field:focus {
+      border-color: var(--orange);
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--orange-light);
+    }
+    input.field::placeholder { color: var(--light); }
+    .field-unit {
+      position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);
+      font-size: 0.78rem; font-weight: 700; color: var(--muted);
+      pointer-events: none;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    /* Suggestions */
+    .suggestions {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      z-index: 100; overflow: hidden;
+      display: none;
+    }
+    .suggestions.open { display: block; }
+    .sug-item {
+      padding: 0.6rem 0.85rem;
+      font-size: 0.83rem; color: var(--dark);
+      cursor: pointer;
+      display: flex; align-items: flex-start; gap: 0.5rem;
+      border-bottom: 1px solid var(--border-light);
+      transition: background 0.1s;
+    }
+    .sug-item:last-child { border-bottom: none; }
+    .sug-item:hover { background: var(--orange-xlight); }
+    .sug-pin { flex-shrink: 0; margin-top: 2px; color: var(--orange); }
+    .sug-main { font-weight: 600; font-size: 0.84rem; }
+    .sug-sub { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+    .sug-tag {
+      display: inline-block;
+      background: var(--orange-light); color: var(--orange);
+      font-size: 0.68rem; font-weight: 700;
+      padding: 1px 6px; border-radius: 4px; margin-top: 3px;
+    }
+
+    /* Commune dropdown */
+    .commune-row { margin-top: 0.6rem; }
+    .commune-label {
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--light); text-transform: uppercase; letter-spacing: 0.07em;
+      margin-bottom: 0.4rem;
+    }
+    .cdd { position: relative; }
+    .cdd-btn {
+      width: 100%;
+      padding: 0.68rem 0.9rem 0.68rem 2.5rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-soft);
+      font-family: inherit; font-size: 0.9rem; font-weight: 500;
+      color: var(--light); text-align: left;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .cdd-btn:hover, .cdd.open .cdd-btn {
+      border-color: var(--orange); background: #fff;
+    }
+    .cdd-btn.selected { color: var(--dark); }
+    .cdd-icon-map {
+      position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
+      color: var(--light); pointer-events: none;
+    }
+    .cdd-chevron {
+      flex-shrink: 0; color: var(--light);
+      transition: transform 0.2s;
+    }
+    .cdd.open .cdd-chevron { transform: rotate(180deg); }
+    .cdd-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      z-index: 110; overflow: hidden;
+      display: none; flex-direction: column;
+    }
+    .cdd.open .cdd-panel { display: flex; }
+    .cdd-search-wrap { padding: 0.5rem; border-bottom: 1px solid var(--border-light); }
+    .cdd-search {
+      width: 100%;
+      padding: 0.45rem 0.7rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 0.83rem;
+      color: var(--dark); background: var(--bg-soft);
+      outline: none;
+    }
+    .cdd-search:focus { border-color: var(--orange); }
+    .cdd-list {
+      max-height: 200px; overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .cdd-list::-webkit-scrollbar { width: 4px; }
+    .cdd-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .cdd-opt {
+      padding: 0.55rem 0.9rem;
+      font-size: 0.85rem; font-weight: 500; color: var(--mid);
+      cursor: pointer; transition: background 0.1s;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .cdd-opt:last-child { border-bottom: none; }
+    .cdd-opt:hover { background: var(--orange-xlight); color: var(--orange); }
+    .cdd-opt.selected { background: var(--orange-light); color: var(--orange); font-weight: 700; }
+
+    /* ── ARCHITECT MODAL ──────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      width: 100%; max-width: 480px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(16px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .modal-ico { font-size: 2rem; margin-bottom: 0.4rem; }
+    .modal h3 { font-size: 1.25rem; font-weight: 900; margin-bottom: 0.3rem; }
+    .modal-sub { font-size: 0.85rem; color: var(--muted); line-height: 1.55; }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-soft); border: 1px solid var(--border);
+      font-size: 1.1rem; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; margin-left: 1rem;
+      transition: background 0.15s;
+    }
+    .modal-close:hover { background: var(--border); }
+    .mform { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.25rem; }
+    .mform-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .mform-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .mform-label {
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--light); text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .mform-input, .mform-select {
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 0.88rem;
+      color: var(--dark); background: var(--bg-soft);
+      outline: none; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .mform-input:focus, .mform-select:focus {
+      border-color: var(--orange); background: #fff;
+      box-shadow: 0 0 0 3px var(--orange-light);
+    }
+    .mform-input::placeholder { color: var(--light); }
+    .mform-select { appearance: none; cursor: pointer; }
+    .mform-divider {
+      font-size: 0.68rem; font-weight: 700; color: var(--light);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      padding: 0.25rem 0;
+      border-top: 1px solid var(--border-light);
+      margin-top: 0.25rem;
+    }
+    .mform-check-group {
+      display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .mform-check {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.83rem; color: var(--mid); cursor: pointer;
+    }
+    .mform-check input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--orange);
+      cursor: pointer; flex-shrink: 0;
+    }
+    /* ── Commune pills selector (architect form) ── */
+    .commune-pills {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      max-height: 170px; overflow-y: auto;
+      padding: 10px; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--bg-soft);
+    }
+    .commune-pills::-webkit-scrollbar { width: 4px; }
+    .commune-pills::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .commune-pill {
+      padding: 4px 11px; border-radius: var(--radius-pill);
+      font-size: 0.74rem; font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: white; color: var(--mid);
+      cursor: pointer; transition: all 0.12s;
+      user-select: none; line-height: 1.6;
+    }
+    .commune-pill:hover { border-color: var(--orange); color: var(--orange); }
+    .commune-pill.sel { background: var(--orange); border-color: var(--orange); color: #fff; }
+    .commune-pills-hint { font-size: 0.71rem; color: var(--muted); margin-top: 5px; }
+
+    .btn-modal-submit {
+      width: 100%; padding: 0.85rem;
+      background: var(--grad); color: #fff; border: none;
+      border-radius: var(--radius-pill);
+      font-family: inherit; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(232,80,58,0.35);
+      transition: opacity 0.15s;
+      margin-top: 0.25rem;
+    }
+    .btn-modal-submit:hover { opacity: 0.9; }
+    .modal-legal {
+      font-size: 0.68rem; color: var(--light); text-align: center; margin-top: 0.5rem;
+    }
+
+    /* Service selector */
+    .service-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.4rem; }
+    .sbtn {
+      padding: 0.6rem 0.3rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-soft);
+      font-family: inherit; font-size: 0.72rem; font-weight: 700;
+      color: var(--muted);
+      cursor: pointer; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 0.13s; line-height: 1.3;
+    }
+    .sbtn:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-xlight); }
+    .sbtn.on { border-color: var(--orange); background: var(--orange); color: #fff; }
+    .sbtn-ico { font-size: 1.1rem; }
+
+    /* Chips */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .chip {
+      padding: 0.3rem 0.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-pill);
+      font-family: inherit; font-size: 0.78rem; font-weight: 600;
+      color: var(--muted); background: var(--bg-soft);
+      cursor: pointer; transition: all 0.12s;
+    }
+    .chip:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-xlight); }
+    .chip.on { border-color: var(--orange); background: var(--orange); color: #fff; }
+
+    /* Price box */
+    .price-box {
+      background: var(--grad-soft);
+      border: 1.5px solid rgba(232,80,58,0.15);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      margin-top: 0.25rem;
+      transition: opacity 0.25s;
+    }
+    .price-box.hidden { opacity: 0; pointer-events: none; }
+    .price-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .price-lbl { font-size: 0.68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .price-total { font-size: 2rem; font-weight: 900; color: var(--dark); line-height: 1; margin-top: 4px; }
+    .price-uf-row { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+    .uf-pill {
+      background: rgba(232,80,58,0.10);
+      color: var(--orange);
+      border-radius: 6px; padding: 3px 8px;
+      font-size: 0.7rem; font-weight: 700;
+      white-space: nowrap;
+    }
+    .stages-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.4rem; }
+    .stage {
+      background: #fff;
+      border: 1px solid rgba(232,80,58,0.12);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.7rem;
+    }
+    .stage-name { font-size: 0.64rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stage-pct { font-size: 0.7rem; font-weight: 800; color: var(--orange); }
+    .stage-amt { font-size: 0.95rem; font-weight: 800; color: var(--dark); margin-top: 1px; }
+
+    .btn-cta {
+      display: block; width: 100%;
+      margin-top: 1rem;
+      padding: 0.85rem;
+      background: var(--grad);
+      color: #fff; border: none;
+      border-radius: var(--radius-pill);
+      font-family: inherit; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; text-align: center;
+      box-shadow: 0 4px 16px rgba(232,80,58,0.35);
+      transition: opacity 0.15s, box-shadow 0.15s, transform 0.1s;
+    }
+    .btn-cta:hover { opacity: 0.92; box-shadow: 0 6px 20px rgba(232,80,58,0.45); }
+    .btn-cta:active { transform: scale(0.98); }
+    .btn-cta:disabled { background: var(--border); box-shadow: none; color: var(--light); cursor: default; }
+    .calc-note { font-size: 0.68rem; color: var(--light); text-align: center; margin-top: 0.6rem; }
+
+    /* ── HOW IT WORKS ──────────────────────── */
+    .how { background: var(--bg-warm); }
+    .section-wrap { padding: clamp(3.5rem, 7vw, 5.5rem) 0; }
+    .section-eyebrow {
+      font-size: 0.72rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--orange); margin-bottom: 0.6rem;
+    }
+    .section-h2 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 900; line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    .section-sub { font-size: 1rem; color: var(--muted); max-width: 520px; margin-bottom: 2.5rem; line-height: 1.7; }
+
+    /* ── JOURNEY (9 steps) ──────────────────── */
+    .journey-wrap {
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      -webkit-overflow-scrolling: touch;
+    }
+    .journey-track {
+      display: flex; align-items: flex-start;
+      gap: 0; min-width: 900px;
+      position: relative;
+    }
+    .journey-track::before {
+      content: '';
+      position: absolute; top: 24px; left: 28px; right: 28px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--orange) 0%, rgba(232,80,58,0.15) 100%);
+      z-index: 0;
+    }
+    .jstep {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      text-align: center; position: relative; z-index: 1;
+      padding: 0 0.35rem;
+    }
+    .jstep-num {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid var(--border);
+      color: var(--light); font-size: 0.85rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.9rem;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    .jstep.active .jstep-num {
+      background: var(--grad); border-color: var(--orange);
+      color: #fff; box-shadow: 0 4px 14px rgba(232,80,58,0.35);
+    }
+    .jstep.done .jstep-num {
+      background: var(--orange-light); border-color: var(--orange);
+      color: var(--orange);
+    }
+    .jstep-ico { font-size: 1.3rem; margin-bottom: 0.4rem; }
+    .jstep-title {
+      font-size: 0.75rem; font-weight: 800; color: var(--dark);
+      line-height: 1.3; margin-bottom: 0.25rem;
+    }
+    .jstep-sub {
+      font-size: 0.68rem; color: var(--muted); line-height: 1.45;
+    }
+    .jstep-tag {
+      display: inline-block; margin-top: 0.4rem;
+      background: var(--orange-light); color: var(--orange);
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.04em;
+      padding: 2px 7px; border-radius: var(--radius-pill);
+    }
+    .jstep-tag.green {
+      background: rgba(16,185,129,0.1); color: #059669;
+    }
+
+    /* ── SERVICES ──────────────────────────── */
+    .services-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.25rem; }
+    .svc-card {
+      background: #fff;
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    .svc-card:hover {
+      border-color: rgba(232,80,58,0.35);
+      box-shadow: 0 0 0 3px var(--orange-light), var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+    .svc-ico { font-size: 2rem; margin-bottom: 0.85rem; }
+    .svc-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .svc-card > p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; margin-bottom: 1rem; }
+    .inc-list { display: flex; flex-direction: column; gap: 0.28rem; }
+    .inc { font-size: 0.79rem; color: var(--mid); display: flex; align-items: center; gap: 0.45rem; }
+    .inc::before { content: '✓'; color: var(--orange); font-weight: 800; font-size: 0.85rem; }
+    .svc-range {
+      margin-top: 1.1rem; padding-top: 0.9rem;
+      border-top: 1px solid var(--border-light);
+      font-size: 0.78rem; color: var(--muted);
+    }
+    .svc-range strong { color: var(--orange); font-size: 1rem; font-weight: 900; }
+
+    /* ── BANNER ────────────────────────────── */
+    .banner {
+      background: var(--grad);
+      border-radius: var(--radius-lg);
+      padding: clamp(2rem, 4vw, 3rem) clamp(2rem, 4vw, 3.5rem);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 2rem; flex-wrap: wrap;
+      margin: 0 clamp(1rem, 4vw, 2.5rem) 4rem;
+      box-shadow: 0 16px 48px rgba(232,80,58,0.25);
+    }
+    .banner-text h2 { color: #fff; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900; line-height: 1.2; }
+    .banner-text p { color: rgba(255,255,255,0.7); margin-top: 0.4rem; font-size: 0.95rem; }
+    .btn-banner {
+      flex-shrink: 0;
+      padding: 0.85rem 2rem;
+      background: #fff; color: var(--orange);
+      text-decoration: none; border-radius: var(--radius-pill);
+      font-weight: 800; font-size: 0.95rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .btn-banner:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(-1px); }
+
+    /* ── FOOTER ────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border-light);
+      padding: 2rem 0;
+    }
+    .footer-inner {
+      display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-links a { font-size: 0.82rem; color: var(--muted); text-decoration: none; }
+    .footer-links a:hover { color: var(--dark); }
+    .footer-copy { font-size: 0.78rem; color: var(--light); }
+
+    /* ── UF CHIP ───────────────────────────── */
+    .uf-chip {
+      position: fixed; bottom: 1rem; right: 1rem; z-index: 300;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 0.35rem 0.8rem;
+      font-size: 0.72rem; font-weight: 700; color: var(--muted);
+      box-shadow: var(--shadow-sm);
+    }
+    .uf-chip span { color: var(--dark); }
+
+    /* toast */
+    .toast {
+      position: fixed; bottom: 3.5rem; right: 1rem; z-index: 400;
+      background: var(--dark); color: #fff;
+      padding: 0.7rem 1.25rem; border-radius: var(--radius);
+      font-size: 0.85rem; font-weight: 600;
+      box-shadow: var(--shadow-md);
+      transform: translateX(130%); transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .toast.show { transform: translateX(0); }
+
+    /* hidden */
+    .hidden { display: none !important; }
+
+    /* ══════════════════════════════════════════
+       WIZARD — TRAMITE FLOW (steps 5-9)
+    ══════════════════════════════════════════ */
+    .wiz-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(17,24,39,0.65);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .wiz-overlay.open { opacity: 1; pointer-events: all; }
+    .wiz-panel {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      width: 100%; max-width: 540px;
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.28);
+      transform: translateY(28px) scale(0.97);
+      transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+      overflow: hidden;
+    }
+    .wiz-overlay.open .wiz-panel { transform: translateY(0) scale(1); }
+
+    /* progress bar */
+    .wiz-bar { height: 4px; background: var(--border-light); flex-shrink: 0; }
+    .wiz-bar-fill { height: 100%; background: var(--grad); border-radius: 0 2px 2px 0; transition: width 0.45s cubic-bezier(.4,0,.2,1); }
+
+    /* header */
+    .wiz-head {
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; gap: 1rem;
+    }
+    .wiz-head-left { display: flex; flex-direction: column; gap: 8px; }
+    .wiz-step-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--orange);
+      background: var(--orange-light); padding: 3px 10px;
+      border-radius: var(--radius-pill);
+    }
+    .wiz-dots { display: flex; gap: 5px; align-items: center; }
+    .wiz-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.25s; }
+    .wiz-dot.done { background: rgba(232,80,58,0.35); }
+    .wiz-dot.active { width: 22px; border-radius: 4px; background: var(--orange); }
+    .wiz-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-soft); border: 1px solid var(--border);
+      font-size: 1.1rem; color: var(--muted); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .wiz-close:hover { background: var(--border); }
+
+    /* body scroll area */
+    .wiz-body { flex: 1; overflow-y: auto; padding: 1.5rem; overscroll-behavior: contain; }
+    .wiz-body::-webkit-scrollbar { width: 4px; }
+    .wiz-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* step slides */
+    .wiz-step { display: none; }
+    .wiz-step.active { display: block; animation: wiz-slide-in 0.3s cubic-bezier(.4,0,.2,1); }
+    .wiz-step.slide-back { animation: wiz-slide-back 0.3s cubic-bezier(.4,0,.2,1) !important; }
+    @keyframes wiz-slide-in   { from { opacity:0; transform:translateX(22px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes wiz-slide-back { from { opacity:0; transform:translateX(-22px); } to { opacity:1; transform:translateX(0); } }
+
+    .wiz-ico   { font-size: 2.4rem; margin-bottom: 0.6rem; }
+    .wiz-title { font-size: 1.25rem; font-weight: 900; color: var(--dark); margin-bottom: 0.3rem; }
+    .wiz-sub   { font-size: 0.87rem; color: var(--muted); line-height: 1.65; margin-bottom: 1.4rem; }
+
+    /* summary pill */
+    .wiz-summary {
+      background: var(--grad-soft);
+      border: 1px solid rgba(232,80,58,0.15);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 1.25rem;
+      display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; align-items: center;
+    }
+    .wiz-sum-item { display: flex; flex-direction: column; gap: 1px; }
+    .wiz-sum-lbl { font-size: 0.63rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .wiz-sum-val { font-size: 0.88rem; font-weight: 700; color: var(--dark); }
+    .wiz-sum-price { font-size: 1.35rem; font-weight: 900; color: var(--orange); margin-left: auto; }
+
+    /* form fields */
+    .wiz-form  { display: flex; flex-direction: column; gap: 0.8rem; }
+    .wiz-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .wiz-group { display: flex; flex-direction: column; gap: 0.28rem; }
+    .wiz-label { font-size: 0.68rem; font-weight: 700; color: var(--light); text-transform: uppercase; letter-spacing: 0.07em; }
+    .wiz-input {
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 0.9rem; color: var(--dark);
+      background: var(--bg-soft); outline: none; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .wiz-input:focus  { border-color: var(--orange); background: #fff; box-shadow: 0 0 0 3px var(--orange-light); }
+    .wiz-input::placeholder { color: var(--light); }
+    .wiz-input[readonly] { opacity: 0.65; cursor: default; }
+
+    /* contract */
+    .contract-box {
+      background: var(--bg-soft); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.1rem;
+      font-size: 0.79rem; color: var(--muted); line-height: 1.9;
+      max-height: 170px; overflow-y: auto; margin-bottom: 1rem;
+    }
+    .contract-box strong { color: var(--dark); }
+    .wiz-check-row {
+      display: flex; gap: 0.6rem; align-items: flex-start;
+      font-size: 0.84rem; color: var(--mid); cursor: pointer; margin-bottom: 1rem;
+    }
+    .wiz-check-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--orange); flex-shrink: 0; margin-top: 2px; }
+
+    /* signature pad */
+    .sig-wrap {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      overflow: hidden; position: relative; background: #fafafa; margin-bottom: 0.4rem;
+    }
+    .sig-canvas   { display: block; width: 100%; height: 120px; cursor: crosshair; touch-action: none; }
+    .sig-clear    { position: absolute; top: 6px; right: 8px; font-size: 0.7rem; color: var(--muted); background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+    .sig-hint     { font-size: 0.71rem; color: var(--light); text-align: center; margin-bottom: 1rem; }
+
+    /* payment */
+    .pay-amount-box {
+      background: var(--grad-soft); border: 1px solid rgba(232,80,58,0.18);
+      border-radius: var(--radius); padding: 1rem 1.25rem;
+      text-align: center; margin-bottom: 1.1rem;
+    }
+    .pay-amount-lbl { font-size: 0.67rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .pay-amount-val { font-size: 2rem; font-weight: 900; color: var(--orange); line-height: 1; }
+    .pay-amount-sub { font-size: 0.74rem; color: var(--muted); margin-top: 4px; }
+
+    .pay-methods { display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 1.1rem; }
+    .pay-opt {
+      border: 2px solid var(--border); border-radius: var(--radius);
+      padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.85rem;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .pay-opt:hover { border-color: rgba(232,80,58,0.4); background: var(--orange-xlight); }
+    .pay-opt.sel   { border-color: var(--orange); background: var(--orange-light); }
+    .pay-opt-ico   { font-size: 1.4rem; flex-shrink: 0; }
+    .pay-opt-label { font-size: 0.87rem; font-weight: 700; color: var(--dark); }
+    .pay-opt-sub   { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
+    .pay-radio {
+      width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+      margin-left: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .pay-opt.sel .pay-radio { border-color: var(--orange); background: var(--orange); }
+    .pay-opt.sel .pay-radio::after { content:''; width:6px; height:6px; border-radius:50%; background:#fff; }
+
+    .transfer-info {
+      background: var(--bg-soft); border: 1.5px solid var(--border); border-radius: var(--radius);
+      padding: 1rem 1.1rem; font-size: 0.8rem; color: var(--muted); line-height: 1.9; margin-bottom: 0.5rem;
+    }
+
+    /* architect card */
+    .arq-card {
+      background: var(--bg-soft); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 1.1rem;
+      display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem;
+    }
+    .arq-avatar {
+      width: 54px; height: 54px; border-radius: 50%; background: var(--grad);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 14px rgba(232,80,58,0.3);
+    }
+    .arq-name  { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 2px; }
+    .arq-role  { font-size: 0.76rem; color: var(--muted); margin-bottom: 5px; }
+    .arq-stars { color: #F59E0B; font-size: 0.78rem; }
+    .arq-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .arq-badge { font-size: 0.65rem; font-weight: 700; background: var(--orange-light); color: var(--orange); padding: 2px 8px; border-radius: var(--radius-pill); }
+
+    .info-box {
+      background: var(--bg-soft); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.1rem;
+      font-size: 0.81rem; color: var(--muted); line-height: 1.9;
+    }
+
+    /* tracking */
+    .track-list { display: flex; flex-direction: column; margin-bottom: 1.1rem; }
+    .track-item { display: flex; gap: 0.85rem; align-items: flex-start; padding: 0.65rem 0; border-bottom: 1px solid var(--border-light); }
+    .track-item:last-child { border-bottom: none; }
+    .track-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+      background: var(--border-light); border: 2px solid var(--border);
+      color: var(--light); font-size: 0.72rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .track-num.done   { background: var(--orange); border-color: var(--orange); color: #fff; }
+    .track-num.active { background: var(--orange-light); border-color: var(--orange); color: var(--orange); }
+    .track-label { font-size: 0.87rem; font-weight: 700; color: var(--dark); margin-bottom: 2px; }
+    .track-label.pending { color: var(--muted); font-weight: 500; }
+    .track-status        { font-size: 0.71rem; color: var(--muted); }
+    .track-status.cur    { color: var(--orange); font-weight: 700; }
+
+    /* success bounce */
+    .wiz-success-ico { font-size: 4rem; text-align: center; margin-bottom: 0.75rem; animation: bounce-in 0.55s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes bounce-in { from { transform:scale(0.4); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+    /* footer nav */
+    .wiz-foot {
+      padding: 1rem 1.5rem 1.25rem; border-top: 1px solid var(--border-light);
+      display: flex; gap: 0.7rem; align-items: center; flex-shrink: 0;
+    }
+    .wiz-btn-back {
+      padding: 0.72rem 1.2rem; border: 1.5px solid var(--border);
+      border-radius: var(--radius-pill); font-family: inherit;
+      font-size: 0.88rem; font-weight: 700; color: var(--muted);
+      background: transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .wiz-btn-back:hover { border-color: var(--dark); color: var(--dark); }
+    .wiz-btn-next {
+      flex: 1; padding: 0.78rem; background: var(--grad); color: #fff; border: none;
+      border-radius: var(--radius-pill); font-family: inherit;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(232,80,58,0.35); transition: opacity 0.15s, box-shadow 0.15s;
+    }
+    .wiz-btn-next:hover    { opacity: 0.9; box-shadow: 0 6px 20px rgba(232,80,58,0.45); }
+    .wiz-btn-next:disabled { background: var(--border); box-shadow: none; color: var(--light); cursor: default; }
+
+    /* ── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 960px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-left { max-width: 560px; }
+      .hero-sub { max-width: 100%; }
+      .steps-grid { grid-template-columns: 1fr 1fr; }
+      .step-connector { display: none; }
+      .services-grid { grid-template-columns: 1fr; }
+      .service-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 600px) {
+      .nav-link { display: none; }
+      .hero h1 { font-size: 2rem; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .calc-card { padding: 1.25rem; }
+      .service-grid { grid-template-columns: repeat(2,1fr); }
+      .stages-grid { grid-template-columns: 1fr 1fr; }
+      .banner { flex-direction: column; text-align: center; }
+      .btn-banner { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────── -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a class="logo" href="#">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="16,2 30,28 2,28" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linejoin="round"/>
+          <line x1="10" y1="22" x2="22" y2="22" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="16" y1="9" x2="16" y2="22" stroke="rgba(232,80,58,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 3"/>
+        </svg>
+        <span class="logo-wordmark">APPARQ</span>
+      </a>
+      <div class="nav-links">
+        <a href="#como-funciona" class="nav-link">Cómo funciona</a>
+        <a href="#servicios" class="nav-link">Servicios</a>
+        <button class="nav-cta" id="navArqBtn">Soy Arquitecto</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <!-- Left copy -->
+      <div class="hero-left">
+        <div class="hero-eyebrow">Santiago de Chile</div>
+        <h1>
+          Tu proyecto<br>
+          arquitectónico,<br>
+          <span>en minutos.</span>
+        </h1>
+        <p class="hero-sub">
+          Ingresa tu dirección, elige tu trámite y obtén el
+          valor exacto de tu proyecto al instante. Sin reuniones,
+          sin sorpresas, sin letra chica.
+        </p>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-num">32</div>
+            <div class="stat-label">Comunas</div>
+          </div>
+          <div>
+            <div class="stat-num">4</div>
+            <div class="stat-label">Tipos de trámite</div>
+          </div>
+          <div>
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Precio transparente</div>
+          </div>
+        </div>
+        <div class="hero-trust">
+          <span class="stars">★★★★★</span>
+          <span>Arquitectos certificados · Precio online garantizado</span>
+        </div>
+      </div>
+
+      <!-- Right: Calculator -->
+      <div class="calc-card">
+        <div class="calc-header">
+          <div class="calc-dot"></div>
+          <div class="calc-title">Cotizador instantáneo</div>
+          <div class="calc-subtitle" id="calcSubtitle">Completa los campos</div>
+        </div>
+
+        <!-- Address -->
+        <div class="calc-group">
+          <label class="calc-label">📍 Dirección de la propiedad</label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+            </span>
+            <input id="addrInput" type="text" class="field"
+              placeholder="Ej: Av. Providencia 1234" autocomplete="off" spellcheck="false" />
+            <div class="field-spin" id="addrSpin"><div class="spin-ring"></div></div>
+            <div class="suggestions" id="suggBox"></div>
+          </div>
+          <div class="commune-row">
+            <div class="commune-label">O selecciona tu comuna directamente</div>
+            <div class="cdd" id="communeDD">
+              <div class="cdd-icon-map">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+                </svg>
+              </div>
+              <button class="cdd-btn" id="communeDDBtn" type="button">
+                <span id="communeDDText">Selecciona una comuna</span>
+                <svg class="cdd-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="cdd-panel" id="communeDDPanel">
+                <div class="cdd-search-wrap">
+                  <input class="cdd-search" id="communeSearch" type="text" placeholder="Buscar comuna…" autocomplete="off" />
+                </div>
+                <div class="cdd-list" id="communeDDList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service -->
+        <div class="calc-group">
+          <label class="calc-label">🏗 Tipo de trámite</label>
+          <div class="service-grid">
+            <button class="sbtn" data-svc="regularizacion"><span class="sbtn-ico">📋</span>Regularización</button>
+            <button class="sbtn" data-svc="ampliacion"><span class="sbtn-ico">🔨</span>Ampliación</button>
+            <button class="sbtn" data-svc="obra-nueva"><span class="sbtn-ico">🏠</span>Obra Nueva</button>
+            <button class="sbtn" data-svc="informe"><span class="sbtn-ico">📄</span>Informe</button>
+          </div>
+        </div>
+
+        <!-- m² -->
+        <div class="calc-group hidden" id="grp-m2">
+          <label class="calc-label">📐 Superficie</label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+            </span>
+            <input id="m2Input" type="number" class="field" min="1" max="5000" placeholder="0" />
+            <span class="field-unit">m²</span>
+          </div>
+        </div>
+
+        <!-- Material -->
+        <div class="calc-group hidden" id="grp-mat">
+          <label class="calc-label">🧱 Tipo de construcción</label>
+          <div class="chip-row">
+            <button class="chip" data-mat="metalcon">Metalcon</button>
+            <button class="chip" data-mat="madera">Madera</button>
+            <button class="chip" data-mat="albanileria">Albañilería</button>
+            <button class="chip" data-mat="hormigon">Hormigón</button>
+          </div>
+        </div>
+
+        <!-- Destino -->
+        <div class="calc-group hidden" id="grp-dest">
+          <label class="calc-label">🏡 Destino</label>
+          <div class="chip-row">
+            <button class="chip" data-dest="dormitorio">Dormitorio</button>
+            <button class="chip" data-dest="baño">Baño</button>
+            <button class="chip" data-dest="cocina">Cocina</button>
+            <button class="chip" data-dest="living">Living/Comedor</button>
+            <button class="chip" data-dest="bodega">Bodega</button>
+            <button class="chip" data-dest="casa">Casa completa</button>
+          </div>
+        </div>
+
+        <!-- Price -->
+        <div class="price-box hidden" id="priceBox">
+          <div class="price-top">
+            <div>
+              <div class="price-lbl">Valor referencial total</div>
+              <div class="price-total" id="priceTotal">$0</div>
+              <div class="price-uf-row" id="priceUFRow"></div>
+            </div>
+            <div class="uf-pill" id="ufPill">UF —</div>
+          </div>
+          <div class="stages-grid" id="stagesGrid"></div>
+        </div>
+
+        <button class="btn-cta" id="btnCta" disabled>Comenzar mi trámite →</button>
+        <p class="calc-note">Valor referencial · Precio final según complejidad · Sin letra chica</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── USER JOURNEY (9 STEPS) ────────────────────── -->
+<section class="how" id="como-funciona">
+  <div class="container">
+    <div class="section-wrap">
+      <div class="section-eyebrow">Experiencia de usuario</div>
+      <h2 class="section-h2">Tu viaje con APPARQ,<br>paso a paso</h2>
+      <p class="section-sub">Desde la primera cotización hasta la recepción final aprobada. Todo en una plataforma, 100% transparente.</p>
+      <div class="journey-wrap">
+        <div class="journey-track">
+
+          <div class="jstep active">
+            <div class="jstep-num">1</div>
+            <div class="jstep-ico">🌐</div>
+            <div class="jstep-title">Entras a APPARQ</div>
+            <div class="jstep-sub">Sin registro previo. Acceso inmediato al cotizador.</div>
+            <span class="jstep-tag green">Gratis</span>
+          </div>
+
+          <div class="jstep active">
+            <div class="jstep-num">2</div>
+            <div class="jstep-ico">🧮</div>
+            <div class="jstep-title">Cotización automática</div>
+            <div class="jstep-sub">Ingresas dirección, trámite, m² y materialidad.</div>
+            <span class="jstep-tag green">Instantáneo</span>
+          </div>
+
+          <div class="jstep active">
+            <div class="jstep-num">3</div>
+            <div class="jstep-ico">💰</div>
+            <div class="jstep-title">Ves el precio calculado</div>
+            <div class="jstep-sub">Precio exacto con desglose por etapas de pago.</div>
+            <span class="jstep-tag green">Sin letra chica</span>
+          </div>
+
+          <div class="jstep">
+            <div class="jstep-num">4</div>
+            <div class="jstep-ico">🚀</div>
+            <div class="jstep-title">Comenzar el trámite</div>
+            <div class="jstep-sub">Click en "Comenzar mi trámite" para iniciar el proceso.</div>
+          </div>
+
+          <div class="jstep">
+            <div class="jstep-num">5</div>
+            <div class="jstep-ico">👤</div>
+            <div class="jstep-title">Registro del cliente</div>
+            <div class="jstep-sub">Creas tu cuenta con datos básicos de la propiedad.</div>
+          </div>
+
+          <div class="jstep">
+            <div class="jstep-num">6</div>
+            <div class="jstep-ico">✍️</div>
+            <div class="jstep-title">Firma del contrato</div>
+            <div class="jstep-sub">Contrato digital firmado 100% online. Sin papel.</div>
+            <span class="jstep-tag">Digital</span>
+          </div>
+
+          <div class="jstep">
+            <div class="jstep-num">7</div>
+            <div class="jstep-ico">💳</div>
+            <div class="jstep-title">Pago del servicio</div>
+            <div class="jstep-sub">Pago del 20% inicial vía WebPay o transferencia.</div>
+            <span class="jstep-tag">20% inicio</span>
+          </div>
+
+          <div class="jstep">
+            <div class="jstep-num">8</div>
+            <div class="jstep-ico">👷</div>
+            <div class="jstep-title">Asignación de arquitecto</div>
+            <div class="jstep-sub">Te asignamos el arquitecto y te presentamos por la plataforma.</div>
+          </div>
+
+          <div class="jstep">
+            <div class="jstep-num">9</div>
+            <div class="jstep-ico">📊</div>
+            <div class="jstep-title">Seguimiento del proyecto</div>
+            <div class="jstep-sub">Avances en tiempo real hasta la Recepción Final aprobada.</div>
+            <span class="jstep-tag green">RF Aprobada ✓</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SERVICES ───────────────────────────────────── -->
+<section id="servicios">
+  <div class="container">
+    <div class="section-wrap">
+      <div class="section-eyebrow">Servicios</div>
+      <h2 class="section-h2">¿Qué puedes tramitar?</h2>
+      <p class="section-sub">Cubrimos todas las comunas de la Provincia de Santiago con precios claros desde el primer día.</p>
+      <div class="services-grid">
+
+        <div class="svc-card">
+          <div class="svc-ico">📋</div>
+          <h3>Regularización</h3>
+          <p>Para construcciones sin permiso municipal. Legalizamos tu obra y obtenemos la recepción final.</p>
+          <div class="inc-list">
+            <div class="inc">Solicitud CIP y desarchivo</div>
+            <div class="inc">Levantamiento en terreno</div>
+            <div class="inc">Planos de arquitectura y especialidades</div>
+            <div class="inc">Ingreso y tramitación DOM</div>
+            <div class="inc">Recepción Final</div>
+          </div>
+          <div class="svc-range">Desde <strong>$169.000</strong> · Precio según m² y materialidad</div>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-ico">🔨</div>
+          <h3>Ampliación</h3>
+          <p>¿Quieres sumar una habitación, baño o cocina? Desarrollamos el proyecto y gestionamos el permiso.</p>
+          <div class="inc-list">
+            <div class="inc">Diseño arquitectónico</div>
+            <div class="inc">Planos de especialidades</div>
+            <div class="inc">Permiso de Obra Municipal</div>
+            <div class="inc">Supervisión de obra</div>
+            <div class="inc">Recepción Final</div>
+          </div>
+          <div class="svc-range">Desde <strong>$313.000</strong> · Precio según m² y materialidad</div>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-ico">🏠</div>
+          <h3>Obra Nueva</h3>
+          <p>Construye desde cero. Proyecto completo con todos los permisos necesarios para edificar legalmente.</p>
+          <div class="inc-list">
+            <div class="inc">Proyecto de arquitectura</div>
+            <div class="inc">Planos estructurales y especialidades</div>
+            <div class="inc">Permiso de Edificación</div>
+            <div class="inc">Supervisión de obra</div>
+            <div class="inc">Recepción Final</div>
+          </div>
+          <div class="svc-range">Desde <strong>$563.000</strong> · Precio según m² y materialidad</div>
+        </div>
+
+        <div class="svc-card">
+          <div class="svc-ico">📄</div>
+          <h3>Informe de Propiedad</h3>
+          <p>Informe técnico completo: estado real de la propiedad, antecedentes municipales y recomendaciones.</p>
+          <div class="inc-list">
+            <div class="inc">Visita y levantamiento en terreno</div>
+            <div class="inc">Revisión de antecedentes municipales</div>
+            <div class="inc">Informe técnico detallado</div>
+            <div class="inc">Recomendaciones profesionales</div>
+          </div>
+          <div class="svc-range">Precio fijo: <strong>0,05 UF/m²</strong> · Sin sorpresas</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── BANNER ARQUITECTOS ─────────────────────────── -->
+<div class="banner" id="arquitectos">
+  <div class="banner-text">
+    <h2>¿Eres arquitecto?<br>Trabaja con APPARQ.</h2>
+    <p>Recibe proyectos, gestiona tu agenda y cobra de forma simple. La red más innovadora de Chile.</p>
+  </div>
+  <button class="btn-banner" id="bannerArqBtn">Quiero ser parte →</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     WIZARD — TRAMITE FLOW
+     Steps: 5=Registro · 6=Contrato · 7=Pago · 8=Asignación · 9=Seguimiento
+════════════════════════════════════════════════════ -->
+<div class="wiz-overlay" id="wizOverlay" role="dialog" aria-modal="true" aria-label="Comenzar trámite">
+  <div class="wiz-panel">
+
+    <!-- Top progress bar -->
+    <div class="wiz-bar"><div class="wiz-bar-fill" id="wizBarFill" style="width:20%"></div></div>
+
+    <!-- Header -->
+    <div class="wiz-head">
+      <div class="wiz-head-left">
+        <span class="wiz-step-badge" id="wizBadge">Paso 1 de 5 · Registro</span>
+        <div class="wiz-dots" id="wizDots">
+          <div class="wiz-dot active"></div>
+          <div class="wiz-dot"></div>
+          <div class="wiz-dot"></div>
+          <div class="wiz-dot"></div>
+          <div class="wiz-dot"></div>
+        </div>
+      </div>
+      <button class="wiz-close" id="wizClose" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="wiz-body">
+
+      <!-- ── STEP 1: Registro del cliente ── -->
+      <div class="wiz-step active" id="wiz-s1">
+        <div class="wiz-ico">👤</div>
+        <div class="wiz-title">Registro del cliente</div>
+        <div class="wiz-sub">Completa tus datos para preparar el contrato y asignarte un arquitecto certificado.</div>
+
+        <div class="wiz-summary" id="wiz-sum1"></div>
+
+        <div class="wiz-form">
+          <div class="wiz-row">
+            <div class="wiz-group">
+              <label class="wiz-label">Nombre</label>
+              <input class="wiz-input" id="wizNombre" type="text" placeholder="Tu nombre" autocomplete="given-name" />
+            </div>
+            <div class="wiz-group">
+              <label class="wiz-label">Apellido</label>
+              <input class="wiz-input" id="wizApellido" type="text" placeholder="Tu apellido" autocomplete="family-name" />
+            </div>
+          </div>
+          <div class="wiz-group">
+            <label class="wiz-label">Correo electrónico</label>
+            <input class="wiz-input" id="wizEmail" type="email" placeholder="tu@correo.cl" autocomplete="email" />
+          </div>
+          <div class="wiz-row">
+            <div class="wiz-group">
+              <label class="wiz-label">Teléfono</label>
+              <input class="wiz-input" id="wizTel" type="tel" placeholder="+56 9 XXXX XXXX" autocomplete="tel" />
+            </div>
+            <div class="wiz-group">
+              <label class="wiz-label">RUT</label>
+              <input class="wiz-input" id="wizRut" type="text" placeholder="12.345.678-9" />
+            </div>
+          </div>
+          <div class="wiz-group">
+            <label class="wiz-label">Dirección de la propiedad</label>
+            <input class="wiz-input" id="wizAddr" type="text" readonly />
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Firma del contrato ── -->
+      <div class="wiz-step" id="wiz-s2">
+        <div class="wiz-ico">✍️</div>
+        <div class="wiz-title">Firma del contrato digital</div>
+        <div class="wiz-sub">Lee el contrato de servicios, acepta los términos y firma con tu mouse o dedo.</div>
+
+        <div class="contract-box" id="wiz-contract">
+          Cargando contrato…
+        </div>
+
+        <label class="wiz-check-row">
+          <input type="checkbox" id="wizTos" />
+          <span>He leído y acepto los <strong>Términos del Servicio</strong> y el contrato de prestación de servicios con <strong>DSR ARQUITECTOS SPA</strong>.</span>
+        </label>
+
+        <div class="wiz-group" style="margin-bottom:0.4rem;">
+          <label class="wiz-label">Firma aquí abajo</label>
+        </div>
+        <div class="sig-wrap">
+          <canvas class="sig-canvas" id="sigCanvas" width="490" height="120"></canvas>
+          <button class="sig-clear" id="sigClear" type="button">Borrar</button>
+        </div>
+        <p class="sig-hint">Dibuja tu firma con el mouse o con el dedo en pantalla táctil</p>
+      </div>
+
+      <!-- ── STEP 3: Pago ── -->
+      <div class="wiz-step" id="wiz-s3">
+        <div class="wiz-ico">💳</div>
+        <div class="wiz-title">Pago del servicio</div>
+        <div class="wiz-sub">Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.</div>
+
+        <div class="pay-amount-box">
+          <div class="pay-amount-lbl">Monto a pagar ahora · E1 (20%)</div>
+          <div class="pay-amount-val" id="wizPayAmt">$0</div>
+          <div class="pay-amount-sub" id="wizPaySub">Del total de $0</div>
+        </div>
+
+        <div class="pay-methods">
+          <div class="pay-opt sel" data-pay="webpay" id="payOptWebpay">
+            <div class="pay-opt-ico">💳</div>
+            <div>
+              <div class="pay-opt-label">WebPay</div>
+              <div class="pay-opt-sub">Débito o crédito · Proceso inmediato</div>
+            </div>
+            <div class="pay-radio"></div>
+          </div>
+          <div class="pay-opt" data-pay="transfer" id="payOptTransfer">
+            <div class="pay-opt-ico">🏦</div>
+            <div>
+              <div class="pay-opt-label">Transferencia bancaria</div>
+              <div class="pay-opt-sub">Banco BCI · Cuenta corriente 12345678-9</div>
+            </div>
+            <div class="pay-radio"></div>
+          </div>
+        </div>
+
+        <!-- WebPay form (mock) -->
+        <div id="wizWebpayForm">
+          <div class="wiz-form">
+            <div class="wiz-group">
+              <label class="wiz-label">Número de tarjeta</label>
+              <input class="wiz-input" id="wizCardNum" type="text" placeholder="•••• •••• •••• ••••" maxlength="19" inputmode="numeric" />
+            </div>
+            <div class="wiz-row">
+              <div class="wiz-group">
+                <label class="wiz-label">Vencimiento</label>
+                <input class="wiz-input" id="wizCardExp" type="text" placeholder="MM/AA" maxlength="5" inputmode="numeric" />
+              </div>
+              <div class="wiz-group">
+                <label class="wiz-label">CVV</label>
+                <input class="wiz-input" id="wizCardCvv" type="text" placeholder="•••" maxlength="4" inputmode="numeric" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transfer info (hidden) -->
+        <div id="wizTransferInfo" class="transfer-info" style="display:none;">
+          <strong>Datos de transferencia:</strong><br>
+          Banco: <strong>BCI</strong><br>
+          Cuenta corriente: <strong>12345678-9</strong><br>
+          RUT empresa: <strong>76.341.206-7</strong><br>
+          Nombre: <strong>DSR ARQUITECTOS SPA</strong><br>
+          Email confirmación: <strong>pagos@apparq.cl</strong><br>
+          Asunto/Referencia: <strong>Tu RUT</strong>
+        </div>
+      </div>
+
+      <!-- ── STEP 4: Asignación de arquitecto ── -->
+      <div class="wiz-step" id="wiz-s4">
+        <div class="wiz-success-ico">✅</div>
+        <div class="wiz-title" style="text-align:center;">¡Pago confirmado!</div>
+        <div class="wiz-sub" style="text-align:center;">Tu arquitecta ha sido asignada. Se contactará contigo en las próximas 24 horas hábiles.</div>
+
+        <div class="arq-card">
+          <div class="arq-avatar">👷</div>
+          <div>
+            <div class="arq-name">Valentina Morales P.</div>
+            <div class="arq-role">Arquitecta · Colegio de Arquitectos de Chile</div>
+            <div class="arq-stars">★★★★★ <span style="color:var(--muted);font-size:0.74rem;">4.9 · 87 proyectos</span></div>
+            <div class="arq-badges">
+              <span class="arq-badge">Regularización</span>
+              <span class="arq-badge">Ampliación</span>
+              <span class="arq-badge" id="wizArqComune">Santiago</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          📧 Recibirás un email con los datos de tu expediente.<br>
+          📱 Tu arquitecta te contactará por WhatsApp para coordinar la visita a terreno.<br>
+          🗂 Puedes ver el avance de tu proyecto en tiempo real en el siguiente paso.
+        </div>
+      </div>
+
+      <!-- ── STEP 5: Seguimiento del proyecto ── -->
+      <div class="wiz-step" id="wiz-s5">
+        <div class="wiz-ico">📊</div>
+        <div class="wiz-title">Tu proyecto está en marcha</div>
+        <div class="wiz-sub" id="wizTrackSub">Sigue el avance de tu trámite hasta la Recepción Final aprobada.</div>
+
+        <div class="track-list">
+          <div class="track-item">
+            <div class="track-num done">✓</div>
+            <div>
+              <div class="track-label">Registro y contrato firmado</div>
+              <div class="track-status">Completado · Hoy</div>
+            </div>
+          </div>
+          <div class="track-item">
+            <div class="track-num done">✓</div>
+            <div>
+              <div class="track-label">Pago E1 (20%) confirmado</div>
+              <div class="track-status">Completado · Hoy</div>
+            </div>
+          </div>
+          <div class="track-item">
+            <div class="track-num active">→</div>
+            <div>
+              <div class="track-label">Levantamiento en terreno</div>
+              <div class="track-status cur">En progreso · Tu arquitecta coordinará la visita</div>
+            </div>
+          </div>
+          <div class="track-item">
+            <div class="track-num">4</div>
+            <div>
+              <div class="track-label pending">Elaboración de planos</div>
+              <div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E2 (30%)</strong> por apparq.cl</div>
+            </div>
+          </div>
+          <div class="track-item">
+            <div class="track-num">5</div>
+            <div>
+              <div class="track-label pending">Ingreso a la DOM</div>
+              <div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E3 (20%)</strong> por apparq.cl</div>
+            </div>
+          </div>
+          <div class="track-item">
+            <div class="track-num">6</div>
+            <div>
+              <div class="track-label pending">Tramitación municipal</div>
+              <div class="track-status">Pendiente</div>
+            </div>
+          </div>
+          <div class="track-item">
+            <div class="track-num">7</div>
+            <div>
+              <div class="track-label pending">🎉 Recepción Final aprobada</div>
+              <div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E4 (30%)</strong> por apparq.cl</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:0.75rem;">
+          <div style="font-size:0.82rem;font-weight:800;color:#92400E;margin-bottom:4px;">⚠️ Importante: todos los pagos van por apparq.cl</div>
+          <div style="font-size:0.74rem;color:#78350F;line-height:1.55;">Los pagos E2, E3 y E4 se realizan <strong>exclusivamente</strong> a través de esta plataforma cuando APPARQ te envíe la notificación por email. <strong>Nunca pagues directamente al arquitecto asignado.</strong> Los pagos fuera de la plataforma no tienen validez.</div>
+        </div>
+
+        <div style="background:var(--orange-light);border-radius:var(--radius);padding:1rem 1.25rem;text-align:center;">
+          <div style="font-size:0.82rem;font-weight:800;color:var(--orange);margin-bottom:3px;">¡Tu trámite está oficialmente activo!</div>
+          <div style="font-size:0.74rem;color:var(--muted);">Recibirás notificaciones por email en cada hito del proceso y cuando corresponda cada pago.</div>
+        </div>
+      </div>
+
+    </div><!-- /wiz-body -->
+
+    <!-- Footer navigation -->
+    <div class="wiz-foot">
+      <button class="wiz-btn-back" id="wizBack" style="display:none">← Volver</button>
+      <button class="wiz-btn-next" id="wizNext">Continuar →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── ARCHITECT MODAL ────────────────────────────── -->
+<div class="modal-overlay" id="arqModal" role="dialog" aria-modal="true" aria-label="Inscripción arquitecto">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-ico">👷</div>
+        <h3>Únete a la red APPARQ</h3>
+        <p class="modal-sub">Recibe proyectos en tu comuna, gestiona tu agenda y cobra sin complicaciones.</p>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    </div>
+
+    <form class="mform" id="arqForm" novalidate
+          name="arquitecto" data-netlify="true" netlify-honeypot="bot-field">
+      <!-- Netlify hidden fields -->
+      <input type="hidden" name="form-name" value="arquitecto" />
+      <p style="display:none"><label>No llenar: <input name="bot-field" /></label></p>
+
+      <div class="mform-row">
+        <div class="mform-group">
+          <label class="mform-label">Nombre</label>
+          <input class="mform-input" name="nombre" type="text" placeholder="Nombre" required />
+        </div>
+        <div class="mform-group">
+          <label class="mform-label">Apellido</label>
+          <input class="mform-input" name="apellido" type="text" placeholder="Apellido" required />
+        </div>
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Correo electrónico</label>
+        <input class="mform-input" name="email" type="email" placeholder="arquitecto@correo.cl" required />
+      </div>
+      <div class="mform-row">
+        <div class="mform-group">
+          <label class="mform-label">Teléfono</label>
+          <input class="mform-input" name="telefono" type="tel" placeholder="+56 9 XXXX XXXX" />
+        </div>
+        <div class="mform-group">
+          <label class="mform-label">RUT</label>
+          <input class="mform-input" name="rut" type="text" placeholder="12.345.678-9" />
+        </div>
+      </div>
+      <div class="mform-row">
+        <div class="mform-group">
+          <label class="mform-label">Años de experiencia</label>
+          <select class="mform-select" name="experiencia">
+            <option value="">Selecciona</option>
+            <option>Menos de 2 años</option>
+            <option>2 – 5 años</option>
+            <option>5 – 10 años</option>
+            <option>Más de 10 años</option>
+          </select>
+        </div>
+        <div class="mform-group">
+          <label class="mform-label">N° de patente</label>
+          <input class="mform-input" name="patente" type="text" placeholder="Ej: 12345" />
+        </div>
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Tipo de trámites que realizas</label>
+        <div class="mform-check-group">
+          <label class="mform-check"><input type="checkbox" name="tramite_regularizacion" value="Regularización" checked> Regularización</label>
+          <label class="mform-check"><input type="checkbox" name="tramite_ampliacion" value="Ampliación"> Ampliación</label>
+          <label class="mform-check"><input type="checkbox" name="tramite_obra_nueva" value="Obra Nueva"> Obra Nueva</label>
+          <label class="mform-check"><input type="checkbox" name="tramite_informe" value="Informe"> Informes de Propiedad</label>
+        </div>
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Comunas en que trabajas <span style="color:var(--orange)">*</span></label>
+        <div class="commune-pills" id="arqComunasPills"></div>
+        <div class="commune-pills-hint">Selecciona todas las comunas donde prestarás servicios. Solo recibirás proyectos de esas comunas.</div>
+        <input type="hidden" name="comunas" id="arqComunasHidden" />
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Cuéntanos algo más (opcional)</label>
+        <textarea class="mform-input" name="mensaje" rows="2" placeholder="Especialidades, disponibilidad, experiencia…" style="resize:vertical;"></textarea>
+      </div>
+      <button type="submit" class="btn-modal-submit" id="arqSubmitBtn">Enviar solicitud de inscripción →</button>
+      <p class="modal-legal">Al enviar aceptas nuestros Términos de uso y Política de privacidad.</p>
+    </form>
+  </div>
+</div>
+
+<!-- ── HIDDEN NETLIFY FORM (tramite — detectado en deploy) ──────── -->
+<form name="tramite" data-netlify="true" netlify-honeypot="bot-field" style="display:none">
+  <input name="nombre" /><input name="apellido" /><input name="email" />
+  <input name="telefono" /><input name="rut" /><input name="direccion" />
+  <input name="tramite" /><input name="metros" /><input name="material" />
+  <input name="destino" /><input name="precio_total" /><input name="precio_e1" />
+  <input name="metodo_pago" /><input name="bot-field" />
+</form>
+
+<!-- ── FOOTER ─────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <a class="logo" href="#">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+          <polygon points="16,2 30,28 2,28" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linejoin="round"/>
+          <line x1="10" y1="22" x2="22" y2="22" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <span class="logo-wordmark">APPARQ</span>
+      </a>
+      <div class="footer-links">
+        <a href="#">Términos</a>
+        <a href="#">Privacidad</a>
+        <a href="#">Contacto</a>
+      </div>
+      <div class="footer-copy">© 2026 APPARQ · Santiago, Chile</div>
+    </div>
+  </div>
+</footer>
+
+<!-- UF chip -->
+<div class="uf-chip">UF hoy: <span id="ufVal">…</span></div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ────────────────────────────────────────────────
+   PRICING ENGINE
+──────────────────────────────────────────────── */
+const ARCH = { regularizacion: 0.40, ampliacion: 0.80, 'obra-nueva': 0.80, informe: 0.05 };
+const SPEC = { dormitorio: 0.20, living: 0.20, bodega: 0.00, baño: 0.80, cocina: 0.80, casa: 0.80 };
+const STRU = { metalcon: 0, madera: 0, albanileria: 0.30, hormigon: 0.30 };
+const STAGES_NORMAL = [
+  { name: 'Inicio (E1)',    pct: 0.20 },
+  { name: 'Planos (E2)',    pct: 0.30 },
+  { name: 'Ingreso (E3)',   pct: 0.20 },
+  { name: 'Recepción (E4)', pct: 0.30 },
+];
+const STAGES_INFORME = [{ name: 'Pago único', pct: 1.00 }];
+
+const COMMUNES = [
+  'Cerrillos','Cerro Navia','Conchalí','El Bosque','Estación Central',
+  'Huechuraba','Independencia','La Cisterna','La Florida','La Granja',
+  'La Pintana','La Reina','Las Condes','Lo Barnechea','Lo Espejo',
+  'Lo Prado','Macul','Maipú','Ñuñoa','Pedro Aguirre Cerda',
+  'Peñalolén','Providencia','Pudahuel','Quilicura','Quinta Normal',
+  'Recoleta','Renca','San Joaquín','San Miguel','San Ramón',
+  'Santiago','Vitacura'
+];
+
+let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf: 38000 };
+
+/* ── Fetch UF ─────────────────────────────── */
+(async () => {
+  try {
+    const d = await (await fetch('https://mindicador.cl/api/uf')).json();
+    if (d?.serie?.[0]?.valor) {
+      S.uf = d.serie[0].valor;
+      const fmt = '$' + Math.round(S.uf).toLocaleString('es-CL');
+      document.getElementById('ufVal').textContent = fmt;
+      document.getElementById('ufPill').textContent = 'UF ' + fmt;
+    }
+  } catch { document.getElementById('ufVal').textContent = '$38.000 (ref.)'; }
+})();
+
+/* ── Commune dropdown ─────────────────────── */
+const cDD      = document.getElementById('communeDD');
+const cDDBtn   = document.getElementById('communeDDBtn');
+const cDDText  = document.getElementById('communeDDText');
+const cDDList  = document.getElementById('communeDDList');
+const cSearch  = document.getElementById('communeSearch');
+
+function buildDDList(filter = '') {
+  cDDList.innerHTML = '';
+  const q = filter.toLowerCase();
+  COMMUNES.filter(c => c.toLowerCase().includes(q)).forEach(c => {
+    const opt = document.createElement('div');
+    opt.className = 'cdd-opt' + (S.commune === c ? ' selected' : '');
+    opt.textContent = c;
+    opt.onclick = () => {
+      S.commune = c; S.addr = c + ', Santiago';
+      document.getElementById('addrInput').value = c + ', Santiago';
+      cDDText.textContent = c;
+      cDDBtn.classList.add('selected');
+      closeDDPanel(); closeSugg(); recalc();
+    };
+    cDDList.appendChild(opt);
+  });
+}
+buildDDList();
+
+function openDDPanel() {
+  cDD.classList.add('open');
+  cSearch.value = '';
+  buildDDList();
+  cSearch.focus();
+}
+function closeDDPanel() { cDD.classList.remove('open'); }
+
+cDDBtn.onclick = e => { e.stopPropagation(); cDD.classList.contains('open') ? closeDDPanel() : openDDPanel(); };
+cSearch.addEventListener('input', () => buildDDList(cSearch.value));
+cSearch.onclick = e => e.stopPropagation();
+document.addEventListener('click', e => { if (!e.target.closest('#communeDD')) closeDDPanel(); });
+
+/* ── Architect modal ──────────────────────── */
+const arqModal = document.getElementById('arqModal');
+const openModal  = () => { arqModal.classList.add('open'); document.body.style.overflow = 'hidden'; };
+const closeModal = () => { arqModal.classList.remove('open'); document.body.style.overflow = ''; };
+
+document.getElementById('navArqBtn').onclick  = openModal;
+document.getElementById('bannerArqBtn').onclick = openModal;
+document.getElementById('modalClose').onclick = closeModal;
+arqModal.addEventListener('click', e => { if (e.target === arqModal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.getElementById('arqForm').onsubmit = async e => {
+  e.preventDefault();
+  const btn = document.getElementById('arqSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    const form = e.target;
+    const data = new URLSearchParams(new FormData(form));
+    await fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: data.toString()
+    });
+    closeModal();
+    showToast('✅ ¡Solicitud enviada! Te contactaremos pronto.');
+  } catch (err) {
+    showToast('⚠️ Error al enviar. Intenta de nuevo.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar solicitud de inscripción →';
+  }
+};
+
+/* ── Address autocomplete ─────────────────── */
+const addrInput = document.getElementById('addrInput');
+const suggBox   = document.getElementById('suggBox');
+const addrSpin  = document.getElementById('addrSpin');
+let debTimer;
+
+addrInput.addEventListener('input', () => {
+  S.addr = addrInput.value.trim();
+  if (S.addr.length < 4) { closeSugg(); return; }
+  clearTimeout(debTimer);
+  debTimer = setTimeout(() => doSearch(S.addr), 420);
+});
+addrInput.addEventListener('focus', () => {
+  if (addrInput.value.length >= 4) doSearch(addrInput.value);
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#addrInput') && !e.target.closest('#suggBox')) closeSugg();
+});
+
+async function doSearch(q) {
+  addrSpin.classList.add('on');
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ', Santiago, Chile')}&format=json&addressdetails=1&limit=6&countrycodes=cl&bounded=1&viewbox=-71.7,-33.7,-70.4,-33.2&accept-language=es`;
+    const data = await (await fetch(url, { headers: { 'User-Agent': 'APPARQ/1.0' } })).json();
+    data?.length ? showSugg(data) : closeSugg();
+  } catch { closeSugg(); }
+  finally { addrSpin.classList.remove('on'); }
+}
+
+function showSugg(data) {
+  suggBox.innerHTML = '';
+  data.slice(0, 5).forEach(item => {
+    const commune = extractCommune(item.address);
+    const el = document.createElement('div');
+    el.className = 'sug-item';
+    el.innerHTML = `
+      <svg class="sug-pin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+      <div>
+        <div class="sug-main">${item.display_name.split(',')[0]}</div>
+        <div class="sug-sub">${item.display_name.split(',').slice(1,4).join(',').trim()}</div>
+        ${commune ? `<span class="sug-tag">${commune}</span>` : ''}
+      </div>`;
+    el.onclick = () => {
+      addrInput.value = item.display_name.split(',')[0] + (commune ? ', ' + commune : '');
+      S.addr = addrInput.value; S.commune = commune || '';
+      if (commune) {
+        cDDText.textContent = commune;
+        cDDBtn.classList.add('selected');
+        buildDDList();
+      }
+      closeSugg(); recalc();
+    };
+    suggBox.appendChild(el);
+  });
+  suggBox.classList.add('open');
+}
+
+function extractCommune(addr) {
+  if (!addr) return '';
+  for (const k of ['suburb','city_district','town','municipality','city']) {
+    const v = addr[k];
+    if (v) { const m = COMMUNES.find(c => c.toLowerCase() === v.toLowerCase()); if (m) return m; }
+  }
+  return '';
+}
+function closeSugg() { suggBox.classList.remove('open'); suggBox.innerHTML = ''; }
+
+/* ── Service buttons ──────────────────────── */
+document.querySelectorAll('.sbtn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.sbtn').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    S.svc = b.dataset.svc;
+    const isInf = S.svc === 'informe';
+    document.getElementById('grp-mat').classList.toggle('hidden', isInf);
+    document.getElementById('grp-dest').classList.toggle('hidden', isInf);
+    document.getElementById('grp-m2').classList.remove('hidden');
+    if (isInf) { S.mat = 'none'; S.dest = 'none'; }
+    else {
+      S.mat = null; S.dest = null;
+      document.querySelectorAll('.chip[data-mat]').forEach(x => x.classList.remove('on'));
+      document.querySelectorAll('.chip[data-dest]').forEach(x => x.classList.remove('on'));
+    }
+    recalc();
+  };
+});
+
+/* ── m² input ─────────────────────────────── */
+document.getElementById('m2Input').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  S.m2 = v > 0 ? v : null; recalc();
+});
+
+/* ── Chips ────────────────────────────────── */
+document.querySelectorAll('.chip[data-mat]').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('.chip[data-mat]').forEach(x => x.classList.remove('on'));
+    c.classList.add('on'); S.mat = c.dataset.mat; recalc();
+  };
+});
+document.querySelectorAll('.chip[data-dest]').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('.chip[data-dest]').forEach(x => x.classList.remove('on'));
+    c.classList.add('on'); S.dest = c.dataset.dest; recalc();
+  };
+});
+
+/* ── Recalculate ──────────────────────────── */
+function isReady() {
+  if (!S.svc || !S.m2) return false;
+  if (S.svc === 'informe') return true;
+  return S.mat && S.dest;
+}
+
+function calcTotal() {
+  const arch = ARCH[S.svc] || 0;
+  const spec = SPEC[S.dest] ?? 0;
+  const stru = STRU[S.mat] ?? 0;
+  const uf   = (arch + spec + stru) * S.m2;
+  return { uf, clp: uf * S.uf };
+}
+
+const clpFmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+
+function recalc() {
+  const cta   = document.getElementById('btnCta');
+  const box   = document.getElementById('priceBox');
+  const sub   = document.getElementById('calcSubtitle');
+
+  if (!isReady()) {
+    box.classList.add('hidden');
+    cta.disabled = true;
+    sub.textContent = 'Completa los campos';
+    return;
+  }
+
+  const { uf, clp } = calcTotal();
+  document.getElementById('priceTotal').textContent = clpFmt(clp);
+  document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF — ' + S.m2 + ' m²';
+  document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
+
+  const stages = S.svc === 'informe' ? STAGES_INFORME : STAGES_NORMAL;
+  document.getElementById('stagesGrid').innerHTML = stages.map(st => `
+    <div class="stage">
+      <div class="stage-name">${st.name}</div>
+      <div class="stage-pct">${Math.round(st.pct * 100)}%</div>
+      <div class="stage-amt">${clpFmt(clp * st.pct)}</div>
+    </div>`).join('');
+
+  box.classList.remove('hidden');
+  cta.disabled = false;
+  sub.textContent = '¡Listo! Tu cotización';
+}
+
+/* ── CTA → open wizard ────────────────────── */
+document.getElementById('btnCta').onclick = () => {
+  if (!isReady()) return;
+  openWizard();
+};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ══════════════════════════════════════════════════
+   WIZARD — TRAMITE FLOW
+══════════════════════════════════════════════════ */
+const WIZ_STEPS = [
+  { badge: 'Paso 1 de 5 · Registro',    pct: 20  },
+  { badge: 'Paso 2 de 5 · Contrato',    pct: 40  },
+  { badge: 'Paso 3 de 5 · Pago',        pct: 60  },
+  { badge: 'Paso 4 de 5 · Asignación',  pct: 80  },
+  { badge: 'Paso 5 de 5 · Seguimiento', pct: 100 },
+];
+let wizStep = 0;   // 0–4
+let sigHasDraw = false;
+let selectedPayMethod = 'webpay';
+
+const wizOverlay = document.getElementById('wizOverlay');
+const wizBarFill = document.getElementById('wizBarFill');
+const wizBadge   = document.getElementById('wizBadge');
+const wizDots    = document.getElementById('wizDots').children;
+const wizBack    = document.getElementById('wizBack');
+const wizNext    = document.getElementById('wizNext');
+
+/* ── open / close ─────────────────────────────── */
+function openWizard() {
+  wizStep = 0;
+  sigHasDraw = false;
+  selectedPayMethod = 'webpay';
+
+  /* pre-fill summary & fields */
+  prefillWizard();
+  renderWizStep(0, false);
+
+  wizOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWizard() {
+  wizOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('wizClose').onclick = closeWizard;
+wizOverlay.addEventListener('click', e => { if (e.target === wizOverlay) closeWizard(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && wizOverlay.classList.contains('open')) closeWizard();
+});
+
+/* ── prefill from cotizador state ─────────────── */
+function prefillWizard() {
+  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón' };
+  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living', bodega:'Bodega', baño:'Baño', cocina:'Cocina', casa:'Casa completa' };
+
+  const { uf: ufVal, clp } = calcTotal();
+  const e1 = clp * 0.20;
+
+  /* summary card on step 1 */
+  document.getElementById('wiz-sum1').innerHTML = `
+    <div class="wiz-sum-item">
+      <span class="wiz-sum-lbl">Trámite</span>
+      <span class="wiz-sum-val">${SVC_LABELS[S.svc] || '—'}</span>
+    </div>
+    <div class="wiz-sum-item">
+      <span class="wiz-sum-lbl">Superficie</span>
+      <span class="wiz-sum-val">${S.m2 || '—'} m²</span>
+    </div>
+    ${S.mat !== 'none' ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Construcción</span><span class="wiz-sum-val">${MAT_LABELS[S.mat]||'—'}</span></div>` : ''}
+    ${S.dest !== 'none' ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Destino</span><span class="wiz-sum-val">${DEST_LABELS[S.dest]||'—'}</span></div>` : ''}
+    <div class="wiz-sum-price">${clpFmt(clp)}</div>`;
+
+  /* address field */
+  document.getElementById('wizAddr').value = S.addr || S.commune ? (S.addr || S.commune + ', Santiago') : '';
+
+  /* contract text */
+  const svcName = SVC_LABELS[S.svc] || S.svc;
+  const commune = S.commune || 'Santiago';
+  document.getElementById('wiz-contract').innerHTML = `
+    <strong>CONTRATO DE PRESTACIÓN DE SERVICIOS PROFESIONALES</strong><br><br>
+    Entre <strong>DSR ARQUITECTOS SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el cliente que firma este documento (en adelante "el Cliente"), se acuerda:<br><br>
+    <strong>1. Servicio contratado:</strong> ${svcName} · ${S.m2} m² · ${commune}.<br>
+    <strong>2. Honorarios:</strong> ${clpFmt(clp)} (${ufVal.toFixed(2)} UF al valor del día).<br>
+    <strong>3. Forma de pago:</strong> E1 20% al inicio · E2 30% entrega planos · E3 20% ingreso DOM · E4 30% Recepción Final.<br>
+    <strong>4. Plazo estimado:</strong> Entre 3 y 6 meses según complejidad del trámite y respuesta municipal.<br>
+    <strong>5. Responsabilidades:</strong> APPARQ asignará un arquitecto habilitado para ejecutar el proyecto completo. El cliente deberá proveer el acceso a la propiedad y los antecedentes existentes.<br>
+    <strong>6. Resolución:</strong> Cualquier diferencia se resolverá por la vía arbitral conforme a la legislación chilena vigente.<br>
+    <strong>7. Obligatoriedad de pago exclusivo por plataforma:</strong> TODOS los pagos del servicio (E1, E2, E3 y E4) deben realizarse EXCLUSIVAMENTE a través de la plataforma <strong>apparq.cl</strong>. Queda estrictamente prohibido realizar pagos directamente al arquitecto asignado o a cualquier tercero vinculado. Los pagos efectuados fuera de la plataforma no serán reconocidos por APPARQ y no generarán obligación alguna de prestación de servicios.<br>
+    <strong>8. Entregas y avances por plataforma:</strong> Todas las entregas de documentos, planos, informes y avances del proyecto serán realizadas EXCLUSIVAMENTE a través de la plataforma apparq.cl. El arquitecto asignado no está autorizado a entregar documentación ni coordinar avances por medios externos (WhatsApp, correo personal, entrega física directa u otros). Cualquier entrega fuera de la plataforma no tendrá validez contractual.<br>
+    <strong>9. Notificaciones de hitos de pago:</strong> APPARQ notificará al cliente por correo electrónico cuando corresponda el pago de cada etapa (E2, E3 y E4). El cliente deberá realizar el pago dentro de los <strong>5 días hábiles</strong> siguientes a la notificación para mantener la continuidad del proyecto. El incumplimiento de este plazo faculta a APPARQ a suspender el avance del trámite hasta regularizar el pago pendiente.<br><br>
+    Al firmar, el cliente declara haber leído, comprendido y aceptado íntegramente estas condiciones, incluyendo la obligatoriedad de realizar todos los pagos y gestiones exclusivamente a través de la plataforma apparq.cl.`;
+
+  /* payment amounts */
+  document.getElementById('wizPayAmt').textContent = clpFmt(e1);
+  document.getElementById('wizPaySub').textContent = 'Del total de ' + clpFmt(clp);
+
+  /* architect commune badge */
+  document.getElementById('wizArqComune').textContent = commune;
+  document.getElementById('wizTrackSub').textContent =
+    `Sigue el avance de tu ${svcName} en ${commune} hasta la Recepción Final aprobada.`;
+}
+
+/* ── render a step ────────────────────────────── */
+function renderWizStep(idx, goBack) {
+  /* hide all steps */
+  document.querySelectorAll('.wiz-step').forEach(el => {
+    el.classList.remove('active', 'slide-back');
+  });
+
+  const target = document.getElementById('wiz-s' + (idx + 1));
+  target.classList.add('active');
+  if (goBack) target.classList.add('slide-back');
+
+  /* progress bar */
+  wizBarFill.style.width = WIZ_STEPS[idx].pct + '%';
+  wizBadge.textContent   = WIZ_STEPS[idx].badge;
+
+  /* dots */
+  Array.from(wizDots).forEach((d, i) => {
+    d.className = 'wiz-dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  });
+
+  /* navigation buttons */
+  wizBack.style.display = idx > 0 ? '' : 'none';
+
+  const isLast = idx === WIZ_STEPS.length - 1;
+  wizNext.textContent = isLast ? '¡Ir a mi proyecto! →' : 'Continuar →';
+  wizNext.disabled = false;
+
+  /* step-specific setup */
+  if (idx === 1) setupSignaturePad();
+  if (idx === 2) setupPaymentStep();
+  if (idx === 4) {
+    /* On the last step, change button to close */
+    wizNext.textContent = 'Cerrar y volver al inicio';
+  }
+}
+
+/* ── navigation ───────────────────────────────── */
+wizNext.onclick = () => {
+  if (!wizCanAdvance()) return;
+
+  if (wizStep === WIZ_STEPS.length - 1) {
+    /* last step: submit to Netlify then close */
+    submitTramiteToNetlify().finally(() => {
+      closeWizard();
+      showToast('🎉 ¡Trámite iniciado! Revisa tu email.');
+      markJourneyDone();
+    });
+    return;
+  }
+  wizStep++;
+  renderWizStep(wizStep, false);
+};
+
+wizBack.onclick = () => {
+  if (wizStep === 0) return;
+  wizStep--;
+  renderWizStep(wizStep, true);
+};
+
+/* ── validation per step ──────────────────────── */
+function wizCanAdvance() {
+  if (wizStep === 0) {
+    const n = document.getElementById('wizNombre').value.trim();
+    const a = document.getElementById('wizApellido').value.trim();
+    const e = document.getElementById('wizEmail').value.trim();
+    const t = document.getElementById('wizTel').value.trim();
+    if (!n || !a || !e || !t) {
+      shakeNext(); showToast('Completa todos los campos obligatorios');
+      return false;
+    }
+    if (!e.includes('@')) { shakeNext(); showToast('Email inválido'); return false; }
+  }
+  if (wizStep === 1) {
+    if (!document.getElementById('wizTos').checked) {
+      shakeNext(); showToast('Debes aceptar los términos del contrato');
+      return false;
+    }
+    if (!sigHasDraw) {
+      shakeNext(); showToast('Por favor firma el contrato');
+      return false;
+    }
+  }
+  if (wizStep === 2) {
+    if (selectedPayMethod === 'webpay') {
+      const num = document.getElementById('wizCardNum').value.replace(/\s/g,'');
+      const exp = document.getElementById('wizCardExp').value;
+      const cvv = document.getElementById('wizCardCvv').value;
+      if (num.length < 16 || !exp.includes('/') || cvv.length < 3) {
+        shakeNext(); showToast('Completa los datos de la tarjeta');
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function shakeNext() {
+  wizNext.style.animation = 'none';
+  wizNext.offsetHeight; /* reflow */
+  wizNext.style.animation = 'shake 0.35s ease';
+}
+
+/* ── signature pad ────────────────────────────── */
+function setupSignaturePad() {
+  const canvas = document.getElementById('sigCanvas');
+  const ctx    = canvas.getContext('2d');
+
+  /* set actual pixel size */
+  canvas.width  = canvas.offsetWidth  || 490;
+  canvas.height = canvas.offsetHeight || 120;
+
+  ctx.strokeStyle = '#111827';
+  ctx.lineWidth   = 2.5;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+
+  let drawing = false;
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * scaleX, y: (src.clientY - r.top) * scaleY };
+  }
+
+  function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+  function move(e)  { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); sigHasDraw = true; }
+  function stop(e)  { e.preventDefault(); drawing = false; }
+
+  /* remove old listeners before adding */
+  const nc = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(nc, canvas);
+
+  nc.addEventListener('mousedown',  start);
+  nc.addEventListener('mousemove',  move);
+  nc.addEventListener('mouseup',    stop);
+  nc.addEventListener('mouseleave', stop);
+  nc.addEventListener('touchstart', start, { passive: false });
+  nc.addEventListener('touchmove',  move,  { passive: false });
+  nc.addEventListener('touchend',   stop);
+
+  document.getElementById('sigClear').onclick = () => {
+    nc.getContext('2d').clearRect(0, 0, nc.width, nc.height);
+    sigHasDraw = false;
+  };
+}
+
+/* ── payment step ─────────────────────────────── */
+function setupPaymentStep() {
+  selectedPayMethod = 'webpay';
+  showPayUI('webpay');
+
+  document.querySelectorAll('.pay-opt').forEach(opt => {
+    opt.onclick = () => {
+      selectedPayMethod = opt.dataset.pay;
+      document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('sel'));
+      opt.classList.add('sel');
+      showPayUI(selectedPayMethod);
+    };
+  });
+
+  /* card number auto-spacing */
+  document.getElementById('wizCardNum').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'').substring(0,16);
+    this.value = v.replace(/(.{4})/g,'$1 ').trim();
+  });
+
+  /* expiry auto-slash */
+  document.getElementById('wizCardExp').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'');
+    if (v.length >= 3) v = v.substring(0,2) + '/' + v.substring(2,4);
+    this.value = v;
+  });
+}
+
+function showPayUI(method) {
+  document.getElementById('wizWebpayForm').style.display  = method === 'webpay'   ? '' : 'none';
+  document.getElementById('wizTransferInfo').style.display = method === 'transfer' ? '' : 'none';
+}
+
+/* ── submit tramite to Netlify Forms (AJAX) ──── */
+async function submitTramiteToNetlify() {
+  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón', none:'' };
+  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living', bodega:'Bodega', baño:'Baño', cocina:'Cocina', casa:'Casa completa', none:'' };
+
+  const { clp } = calcTotal();
+  const e1 = clp * 0.20;
+
+  const payload = new URLSearchParams({
+    'form-name':    'tramite',
+    'nombre':       document.getElementById('wizNombre').value,
+    'apellido':     document.getElementById('wizApellido').value,
+    'email':        document.getElementById('wizEmail').value,
+    'telefono':     document.getElementById('wizTel').value,
+    'rut':          document.getElementById('wizRut').value,
+    'direccion':    document.getElementById('wizAddr').value,
+    'tramite':      SVC_LABELS[S.svc]  || S.svc  || '',
+    'metros':       S.m2  ? S.m2 + ' m²' : '',
+    'material':     MAT_LABELS[S.mat]  || '',
+    'destino':      DEST_LABELS[S.dest] || '',
+    'precio_total': clpFmt(clp),
+    'precio_e1':    clpFmt(e1),
+    'metodo_pago':  selectedPayMethod === 'webpay' ? 'WebPay' : 'Transferencia',
+  });
+
+  try {
+    await fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload.toString()
+    });
+  } catch (err) {
+    console.warn('Netlify form submit error:', err);
+    /* Silent fail — don't block the user */
+  }
+}
+
+/* ── mark journey steps done ──────────────────── */
+function markJourneyDone() {
+  const steps = document.querySelectorAll('.jstep');
+  steps.forEach((s, i) => {
+    if (i < 9) s.classList.add('done');   /* mark all as done */
+    if (i >= 2) s.classList.add('active'); /* highlight all orange */
+  });
+}
+
+/* ── CSS shake keyframe (injected once) ────────── */
+(function() {
+  const style = document.createElement('style');
+  style.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }`;
+  document.head.appendChild(style);
+})();
+
+/* ══════════════════════════════════════════════════
+   ARCHITECT COMMUNE PILLS — init
+══════════════════════════════════════════════════ */
+(function initArqComunasPills() {
+  const container  = document.getElementById('arqComunasPills');
+  const hiddenInp  = document.getElementById('arqComunasHidden');
+  if (!container || !hiddenInp) return;
+  const selected = new Set();
+  COMUNAS.forEach(c => {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'commune-pill';
+    pill.textContent = c;
+    pill.addEventListener('click', () => {
+      if (selected.has(c)) { selected.delete(c); pill.classList.remove('sel'); }
+      else                 { selected.add(c);    pill.classList.add('sel');    }
+      hiddenInp.value = Array.from(selected).join(', ');
+    });
+    container.appendChild(pill);
+  });
+})();
+
+/* ══════════════════════════════════════════════════
+   COMMUNE MATCHING — asignación de arquitecto
+   Usado cuando hay una base de arquitectos real.
+   BFS de 2 niveles: comuna exacta → vecina → 2ª vecina
+══════════════════════════════════════════════════ */
+const COMUNAS_ADYACENTES = {
+  'Santiago':        ['Providencia','Independencia','Recoleta','Ñuñoa','San Miguel','Cerrillos','Quinta Normal','Estación Central'],
+  'Providencia':     ['Santiago','Las Condes','Ñuñoa','La Reina'],
+  'Las Condes':      ['Providencia','Vitacura','La Reina','Lo Barnechea'],
+  'Vitacura':        ['Las Condes','Lo Barnechea','Providencia'],
+  'Lo Barnechea':    ['Vitacura','Las Condes'],
+  'La Reina':        ['Las Condes','Providencia','Ñuñoa','Peñalolén'],
+  'Ñuñoa':           ['Providencia','La Reina','Peñalolén','Macul','San Joaquín','Santiago'],
+  'Peñalolén':       ['La Reina','Ñuñoa','Macul','La Florida'],
+  'La Florida':      ['Peñalolén','Macul','San Joaquín','El Bosque','La Granja','La Pintana'],
+  'Macul':           ['Ñuñoa','Peñalolén','La Florida','San Joaquín'],
+  'San Joaquín':     ['Ñuñoa','Macul','La Florida','La Granja','San Miguel'],
+  'La Granja':       ['San Joaquín','La Florida','La Pintana','El Bosque','San Ramón'],
+  'La Pintana':      ['La Granja','La Florida','El Bosque','San Ramón'],
+  'El Bosque':       ['La Florida','La Granja','La Pintana','San Ramón','Pedro Aguirre Cerda'],
+  'San Ramón':       ['La Granja','La Pintana','El Bosque','Pedro Aguirre Cerda'],
+  'Pedro Aguirre Cerda': ['San Miguel','San Ramón','El Bosque','Lo Espejo','La Cisterna'],
+  'San Miguel':      ['Santiago','San Joaquín','La Cisterna','Pedro Aguirre Cerda'],
+  'La Cisterna':     ['San Miguel','Pedro Aguirre Cerda','Lo Espejo','El Bosque'],
+  'Lo Espejo':       ['Pedro Aguirre Cerda','La Cisterna','San Ramón'],
+  'Cerrillos':       ['Santiago','Maipú','Estación Central'],
+  'Estación Central':['Santiago','Cerrillos','Maipú','Pudahuel','Quinta Normal'],
+  'Maipú':           ['Cerrillos','Estación Central','Pudahuel'],
+  'Pudahuel':        ['Estación Central','Maipú','Renca','Quilicura','Lo Prado','Cerro Navia'],
+  'Lo Prado':        ['Pudahuel','Quinta Normal','Cerro Navia'],
+  'Quinta Normal':   ['Santiago','Estación Central','Lo Prado','Cerro Navia','Independencia'],
+  'Cerro Navia':     ['Lo Prado','Quinta Normal','Pudahuel','Renca'],
+  'Renca':           ['Cerro Navia','Pudahuel','Quilicura','Huechuraba','Conchalí'],
+  'Quilicura':       ['Renca','Pudahuel','Huechuraba'],
+  'Huechuraba':      ['Renca','Quilicura','Conchalí','Recoleta'],
+  'Conchalí':        ['Renca','Huechuraba','Recoleta','Independencia'],
+  'Recoleta':        ['Santiago','Independencia','Conchalí','Huechuraba'],
+  'Independencia':   ['Santiago','Recoleta','Conchalí','Quinta Normal'],
+};
+
+/**
+ * Encuentra el arquitecto más cercano disponible para una comuna.
+ * @param {string} targetCommune  - Comuna del proyecto del cliente
+ * @param {Array}  architects     - Array de objetos { nombre, comunas: ['Providencia','Las Condes',...] }
+ * @returns {object|null} El arquitecto asignado, o null si no hay ninguno disponible
+ */
+function findBestArchitect(targetCommune, architects) {
+  if (!architects || architects.length === 0) return null;
+
+  // Nivel 0: coincidencia exacta
+  const exact = architects.filter(a => a.comunas.includes(targetCommune));
+  if (exact.length) return exact[Math.floor(Math.random() * exact.length)];
+
+  // Nivel 1: comunas adyacentes directas
+  const adj1 = COMUNAS_ADYACENTES[targetCommune] || [];
+  for (const c of adj1) {
+    const match = architects.filter(a => a.comunas.includes(c));
+    if (match.length) return match[Math.floor(Math.random() * match.length)];
+  }
+
+  // Nivel 2: vecinos de vecinos
+  for (const c of adj1) {
+    const adj2 = COMUNAS_ADYACENTES[c] || [];
+    for (const c2 of adj2) {
+      if (c2 === targetCommune) continue;
+      const match = architects.filter(a => a.comunas.includes(c2));
+      if (match.length) return match[Math.floor(Math.random() * match.length)];
+    }
+  }
+
+  // Último recurso: cualquier arquitecto disponible
+  return architects[Math.floor(Math.random() * architects.length)];
+}
+
+/**
+ * Devuelve la descripción del match para mostrar en UI.
+ * @param {string} targetCommune
+ * @param {string} assignedCommune  - Primera comuna del arquitecto asignado
+ * @returns {string}
+ */
+function communeMatchLabel(targetCommune, assignedCommune) {
+  if (assignedCommune === targetCommune)
+    return `Arquitecto de ${targetCommune}`;
+  const adj1 = COMUNAS_ADYACENTES[targetCommune] || [];
+  if (adj1.includes(assignedCommune))
+    return `Arquitecto de ${assignedCommune} · comuna vecina a ${targetCommune}`;
+  return `Arquitecto de ${assignedCommune} · más cercano disponible a ${targetCommune}`;
+}
+</script>
+</body>
+</html>

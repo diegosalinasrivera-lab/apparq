@@ -1,0 +1,41 @@
+# ── Documentos de negocio (privados) ──────────────
+*.pdf
+*.docx
+*.xlsx
+*.xlsm
+*.csv
+*.key
+*.pptx
+
+# ── Archivos de diseño ─────────────────────────────
+*.ai
+*.psd
+*.sketch
+*.fig
+*.xd
+
+# ── Imágenes no usadas en la web ──────────────────
+apparq2.png
+apparq3.png
+apparq3.psd
+apparq5 copy.png
+sesion cliente apparq.png
+APPARQ F.png
+
+# ── Sistema operativo ─────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── iCloud ────────────────────────────────────────
+*.icloud
+
+# ── Node (para cuando integremos Netlify Functions) ──
+node_modules/
+.env
+.env.local
+.env.production
+
+# ── Netlify build ─────────────────────────────────
+.netlify/
