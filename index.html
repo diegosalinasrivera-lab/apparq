@@ -2411,7 +2411,7 @@ async function loadArchitectForCommune(commune) {
   const hiddenInp  = document.getElementById('arqComunasHidden');
   if (!container || !hiddenInp) return;
   const selected = new Set();
-  COMUNAS.forEach(c => {
+  COMMUNES.forEach(c => {
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'commune-pill';
