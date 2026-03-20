@@ -1682,8 +1682,61 @@
         <label class="mform-label">Cuéntanos algo más (opcional)</label>
         <textarea class="mform-input" name="mensaje" rows="2" placeholder="Especialidades, disponibilidad, experiencia…" style="resize:vertical;"></textarea>
       </div>
-      <button type="submit" class="btn-modal-submit" id="arqSubmitBtn">Enviar solicitud de inscripción →</button>
-      <p class="modal-legal">Al enviar aceptas nuestros Términos de uso y Política de privacidad.</p>
+
+      <!-- ── CONTRATO ARQUITECTO ── -->
+      <div class="mform-group" style="margin-top:1.25rem;">
+        <label class="mform-label" style="font-size:0.82rem;font-weight:800;color:var(--dark);">📄 Contrato de Colaboración Profesional</label>
+        <div class="contract-box" id="arqContractBox" style="max-height:220px;font-size:0.76rem;line-height:1.65;">
+          <strong>CONTRATO DE COLABORACIÓN PROFESIONAL — APPARQ</strong><br><br>
+          Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el profesional que suscribe este documento (en adelante "el Arquitecto"), se acuerda lo siguiente:<br><br>
+
+          <strong>1. Objeto.</strong> El Arquitecto se incorpora a la red APPARQ como colaborador independiente para ejecutar trámites de arquitectura asignados por la plataforma en las comunas que declare trabajar. Esta relación no constituye vínculo laboral ni de subordinación entre las partes.<br><br>
+
+          <strong>2. Asignación de proyectos.</strong> APPARQ asignará proyectos al Arquitecto según la disponibilidad geográfica declarada. El Arquitecto podrá aceptar o rechazar proyectos dentro de las 24 horas siguientes a la notificación. El rechazo reiterado e injustificado podrá ser causal de suspensión de la red.<br><br>
+
+          <strong>3. Honorarios y comisión.</strong> Por cada etapa de pago que el cliente realice a APPARQ, el Arquitecto recibirá el <strong>75% del monto neto</strong> correspondiente a dicha etapa. APPARQ retendrá el <strong>25%</strong> en concepto de comisión por el uso de la plataforma, gestión administrativa y captación de clientes.<br><br>
+
+          <strong>4. Forma y plazo de pago.</strong> APPARQ transferirá los honorarios al Arquitecto dentro de los <strong>10 días hábiles</strong> siguientes a la confirmación del pago de cada etapa por parte del cliente. El pago se realizará mediante transferencia bancaria a la cuenta indicada por el Arquitecto al momento de la inscripción.<br><br>
+
+          <strong>5. Obligatoriedad de uso de la plataforma.</strong> El Arquitecto se obliga a:<br>
+          a) Realizar <strong>todas las entregas</strong> de planos, documentos e informes exclusivamente a través de apparq.cl.<br>
+          b) No recibir pagos directos de los clientes asignados por APPARQ bajo ninguna circunstancia.<br>
+          c) No contactar a los clientes por medios externos (WhatsApp personal, correo directo u otros) para gestionar pagos o entregar documentación fuera de la plataforma.<br><br>
+
+          <strong>6. No captación directa.</strong> Durante la vigencia de este contrato y por un período de <strong>12 meses</strong> desde su término, el Arquitecto se compromete a no gestionar directamente ni a través de terceros los proyectos de clientes que hayan sido captados originalmente por APPARQ.<br><br>
+
+          <strong>7. Obligaciones del Arquitecto.</strong><br>
+          a) Mantener vigente su patente profesional y habilitación en el Colegio de Arquitectos de Chile.<br>
+          b) Ejecutar los proyectos con la diligencia, estándares técnicos y plazos acordados con el cliente.<br>
+          c) Responder las comunicaciones de la plataforma en un plazo máximo de <strong>24 horas hábiles</strong>.<br>
+          d) Informar a APPARQ cualquier impedimento para ejecutar un proyecto asignado con al menos 48 horas de anticipación.<br><br>
+
+          <strong>8. Obligaciones de APPARQ.</strong><br>
+          a) Poner a disposición del Arquitecto la plataforma y las herramientas necesarias para la gestión de proyectos.<br>
+          b) Transferir los honorarios correspondientes en los plazos establecidos.<br>
+          c) Asignar proyectos de manera justa considerando la carga de trabajo y disponibilidad del Arquitecto.<br><br>
+
+          <strong>9. Responsabilidad profesional.</strong> El Arquitecto es el único responsable de la calidad técnica, legalidad y exactitud de los proyectos que elabore. APPARQ no asume responsabilidad por errores técnicos, rechazos municipales derivados de deficiencias en los documentos, ni por daños causados por incumplimiento del Arquitecto.<br><br>
+
+          <strong>10. Confidencialidad.</strong> El Arquitecto se obliga a mantener confidencialidad sobre los datos personales de los clientes, información comercial de APPARQ y las condiciones de este contrato. Esta obligación se extiende por <strong>2 años</strong> desde la terminación del contrato.<br><br>
+
+          <strong>11. Protección de datos.</strong> El Arquitecto acepta que sus datos personales sean tratados por APPARQ conforme a la Ley N° 19.628 para los fines propios de la plataforma.<br><br>
+
+          <strong>12. Vigencia y término.</strong> Este contrato tiene vigencia indefinida desde la aceptación digital. Cualquiera de las partes podrá ponerle término con un aviso escrito de <strong>30 días corridos</strong> a la otra parte. APPARQ podrá terminarlo de inmediato en caso de incumplimiento grave, incluyendo el cobro directo a clientes o el uso de datos de la plataforma para fines distintos a los acordados.<br><br>
+
+          <strong>13. Ley aplicable y resolución de conflictos.</strong> Este contrato se rige por la legislación chilena vigente. Cualquier controversia se someterá al arbitraje del Centro de Arbitraje y Mediación de Santiago, o a los Tribunales Ordinarios de Justicia de Santiago, a elección de APPARQ.<br><br>
+
+          Al enviar su inscripción, el Arquitecto declara haber leído, comprendido y aceptado íntegramente las condiciones de este contrato.
+        </div>
+      </div>
+
+      <label class="mform-check" style="margin-top:0.75rem;align-items:flex-start;gap:0.6rem;">
+        <input type="checkbox" id="arqContractCheck" style="margin-top:3px;width:16px;height:16px;accent-color:var(--orange);flex-shrink:0;" />
+        <span style="font-size:0.8rem;color:var(--mid);line-height:1.5;">He leído y acepto el <strong>Contrato de Colaboración Profesional</strong> con APPARQ, incluyendo la comisión del 25%, la obligatoriedad de uso exclusivo de la plataforma y las cláusulas de no captación directa.</span>
+      </label>
+
+      <button type="submit" class="btn-modal-submit" id="arqSubmitBtn" disabled style="margin-top:1rem;opacity:0.5;cursor:not-allowed;">Acepta el contrato para continuar</button>
+      <p class="modal-legal">Al enviar, tu solicitud quedará en revisión. APPARQ te confirmará la activación en tu(s) comuna(s) por email.</p>
     </form>
   </div>
 </div>
@@ -1984,13 +2037,37 @@ document.addEventListener('click', e => { if (!e.target.closest('#communeDD')) c
 /* ── Architect modal ──────────────────────── */
 const arqModal = document.getElementById('arqModal');
 const openModal  = () => { arqModal.classList.add('open'); document.body.style.overflow = 'hidden'; };
-const closeModal = () => { arqModal.classList.remove('open'); document.body.style.overflow = ''; };
+const closeModal = () => {
+  arqModal.classList.remove('open');
+  document.body.style.overflow = '';
+  /* Reset contrato */
+  const chk = document.getElementById('arqContractCheck');
+  const btn = document.getElementById('arqSubmitBtn');
+  if (chk) { chk.checked = false; }
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; btn.textContent = 'Acepta el contrato para continuar'; }
+};
 
 document.getElementById('navArqBtn').onclick  = openModal;
 document.getElementById('bannerArqBtn').onclick = openModal;
 document.getElementById('modalClose').onclick = closeModal;
 arqModal.addEventListener('click', e => { if (e.target === arqModal) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* Habilitar botón de inscripción solo si acepta el contrato */
+document.getElementById('arqContractCheck').addEventListener('change', function() {
+  const btn = document.getElementById('arqSubmitBtn');
+  if (this.checked) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    btn.textContent = 'Enviar solicitud de inscripción →';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = 'Acepta el contrato para continuar';
+  }
+});
 
 document.getElementById('arqForm').onsubmit = async e => {
   e.preventDefault();
