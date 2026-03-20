@@ -999,8 +999,8 @@
       <div class="hero-left">
         <div class="hero-eyebrow">Santiago de Chile</div>
         <h1>
-          Tu proyecto<br>
-          arquitectónico,<br>
+          Tu trámite de<br>
+          arquitectura,<br>
           <span>en minutos.</span>
         </h1>
         <p class="hero-sub">
@@ -1466,26 +1466,24 @@
       <div class="wiz-step" id="wiz-s4">
         <div class="wiz-success-ico">✅</div>
         <div class="wiz-title" style="text-align:center;">¡Pago confirmado!</div>
-        <div class="wiz-sub" style="text-align:center;">Tu arquitecta ha sido asignada. Se contactará contigo en las próximas 24 horas hábiles.</div>
+        <div class="wiz-sub" id="wizArqSub" style="text-align:center;">Buscando arquitecto disponible en tu comuna…</div>
 
-        <div class="arq-card">
-          <div class="arq-avatar">👷</div>
+        <div class="arq-card" id="wizArqCard">
+          <div class="arq-avatar" id="wizArqAvatar">⏳</div>
           <div>
-            <div class="arq-name">Valentina Morales P.</div>
-            <div class="arq-role">Arquitecta · Colegio de Arquitectos de Chile</div>
-            <div class="arq-stars">★★★★★ <span style="color:var(--muted);font-size:0.74rem;">4.9 · 87 proyectos</span></div>
-            <div class="arq-badges">
-              <span class="arq-badge">Regularización</span>
-              <span class="arq-badge">Ampliación</span>
-              <span class="arq-badge" id="wizArqComune">Santiago</span>
+            <div class="arq-name" id="wizArqName">Buscando…</div>
+            <div class="arq-role" id="wizArqRole">Arquitecto · APPARQ</div>
+            <div class="arq-stars" id="wizArqStars"></div>
+            <div class="arq-badges" id="wizArqBadges">
+              <span class="arq-badge" id="wizArqComune">—</span>
             </div>
           </div>
         </div>
 
-        <div class="info-box">
-          📧 Recibirás un email con los datos de tu expediente.<br>
-          📱 Tu arquitecta te contactará por WhatsApp para coordinar la visita a terreno.<br>
-          🗂 Puedes ver el avance de tu proyecto en tiempo real en el siguiente paso.
+        <div class="info-box" id="wizArqInfo">
+          📧 Recibirás un email con los datos de tu expediente y del arquitecto asignado.<br>
+          📱 Tu arquitecto te contactará a través de <strong>apparq.cl</strong> para coordinar la visita a terreno.<br>
+          🗂 Puedes ver el avance de tu trámite en tiempo real en el siguiente paso.
         </div>
       </div>
 
@@ -1781,19 +1779,53 @@ document.getElementById('arqForm').onsubmit = async e => {
   e.preventDefault();
   const btn = document.getElementById('arqSubmitBtn');
   btn.disabled = true;
-  btn.textContent = 'Enviando…';
+  btn.textContent = 'Registrando…';
 
   try {
-    const form = e.target;
-    const data = new URLSearchParams(new FormData(form));
-    await fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: data.toString()
+    const form    = e.target;
+    const fd      = new FormData(form);
+
+    /* Recolectar trámites marcados */
+    const tramites = [];
+    if (fd.get('tramite_regularizacion')) tramites.push('Regularización');
+    if (fd.get('tramite_ampliacion'))     tramites.push('Ampliación');
+    if (fd.get('tramite_obra_nueva'))     tramites.push('Obra Nueva');
+    if (fd.get('tramite_informe'))        tramites.push('Informe');
+
+    const payload = {
+      nombre:      fd.get('nombre')      || '',
+      apellido:    fd.get('apellido')    || '',
+      email:       fd.get('email')       || '',
+      telefono:    fd.get('telefono')    || '',
+      rut:         fd.get('rut')         || '',
+      experiencia: fd.get('experiencia') || '',
+      patente:     fd.get('patente')     || '',
+      comunas:     fd.get('comunas')     || '',   /* string "Providencia, Las Condes, …" */
+      tramites:    tramites.join(', '),
+      mensaje:     fd.get('mensaje')     || '',
+    };
+
+    const res = await fetch('/.netlify/functions/register-architect', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
     });
+
+    const json = await res.json();
+
+    if (!res.ok || json.error) {
+      throw new Error(json.error || 'Error desconocido');
+    }
+
     closeModal();
-    showToast('✅ ¡Solicitud enviada! Te contactaremos pronto.');
+    showToast('✅ ¡Inscripción recibida! Quedas disponible en tu(s) comuna(s).');
+    form.reset();
+    /* Limpiar pills */
+    document.querySelectorAll('#arqComunasPills .commune-pill').forEach(p => p.classList.remove('sel'));
+    document.getElementById('arqComunasHidden').value = '';
+
   } catch (err) {
+    console.error(err);
     showToast('⚠️ Error al enviar. Intenta de nuevo.');
   } finally {
     btn.disabled = false;
@@ -2098,6 +2130,7 @@ function renderWizStep(idx, goBack) {
   /* step-specific setup */
   if (idx === 1) setupSignaturePad();
   if (idx === 2) setupPaymentStep();
+  if (idx === 3) loadArchitectForCommune(S.commune || 'Santiago');
   if (idx === 4) {
     /* On the last step, change button to close */
     wizNext.textContent = 'Cerrar y volver al inicio';
@@ -2302,6 +2335,73 @@ function markJourneyDone() {
   style.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }`;
   document.head.appendChild(style);
 })();
+
+/* ══════════════════════════════════════════════════
+   LOAD ARCHITECT — step 4 del wizard
+   Consulta la función get-architect y rellena la card
+══════════════════════════════════════════════════ */
+async function loadArchitectForCommune(commune) {
+  /* Reset UI a estado "buscando" */
+  document.getElementById('wizArqAvatar').textContent = '⏳';
+  document.getElementById('wizArqName').textContent   = 'Buscando arquitecto…';
+  document.getElementById('wizArqRole').textContent   = '';
+  document.getElementById('wizArqStars').textContent  = '';
+  document.getElementById('wizArqBadges').innerHTML   = `<span class="arq-badge" id="wizArqComune">${commune}</span>`;
+  document.getElementById('wizArqSub').textContent    = 'Buscando arquitecto disponible en tu comuna…';
+
+  try {
+    const res  = await fetch(`/.netlify/functions/get-architect?comuna=${encodeURIComponent(commune)}`);
+    const data = await res.json();
+
+    if (!data.architect) {
+      /* Sin arquitectos disponibles aún */
+      document.getElementById('wizArqAvatar').textContent = '👷';
+      document.getElementById('wizArqName').textContent   = 'Arquitecto APPARQ';
+      document.getElementById('wizArqRole').textContent   = 'Te asignaremos uno en las próximas horas';
+      document.getElementById('wizArqSub').textContent    = 'Te confirmaremos tu arquitecto asignado por email en las próximas 2 horas hábiles.';
+      return;
+    }
+
+    const arq = data.architect;
+    const nombreCompleto = `${arq.nombre} ${arq.apellido}`;
+
+    /* Texto de match */
+    const matchTexts = {
+      exact:    `Arquitecto de ${data.matchCommune}`,
+      adjacent: `Arquitecto de ${data.matchCommune} · comuna vecina`,
+      nearby:   `Arquitecto de ${data.matchCommune} · más cercano disponible`,
+      any:      `Arquitecto APPARQ disponible`,
+    };
+
+    document.getElementById('wizArqAvatar').textContent = '👷';
+    document.getElementById('wizArqName').textContent   = nombreCompleto;
+    document.getElementById('wizArqRole').textContent   = 'Arquitecto · APPARQ';
+    document.getElementById('wizArqSub').textContent    =
+      `Tu arquitecto ha sido asignado. Se contactará contigo en las próximas 24 horas hábiles a través de apparq.cl.`;
+
+    /* Badges: trámites + comuna match */
+    const badges = document.getElementById('wizArqBadges');
+    badges.innerHTML = '';
+    (arq.tramites || []).forEach(t => {
+      const b = document.createElement('span');
+      b.className = 'arq-badge';
+      b.textContent = t;
+      badges.appendChild(b);
+    });
+    const comunaBadge = document.createElement('span');
+    comunaBadge.className = 'arq-badge';
+    comunaBadge.id = 'wizArqComune';
+    comunaBadge.textContent = matchTexts[data.matchType] || data.matchCommune;
+    badges.appendChild(comunaBadge);
+
+  } catch (err) {
+    console.warn('No se pudo cargar arquitecto:', err);
+    document.getElementById('wizArqAvatar').textContent = '👷';
+    document.getElementById('wizArqName').textContent   = 'Arquitecto APPARQ';
+    document.getElementById('wizArqRole').textContent   = 'Asignación confirmada por email';
+    document.getElementById('wizArqSub').textContent    = 'Te confirmaremos tu arquitecto por email en las próximas 2 horas hábiles.';
+  }
+}
 
 /* ══════════════════════════════════════════════════
    ARCHITECT COMMUNE PILLS — init
