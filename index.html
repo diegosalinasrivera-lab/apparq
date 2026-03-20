@@ -1024,7 +1024,7 @@
         </div>
         <div class="hero-trust">
           <span class="stars">★★★★★</span>
-          <span>Arquitectos certificados · Precio online garantizado</span>
+          <span>Precio online garantizado</span>
         </div>
       </div>
 
@@ -1237,7 +1237,7 @@
       <p class="section-sub">Cubrimos todas las comunas de la Provincia de Santiago con precios claros desde el primer día.</p>
       <div class="services-grid">
 
-        <div class="svc-card">
+        <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
           <div class="svc-ico">📋</div>
           <h3>Regularización</h3>
           <p>Para construcciones sin permiso municipal. Legalizamos tu obra y obtenemos la recepción final.</p>
@@ -1248,10 +1248,9 @@
             <div class="inc">Ingreso y tramitación DOM</div>
             <div class="inc">Recepción Final</div>
           </div>
-          <div class="svc-range">Desde <strong>$169.000</strong> · Precio según m² y materialidad</div>
         </div>
 
-        <div class="svc-card">
+        <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
           <div class="svc-ico">🔨</div>
           <h3>Ampliación</h3>
           <p>¿Quieres sumar una habitación, baño o cocina? Desarrollamos el proyecto y gestionamos el permiso.</p>
@@ -1262,10 +1261,9 @@
             <div class="inc">Supervisión de obra</div>
             <div class="inc">Recepción Final</div>
           </div>
-          <div class="svc-range">Desde <strong>$313.000</strong> · Precio según m² y materialidad</div>
         </div>
 
-        <div class="svc-card">
+        <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
           <div class="svc-ico">🏠</div>
           <h3>Obra Nueva</h3>
           <p>Construye desde cero. Proyecto completo con todos los permisos necesarios para edificar legalmente.</p>
@@ -1276,10 +1274,9 @@
             <div class="inc">Supervisión de obra</div>
             <div class="inc">Recepción Final</div>
           </div>
-          <div class="svc-range">Desde <strong>$563.000</strong> · Precio según m² y materialidad</div>
         </div>
 
-        <div class="svc-card">
+        <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
           <div class="svc-ico">📄</div>
           <h3>Informe de Propiedad</h3>
           <p>Informe técnico completo: estado real de la propiedad, antecedentes municipales y recomendaciones.</p>
@@ -1289,7 +1286,6 @@
             <div class="inc">Informe técnico detallado</div>
             <div class="inc">Recomendaciones profesionales</div>
           </div>
-          <div class="svc-range">Precio fijo: <strong>0,05 UF/m²</strong> · Sin sorpresas</div>
         </div>
 
       </div>
@@ -1386,7 +1382,7 @@
 
         <label class="wiz-check-row">
           <input type="checkbox" id="wizTos" />
-          <span>He leído y acepto los <strong>Términos del Servicio</strong> y el contrato de prestación de servicios con <strong>DSR ARQUITECTOS SPA</strong>.</span>
+          <span>He leído y acepto los <strong>Términos del Servicio</strong> y el contrato de prestación de servicios con <strong>DSR ARQ SPA</strong>.</span>
         </label>
 
         <div class="wiz-group" style="margin-bottom:0.4rem;">
@@ -1456,7 +1452,7 @@
           Banco: <strong>BCI</strong><br>
           Cuenta corriente: <strong>12345678-9</strong><br>
           RUT empresa: <strong>76.341.206-7</strong><br>
-          Nombre: <strong>DSR ARQUITECTOS SPA</strong><br>
+          Nombre: <strong>DSR ARQ SPA</strong><br>
           Email confirmación: <strong>pagos@apparq.cl</strong><br>
           Asunto/Referencia: <strong>Tu RUT</strong>
         </div>
@@ -2078,7 +2074,7 @@ function prefillWizard() {
   const commune = S.commune || 'Santiago';
   document.getElementById('wiz-contract').innerHTML = `
     <strong>CONTRATO DE PRESTACIÓN DE SERVICIOS PROFESIONALES</strong><br><br>
-    Entre <strong>DSR ARQUITECTOS SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el cliente que firma este documento (en adelante "el Cliente"), se acuerda:<br><br>
+    Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el cliente que firma este documento (en adelante "el Cliente"), se acuerda:<br><br>
     <strong>1. Servicio contratado:</strong> ${svcName} · ${S.m2} m² · ${commune}.<br>
     <strong>2. Honorarios:</strong> ${clpFmt(clp)} (${ufVal.toFixed(2)} UF al valor del día).<br>
     <strong>3. Forma de pago:</strong> E1 20% al inicio · E2 30% entrega planos · E3 20% ingreso DOM · E4 30% Recepción Final.<br>
