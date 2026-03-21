@@ -1449,55 +1449,37 @@
           <div class="pay-amount-sub" id="wizPaySub">Del total de $0</div>
         </div>
 
-        <div class="pay-methods">
-          <div class="pay-opt sel" data-pay="webpay" id="payOptWebpay">
-            <div class="pay-opt-ico">💳</div>
-            <div>
-              <div class="pay-opt-label">WebPay</div>
-              <div class="pay-opt-sub">Débito o crédito · Proceso inmediato</div>
-            </div>
-            <div class="pay-radio"></div>
-          </div>
-          <div class="pay-opt" data-pay="transfer" id="payOptTransfer">
-            <div class="pay-opt-ico">🏦</div>
-            <div>
-              <div class="pay-opt-label">Transferencia bancaria</div>
-              <div class="pay-opt-sub">Banco BCI · Cuenta corriente 12345678-9</div>
-            </div>
-            <div class="pay-radio"></div>
+        <!-- Métodos aceptados -->
+        <div style="background:var(--bg-soft);border:1px solid var(--border-light);border-radius:var(--radius);padding:0.9rem 1.1rem;margin-bottom:1rem;font-size:0.8rem;color:var(--mid);">
+          <div style="font-weight:700;color:var(--dark);margin-bottom:0.4rem;">Medios de pago aceptados</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            <span style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 10px;">💳 WebPay</span>
+            <span style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 10px;">💳 Crédito</span>
+            <span style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 10px;">🏦 Débito</span>
+            <span style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 10px;">📱 Mercado Pago</span>
           </div>
         </div>
 
-        <!-- WebPay form (mock) -->
-        <div id="wizWebpayForm">
-          <div class="wiz-form">
-            <div class="wiz-group">
-              <label class="wiz-label">Número de tarjeta</label>
-              <input class="wiz-input" id="wizCardNum" type="text" placeholder="•••• •••• •••• ••••" maxlength="19" inputmode="numeric" />
-            </div>
-            <div class="wiz-row">
-              <div class="wiz-group">
-                <label class="wiz-label">Vencimiento</label>
-                <input class="wiz-input" id="wizCardExp" type="text" placeholder="MM/AA" maxlength="5" inputmode="numeric" />
-              </div>
-              <div class="wiz-group">
-                <label class="wiz-label">CVV</label>
-                <input class="wiz-input" id="wizCardCvv" type="text" placeholder="•••" maxlength="4" inputmode="numeric" />
-              </div>
-            </div>
-          </div>
+        <!-- Botón Mercado Pago -->
+        <button id="btnPagarMP" style="
+          width:100%; padding:0.95rem; border-radius:var(--radius);
+          background:#009EE3; color:#fff; font-size:1rem; font-weight:800;
+          border:none; cursor:pointer; display:flex; align-items:center;
+          justify-content:center; gap:0.6rem; transition:opacity 0.15s;
+          box-shadow:0 4px 14px rgba(0,158,227,0.35); margin-bottom:0.75rem;">
+          <svg width="22" height="22" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#fff" opacity=".15"/><path d="M13 27.5c0-6.351 4.925-11.5 11-11.5s11 5.149 11 11.5H13z" fill="#fff"/></svg>
+          Pagar con Mercado Pago
+        </button>
+
+        <div style="font-size:0.72rem;color:var(--muted);text-align:center;line-height:1.5;">
+          Serás redirigido al checkout seguro de Mercado Pago.<br>
+          Todos los medios de pago disponibles en Chile.
         </div>
 
-        <!-- Transfer info (hidden) -->
-        <div id="wizTransferInfo" class="transfer-info" style="display:none;">
-          <strong>Datos de transferencia:</strong><br>
-          Banco: <strong>BCI</strong><br>
-          Cuenta corriente: <strong>12345678-9</strong><br>
-          RUT empresa: <strong>76.341.206-7</strong><br>
-          Nombre: <strong>DSR ARQ SPA</strong><br>
-          Email confirmación: <strong>pagos@apparq.cl</strong><br>
-          Asunto/Referencia: <strong>Tu RUT</strong>
-        </div>
+        <!-- Inputs ocultos para pasar al webhook -->
+        <input type="hidden" id="wizCardNum" />
+        <input type="hidden" id="wizCardExp" />
+        <input type="hidden" id="wizCardCvv" />
       </div>
 
       <!-- ── STEP 4: Asignación de arquitecto ── -->
@@ -1997,6 +1979,76 @@ const COMMUNES = [
 ];
 
 let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf: 38000 };
+
+/* ══════════════════════════════════════════════════
+   RETORNO DESDE MERCADO PAGO
+   Detecta ?pago=aprobado|pendiente|rechazado en la URL
+══════════════════════════════════════════════════ */
+(function handleMPReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const pago   = params.get('pago');
+  if (!pago) return;
+
+  /* Limpiar la URL sin recargar */
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (pago === 'aprobado') {
+    /* Mostrar banner de éxito */
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:#059669;color:#fff;text-align:center;
+      padding:1rem 1.5rem;font-size:0.9rem;font-weight:700;
+      box-shadow:0 4px 16px rgba(0,0,0,0.15);
+    `;
+    banner.innerHTML = `
+      ✅ ¡Pago recibido exitosamente! Tu trámite está activo.
+      Te asignaremos un arquitecto y recibirás un email de confirmación pronto.
+      <button onclick="this.parentElement.remove()" style="
+        margin-left:1rem;background:rgba(255,255,255,0.2);border:none;
+        color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;">
+        ✕
+      </button>`;
+    document.body.prepend(banner);
+
+    /* Limpiar localStorage del wizard */
+    localStorage.removeItem('apparq_wiz');
+
+  } else if (pago === 'pendiente') {
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:#D97706;color:#fff;text-align:center;
+      padding:1rem 1.5rem;font-size:0.9rem;font-weight:700;
+      box-shadow:0 4px 16px rgba(0,0,0,0.15);
+    `;
+    banner.innerHTML = `
+      ⏳ Tu pago está en proceso. Te notificaremos por email cuando se confirme.
+      <button onclick="this.parentElement.remove()" style="
+        margin-left:1rem;background:rgba(255,255,255,0.2);border:none;
+        color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;">
+        ✕
+      </button>`;
+    document.body.prepend(banner);
+
+  } else if (pago === 'rechazado') {
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:#DC2626;color:#fff;text-align:center;
+      padding:1rem 1.5rem;font-size:0.9rem;font-weight:700;
+      box-shadow:0 4px 16px rgba(0,0,0,0.15);
+    `;
+    banner.innerHTML = `
+      ❌ El pago no pudo procesarse. Puedes intentarlo nuevamente.
+      <button onclick="this.parentElement.remove()" style="
+        margin-left:1rem;background:rgba(255,255,255,0.2);border:none;
+        color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;">
+        ✕
+      </button>`;
+    document.body.prepend(banner);
+  }
+})();
 
 /* ── Fetch UF ─────────────────────────────── */
 (async () => {
@@ -2499,15 +2551,7 @@ function wizCanAdvance() {
     }
   }
   if (wizStep === 2) {
-    if (selectedPayMethod === 'webpay') {
-      const num = document.getElementById('wizCardNum').value.replace(/\s/g,'');
-      const exp = document.getElementById('wizCardExp').value;
-      const cvv = document.getElementById('wizCardCvv').value;
-      if (num.length < 16 || !exp.includes('/') || cvv.length < 3) {
-        shakeNext(); showToast('Completa los datos de la tarjeta');
-        return false;
-      }
-    }
+    /* El pago se procesa en Mercado Pago — no validamos datos de tarjeta aquí */
   }
   return true;
 }
@@ -2566,36 +2610,62 @@ function setupSignaturePad() {
 
 /* ── payment step ─────────────────────────────── */
 function setupPaymentStep() {
-  selectedPayMethod = 'webpay';
-  showPayUI('webpay');
+  const btn = document.getElementById('btnPagarMP');
+  if (!btn) return;
 
-  document.querySelectorAll('.pay-opt').forEach(opt => {
-    opt.onclick = () => {
-      selectedPayMethod = opt.dataset.pay;
-      document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('sel'));
-      opt.classList.add('sel');
-      showPayUI(selectedPayMethod);
-    };
-  });
+  /* Evitar doble-click */
+  btn.onclick = async () => {
+    btn.disabled = true;
+    btn.textContent = 'Preparando pago…';
 
-  /* card number auto-spacing */
-  document.getElementById('wizCardNum').addEventListener('input', function() {
-    let v = this.value.replace(/\D/g,'').substring(0,16);
-    this.value = v.replace(/(.{4})/g,'$1 ').trim();
-  });
+    try {
+      const { clp } = calcTotal();
+      const e1      = Math.round(clp * 0.20);
+      const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+      const svcName = SVC_LABELS[S.svc] || 'Trámite';
+      const commune = S.commune || 'Santiago';
+      const email   = document.getElementById('wizEmail')?.value || 'cliente@apparq.cl';
 
-  /* expiry auto-slash */
-  document.getElementById('wizCardExp').addEventListener('input', function() {
-    let v = this.value.replace(/\D/g,'');
-    if (v.length >= 3) v = v.substring(0,2) + '/' + v.substring(2,4);
-    this.value = v;
-  });
+      /* Guardar estado en localStorage para recuperar tras redirect */
+      localStorage.setItem('apparq_wiz', JSON.stringify({
+        nombre:   document.getElementById('wizNombre')?.value,
+        apellido: document.getElementById('wizApellido')?.value,
+        email,
+        telefono: document.getElementById('wizTel')?.value,
+        rut:      document.getElementById('wizRut')?.value,
+        addr:     document.getElementById('wizAddr')?.value,
+        svc: S.svc, m2: S.m2, mat: S.mat, dest: S.dest,
+        commune, clp, e1,
+      }));
+
+      const res  = await fetch('/.netlify/functions/create-payment', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount:      e1,
+          description: `APPARQ · ${svcName} ${S.m2}m² · ${commune}`,
+          email,
+          reference:   `apparq-${Date.now()}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) throw new Error(data.error || 'Error MP');
+
+      /* Redirigir al checkout de Mercado Pago */
+      window.location.href = data.init_point;
+
+    } catch (err) {
+      console.error(err);
+      showToast('⚠️ No se pudo iniciar el pago. Intenta de nuevo.');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#fff" opacity=".15"/><path d="M13 27.5c0-6.351 4.925-11.5 11-11.5s11 5.149 11 11.5H13z" fill="#fff"/></svg> Pagar con Mercado Pago`;
+    }
+  };
 }
 
-function showPayUI(method) {
-  document.getElementById('wizWebpayForm').style.display  = method === 'webpay'   ? '' : 'none';
-  document.getElementById('wizTransferInfo').style.display = method === 'transfer' ? '' : 'none';
-}
+function showPayUI() { /* ya no se usa — mantenemos por compatibilidad */ }
 
 /* ── submit tramite to Netlify Forms (AJAX) ──── */
 async function submitTramiteToNetlify() {
