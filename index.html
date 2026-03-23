@@ -2206,7 +2206,10 @@ const STAGES_NORMAL = [
   { name: 'Ingreso (E3)',   pct: 0.20 },
   { name: 'Recepción (E4)', pct: 0.30 },
 ];
-const STAGES_INFORME = [{ name: 'Pago único', pct: 1.00 }];
+const STAGES_INFORME = [
+  { name: 'Inicio (E1)',          pct: 0.50 },
+  { name: 'Entrega informe (E2)', pct: 0.50 },
+];
 
 const COMMUNES = [
   'Cerrillos','Cerro Navia','Conchalí','El Bosque','Estación Central',
@@ -2233,23 +2236,34 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
   window.history.replaceState({}, '', window.location.pathname);
 
   if (pago === 'aprobado') {
-    /* Mostrar banner de éxito */
-    const banner = document.createElement('div');
-    banner.style.cssText = `
-      position:fixed;top:0;left:0;right:0;z-index:9999;
-      background:#059669;color:#fff;text-align:center;
-      padding:1rem 1.5rem;font-size:0.9rem;font-weight:700;
-      box-shadow:0 4px 16px rgba(0,0,0,0.15);
-    `;
-    banner.innerHTML = `
-      ✅ ¡Pago recibido exitosamente! Tu trámite está activo.
-      Te asignaremos un arquitecto y recibirás un email de confirmación pronto.
-      <button onclick="this.parentElement.remove()" style="
-        margin-left:1rem;background:rgba(255,255,255,0.2);border:none;
-        color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;">
-        ✕
-      </button>`;
-    document.body.prepend(banner);
+    /* Restaurar estado del wizard desde localStorage */
+    const saved = JSON.parse(localStorage.getItem('apparq_wiz') || '{}');
+
+    if (saved.svc) {
+      /* Restaurar estado global S */
+      Object.assign(S, {
+        svc:     saved.svc,
+        m2:      saved.m2,
+        mat:     saved.mat,
+        dest:    saved.dest,
+        commune: saved.commune,
+      });
+
+      /* Abrir wizard directo en step 3 (asignación arquitecto) */
+      document.addEventListener('DOMContentLoaded', () => {});
+      openWizard();
+      wizStep = 3;
+      renderWizStep(3, false);
+
+      /* Pre-rellenar campos del wizard con datos guardados */
+      setTimeout(() => {
+        if (saved.nombre)   document.getElementById('wizNombre')  && (document.getElementById('wizNombre').value   = saved.nombre);
+        if (saved.apellido) document.getElementById('wizApellido')&& (document.getElementById('wizApellido').value = saved.apellido);
+        if (saved.email)    document.getElementById('wizEmail')   && (document.getElementById('wizEmail').value    = saved.email);
+        if (saved.telefono) document.getElementById('wizTel')     && (document.getElementById('wizTel').value      = saved.telefono);
+        if (saved.rut)      document.getElementById('wizRut')     && (document.getElementById('wizRut').value      = saved.rut);
+      }, 100);
+    }
 
     /* Limpiar localStorage del wizard */
     localStorage.removeItem('apparq_wiz');
@@ -2658,7 +2672,8 @@ function prefillWizard() {
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living', bodega:'Bodega', baño:'Baño', cocina:'Cocina', casa:'Casa completa' };
 
   const { uf: ufVal, clp } = calcTotal();
-  const e1 = clp * 0.20;
+  const e1pct = S.svc === 'informe' ? 0.50 : 0.20;
+  const e1 = clp * e1pct;
 
   /* summary card on step 1 */
   document.getElementById('wiz-sum1').innerHTML = `
@@ -2685,8 +2700,8 @@ function prefillWizard() {
     Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el cliente que firma este documento (en adelante "el Cliente"), se acuerda:<br><br>
     <strong>1. Servicio contratado:</strong> ${svcName} · ${S.m2} m² · ${commune}.<br>
     <strong>2. Honorarios:</strong> ${clpFmt(clp)} (${ufVal.toFixed(2)} UF al valor del día).<br>
-    <strong>3. Forma de pago:</strong> E1 20% al inicio · E2 30% entrega planos · E3 20% ingreso DOM · E4 30% Recepción Final.<br>
-    <strong>4. Plazo estimado:</strong> Entre 3 y 6 meses según complejidad del trámite y respuesta municipal.<br>
+    <strong>3. Forma de pago:</strong> ${S.svc === 'informe' ? 'E1 50% al inicio · E2 50% a la entrega del informe.' : 'E1 20% al inicio · E2 30% entrega planos · E3 20% ingreso DOM · E4 30% Recepción Final.'}<br>
+    <strong>4. Plazo estimado:</strong> ${S.svc === 'informe' ? 'Aproximadamente 2 semanas desde la visita a terreno.' : 'Entre 3 y 6 meses según complejidad del trámite y respuesta municipal.'}<br>
     <strong>5. Responsabilidades:</strong> APPARQ asignará un arquitecto habilitado para ejecutar el proyecto completo. El cliente deberá proveer el acceso a la propiedad y los antecedentes existentes.<br>
     <strong>6. Resolución:</strong> Cualquier diferencia se resolverá por la vía arbitral conforme a la legislación chilena vigente.<br>
     <strong>7. Obligatoriedad de pago exclusivo por plataforma:</strong> TODOS los pagos del servicio (E1, E2, E3 y E4) deben realizarse EXCLUSIVAMENTE a través de la plataforma <strong>apparq.cl</strong>. Queda estrictamente prohibido realizar pagos directamente al arquitecto asignado o a cualquier tercero vinculado. Los pagos efectuados fuera de la plataforma no serán reconocidos por APPARQ y no generarán obligación alguna de prestación de servicios.<br>
@@ -2735,6 +2750,11 @@ function renderWizStep(idx, goBack) {
   const isLast = idx === WIZ_STEPS.length - 1;
   wizNext.textContent = isLast ? '¡Ir a mi proyecto! →' : 'Continuar →';
   wizNext.disabled = false;
+
+  /* En el step de pago ocultamos el botón Continuar —
+     el avance solo ocurre vía retorno aprobado de Mercado Pago */
+  wizNext.style.display = (idx === 2) ? 'none' : '';
+  wizBack.style.display = (idx === 2 || idx === 3 || idx === 4) ? 'none' : (idx > 0 ? '' : 'none');
 
   /* step-specific setup */
   if (idx === 1) setupSignaturePad();
@@ -2865,7 +2885,8 @@ function setupPaymentStep() {
 
     try {
       const { clp } = calcTotal();
-      const e1      = Math.round(clp * 0.20);
+      const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
+      const e1      = Math.round(clp * e1pct);
       const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
       const svcName = SVC_LABELS[S.svc] || 'Trámite';
       const commune = S.commune || 'Santiago';
@@ -3040,6 +3061,28 @@ async function loadArchitectForCommune(commune) {
     document.getElementById('wizArqRole').textContent   = 'Arquitecto · APPARQ';
     document.getElementById('wizArqSub').textContent    =
       `Tu arquitecto ha sido asignado. Se contactará contigo en las próximas 24 horas hábiles a través de apparq.cl.`;
+
+    /* Enviar emails de confirmación */
+    const { clp } = calcTotal();
+    const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
+    fetch('/.netlify/functions/confirm-tramite', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre:    document.getElementById('wizNombre')?.value   || '',
+        apellido:  document.getElementById('wizApellido')?.value || '',
+        email:     document.getElementById('wizEmail')?.value    || '',
+        telefono:  document.getElementById('wizTel')?.value      || '',
+        rut:       document.getElementById('wizRut')?.value      || '',
+        direccion: document.getElementById('wizAddr')?.value     || '',
+        svc:       S.svc,
+        m2:        S.m2,
+        commune,
+        clp,
+        e1: Math.round(clp * e1pct),
+        arquitecto: { nombre: arq.nombre, apellido: arq.apellido, comunas: arq.comunas, tramites: arq.tramites },
+      }),
+    }).catch(err => console.warn('confirm-tramite error:', err));
 
     /* Badges: trámites + comuna match */
     const badges = document.getElementById('wizArqBadges');

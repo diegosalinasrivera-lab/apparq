@@ -1,0 +1,169 @@
+/* ══════════════════════════════════════════════════
+   APPARQ — Netlify Function: confirm-tramite
+   Recibe los datos del trámite confirmado (pago + arquitecto)
+   y envía emails a cliente y a hola@apparq.cl
+   POST /.netlify/functions/confirm-tramite
+══════════════════════════════════════════════════ */
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+async function sendEmail({ to, subject, html }) {
+  if (!RESEND_API_KEY) { console.warn('Sin RESEND_API_KEY'); return; }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ from: 'APPARQ <hola@apparq.cl>', to, subject, html }),
+  });
+  if (!res.ok) console.error('Resend error:', await res.text());
+  else         console.log('Email enviado a:', to);
+}
+
+function clpFmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-CL');
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  const headers = {
+    'Access-Control-Allow-Origin':  '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const {
+      nombre, apellido, email, telefono, rut, direccion,
+      svc, m2, commune, clp, e1,
+      arquitecto,   /* { nombre, apellido, comunas, tramites } o null */
+    } = body;
+
+    const fecha     = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    const svcName   = svcLabels[svc] || svc || 'Trámite';
+    const nombreCliente = `${nombre || ''} ${apellido || ''}`.trim();
+    const arqNombre = arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Por asignar';
+
+    /* ── Email interno a hola@apparq.cl ────────── */
+    await sendEmail({
+      to:      'hola@apparq.cl',
+      subject: `🚀 Nuevo trámite iniciado — ${nombreCliente} · ${svcName} · ${commune}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a2e">
+          <div style="background:#1a1a2e;padding:28px 32px;border-radius:8px 8px 0 0">
+            <h1 style="color:#fff;margin:0;font-size:20px">APPARQ</h1>
+            <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Nuevo trámite confirmado</p>
+          </div>
+          <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+            <h2 style="margin-top:0;font-size:16px;color:#1a1a2e">📋 Datos del trámite</h2>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Servicio</td><td style="padding:8px 10px;font-weight:700">${svcName}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${direccion || '—'}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Comuna</td><td style="padding:8px 10px">${commune || '—'}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">Superficie</td><td style="padding:8px 10px">${m2 ? m2 + ' m²' : '—'}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Total</td><td style="padding:8px 10px;font-weight:700">${clpFmt(clp)}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">E1 pagado</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(e1)} ✓</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Fecha</td><td style="padding:8px 10px">${fecha}</td></tr>
+            </table>
+
+            <h2 style="margin-top:24px;font-size:16px;color:#1a1a2e">👤 Datos del cliente</h2>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Nombre</td><td style="padding:8px 10px;font-weight:700">${nombreCliente}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">Email</td><td style="padding:8px 10px">${email || '—'}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Teléfono</td><td style="padding:8px 10px">${telefono || '—'}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px">${rut || '—'}</td></tr>
+            </table>
+
+            <h2 style="margin-top:24px;font-size:16px;color:#1a1a2e">🏗 Arquitecto asignado</h2>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Nombre</td><td style="padding:8px 10px;font-weight:700">${arqNombre}</td></tr>
+              ${arquitecto?.comunas ? `<tr><td style="padding:8px 10px;color:#718096">Comunas</td><td style="padding:8px 10px">${arquitecto.comunas.join(', ')}</td></tr>` : ''}
+            </table>
+
+            <p style="margin-top:24px;font-size:11px;color:#a0aec0">APPARQ — Sistema automático · ${fecha}</p>
+          </div>
+        </div>
+      `,
+    });
+
+    /* ── Email de confirmación al cliente ─────── */
+    if (email) {
+      const esInforme = svc === 'informe';
+      await sendEmail({
+        to:      email,
+        subject: `✅ Tu trámite está en marcha — APPARQ`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+              <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Trámites de arquitectura</p>
+            </div>
+            <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <h2 style="margin-top:0;color:#1a1a2e">¡Hola ${nombre || 'cliente'}! Tu trámite está en marcha 🎉</h2>
+              <p style="color:#4a5568;font-size:14px;line-height:1.7">
+                Hemos recibido tu pago y tu trámite ha sido activado. A continuación el resumen:
+              </p>
+
+              <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0">
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Servicio:</strong> ${svcName}</p>
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Dirección:</strong> ${direccion || '—'}, ${commune}</p>
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago E1 recibido:</strong> ${clpFmt(e1)}</p>
+                <p style="margin:0;font-size:13px"><strong>✓ Total del proyecto:</strong> ${clpFmt(clp)}</p>
+              </div>
+
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">🏗 Tu arquitecto asignado</h3>
+              <div style="background:#f7fafc;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+                <p style="margin:0;font-size:14px;font-weight:700">${arqNombre}</p>
+                <p style="margin:4px 0 0;font-size:12px;color:#718096">Arquitecto APPARQ · ${commune}</p>
+              </div>
+
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">⏱ ¿Qué sigue?</h3>
+              <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0">
+                <li>Tu arquitecto te contactará en las próximas <strong>24 horas hábiles</strong> vía apparq.cl</li>
+                <li>Coordinarán la visita a terreno para el levantamiento</li>
+                ${esInforme
+                  ? '<li>Recibirás tu informe en <strong>aproximadamente 2 semanas</strong></li>'
+                  : '<li>Una vez entregados los planos, recibirás el aviso del pago E2</li><li>El trámite completo toma entre <strong>3 y 6 meses</strong></li>'
+                }
+              </ol>
+
+              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:24px">
+                <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
+                <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
+                  Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>.
+                  Nunca pagues directamente al arquitecto ni coordines por canales externos.
+                </p>
+              </div>
+
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
+              <p style="font-size:11px;color:#a0aec0;margin:0">
+                APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+                ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a>
+                o por <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a>
+              </p>
+            </div>
+          </div>
+        `,
+      });
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ok: true }),
+    };
+
+  } catch (err) {
+    console.error('confirm-tramite error:', err);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
+};
