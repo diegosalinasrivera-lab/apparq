@@ -1483,6 +1483,7 @@
               <label class="wiz-label">RUT</label>
               <input class="wiz-input" id="wizRut" type="text" placeholder="12.345.678-9" maxlength="12" />
               <div class="field-hint" id="hintWizRut"></div>
+              <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;">Requerido para firmar el contrato</div>
             </div>
           </div>
           <div class="wiz-group">
@@ -1514,7 +1515,7 @@
           <canvas class="sig-canvas" id="sigCanvas" width="490" height="120"></canvas>
           <button class="sig-clear" id="sigClear" type="button">Borrar</button>
         </div>
-        <p class="sig-hint">Dibuja tu firma con el mouse o con el dedo en pantalla táctil</p>
+        <p class="sig-hint">Dibuja tu firma con el mouse o con el dedo · Esta firma tiene validez contractual</p>
       </div>
 
       <!-- ── STEP 3: Pago ── -->
@@ -2807,13 +2808,18 @@ function shakeNext() {
 
 /* ── signature pad ────────────────────────────── */
 function setupSignaturePad() {
-  const canvas = document.getElementById('sigCanvas');
-  const ctx    = canvas.getContext('2d');
+  const old = document.getElementById('sigCanvas');
 
-  /* set actual pixel size */
-  canvas.width  = canvas.offsetWidth  || 490;
-  canvas.height = canvas.offsetHeight || 120;
+  /* Clonar para limpiar listeners anteriores */
+  const nc = old.cloneNode(true);
+  old.parentNode.replaceChild(nc, old);
 
+  /* Dimensiones reales del canvas visible */
+  nc.width  = nc.offsetWidth  || 490;
+  nc.height = nc.offsetHeight || 120;
+
+  /* Contexto sobre el canvas NUEVO (visible) */
+  const ctx = nc.getContext('2d');
   ctx.strokeStyle = '#111827';
   ctx.lineWidth   = 2.5;
   ctx.lineCap     = 'round';
@@ -2822,9 +2828,9 @@ function setupSignaturePad() {
   let drawing = false;
 
   function getPos(e) {
-    const r = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / r.width;
-    const scaleY = canvas.height / r.height;
+    const r = nc.getBoundingClientRect();
+    const scaleX = nc.width  / r.width;
+    const scaleY = nc.height / r.height;
     const src = e.touches ? e.touches[0] : e;
     return { x: (src.clientX - r.left) * scaleX, y: (src.clientY - r.top) * scaleY };
   }
@@ -2832,10 +2838,6 @@ function setupSignaturePad() {
   function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
   function move(e)  { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); sigHasDraw = true; }
   function stop(e)  { e.preventDefault(); drawing = false; }
-
-  /* remove old listeners before adding */
-  const nc = canvas.cloneNode(true);
-  canvas.parentNode.replaceChild(nc, canvas);
 
   nc.addEventListener('mousedown',  start);
   nc.addEventListener('mousemove',  move);
