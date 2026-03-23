@@ -1926,6 +1926,19 @@
       <button type="submit" class="btn-modal-submit" id="arqSubmitBtn" disabled style="margin-top:1rem;opacity:0.5;cursor:not-allowed;">Acepta el contrato para continuar</button>
       <p class="modal-legal">Al enviar tu inscripción quedarás registrado y podrás acceder al portal de arquitecto con tu email y contraseña.</p>
     </form>
+
+    <!-- ── Estado de éxito ── -->
+    <div id="arqSuccess" style="display:none;padding:2rem 1.5rem;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
+      <h3 style="font-size:1.3rem;font-weight:800;color:#1a1a2e;margin:0 0 0.5rem;">¡Bienvenido a APPARQ!</h3>
+      <p style="font-size:0.88rem;color:#4a5568;line-height:1.6;margin:0 0 1rem;">Tu inscripción fue recibida exitosamente. Recibirás un email de bienvenida en <strong id="arqSuccessEmail"></strong> con los detalles de tu cuenta.</p>
+      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:0.85rem 1rem;font-size:0.82rem;color:#166534;margin-bottom:1.5rem;text-align:left;">
+        ✓ Datos guardados correctamente<br>
+        ✓ Contrato firmado digitalmente<br>
+        ✓ Email de confirmación enviado
+      </div>
+      <button id="arqSuccessPortalBtn" class="btn-modal-submit" style="width:100%;">Ir al portal →</button>
+    </div>
   </div>
 </div>
 
@@ -2788,29 +2801,37 @@ document.getElementById('arqForm').onsubmit = async e => {
       body: JSON.stringify(payload),
     });
 
-    /* 3. Guardar sesión y abrir portal */
+    /* 3. Guardar sesión */
     localStorage.setItem('arq_token',  token);
     localStorage.setItem('arq_email',  arqEmail);
     localStorage.setItem('arq_nombre', `${payload.nombre} ${payload.apellido}`.trim());
 
-    closeModal();
-    form.reset();
-    arqFotoBase64 = null;
-    document.getElementById('arqPhotoPreview').style.display = 'none';
-    document.getElementById('arqPhotoPlaceholder').style.display = '';
-    document.getElementById('arqPhotoCircle').style.border = '2.5px dashed #cbd5e0';
-    document.querySelectorAll('#arqComunasPills .commune-pill').forEach(p => p.classList.remove('sel'));
-    document.getElementById('arqComunasHidden').value = '';
+    /* 4. Mostrar pantalla de éxito dentro del mismo modal */
+    form.style.display = 'none';
+    document.querySelector('#arqModal .modal-head').style.display = 'none';
+    document.getElementById('arqSuccessEmail').textContent = arqEmail;
+    document.getElementById('arqSuccess').style.display = '';
 
-    /* Abrir portal directo */
-    const portalModal = document.getElementById('portalArqModal');
-    if (portalModal) {
-      portalModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      loadArqDash();
-    } else {
-      showToast('✅ ¡Inscripción completada! Ya puedes acceder al portal con "Soy Arquitecto".');
-    }
+    /* Botón "Ir al portal" */
+    document.getElementById('arqSuccessPortalBtn').onclick = () => {
+      /* Resetear form para próxima vez */
+      form.reset(); form.style.display = '';
+      document.querySelector('#arqModal .modal-head').style.display = '';
+      document.getElementById('arqSuccess').style.display = 'none';
+      arqFotoBase64 = null;
+      document.getElementById('arqPhotoPreview').style.display = 'none';
+      document.getElementById('arqPhotoPlaceholder').style.display = '';
+      document.getElementById('arqPhotoCircle').style.border = '2.5px dashed #cbd5e0';
+      document.querySelectorAll('#arqComunasPills .commune-pill').forEach(p => p.classList.remove('sel'));
+      document.getElementById('arqComunasHidden').value = '';
+      closeModal();
+      const portalModal = document.getElementById('portalArqModal');
+      if (portalModal) {
+        portalModal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        loadArqDash();
+      }
+    };
 
   } catch (err) {
     console.error(err);
