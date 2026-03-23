@@ -74,7 +74,12 @@ exports.handler = async (event) => {
 
       const token = data.access_token;
       if (!token) {
-        return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'No se recibió token. Puede que el email ya esté registrado.' }) };
+        /* Supabase devuelve user sin token cuando el email no está confirmado */
+        if (data.user && !data.session) {
+          return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'email_not_confirmed' }) };
+        }
+        /* Email ya registrado: Supabase devuelve user vacío o identities: [] */
+        return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'already registered' }) };
       }
 
       const { role, architect } = await getRole(emailLower);

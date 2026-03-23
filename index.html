@@ -506,6 +506,8 @@
     .sbtn:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-xlight); }
     .sbtn.on { border-color: var(--orange); background: var(--orange); color: #fff; }
     .sbtn-ico { font-size: 1.1rem; }
+    .sbtn-rate { font-size: 0.6rem; font-weight: 500; color: var(--muted); line-height: 1.2; }
+    .sbtn.on .sbtn-rate { color: rgba(255,255,255,0.8); }
 
     /* Chips */
     .chip-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
@@ -729,6 +731,9 @@
     .msg-client { background:#e0f2fe;color:#0c4a6e;margin-left:auto;text-align:right; }
     .msg-architect { background:#f0fdf4;color:#14532d; }
     .msg-meta { font-size:0.65rem;color:var(--muted);margin-top:2px; }
+    /* ── PASSWORD STRENGTH ──────────────────── */
+    .pass-bars { display:flex;gap:4px;margin-bottom:4px; }
+    .pass-bar { flex:1;height:4px;border-radius:2px;background:#e2e8f0;transition:background 0.25s; }
 
     /* ── LEGAL MODALS ──────────────────────── */
     .legal-overlay {
@@ -1195,10 +1200,10 @@
         <div class="calc-group">
           <label class="calc-label">🏗 Tipo de trámite</label>
           <div class="service-grid">
-            <button class="sbtn" data-svc="regularizacion"><span class="sbtn-ico">📋</span>Regularización</button>
-            <button class="sbtn" data-svc="ampliacion"><span class="sbtn-ico">🔨</span>Ampliación</button>
-            <button class="sbtn" data-svc="obra-nueva"><span class="sbtn-ico">🏠</span>Obra Nueva</button>
-            <button class="sbtn" data-svc="informe"><span class="sbtn-ico">📄</span>Informe</button>
+            <button class="sbtn" data-svc="regularizacion"><span class="sbtn-ico">📋</span>Regularización<span class="sbtn-rate">0,60 UF/m² · mín 20 UF</span></button>
+            <button class="sbtn" data-svc="ampliacion"><span class="sbtn-ico">🔨</span>Ampliación<span class="sbtn-rate">0,90 UF/m² · mín 25 UF</span></button>
+            <button class="sbtn" data-svc="obra-nueva"><span class="sbtn-ico">🏠</span>Obra Nueva<span class="sbtn-rate">1,00 UF/m² · mín 35 UF</span></button>
+            <button class="sbtn" data-svc="informe"><span class="sbtn-ico">📄</span>Informe<span class="sbtn-rate">0,05 UF/m² · mín 3 UF</span></button>
           </div>
         </div>
 
@@ -1960,23 +1965,47 @@
 
     <!-- Login form -->
     <div id="portalArqLogin">
-      <div id="portalArqLoginTabs" style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+      <div id="portalArqLoginTabs" style="display:flex;gap:0.5rem;margin-bottom:1.1rem;">
         <button class="arq-tab active" id="tabArqLogin" onclick="switchArqTab('login')">Ingresar</button>
         <button class="arq-tab" id="tabArqSignup" onclick="switchArqTab('signup')">Crear cuenta</button>
       </div>
-      <div class="mform-group">
-        <label class="mform-label">Email</label>
-        <input class="mform-input" id="paEmail" type="email" placeholder="tu@correo.cl" />
+
+      <!-- Signup hint -->
+      <div id="paSignupHint" style="display:none;font-size:0.76rem;color:#92400E;margin-bottom:0.85rem;background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:var(--radius);padding:0.7rem 0.9rem;line-height:1.55;">
+        <strong>¿Primera vez?</strong> Usa el mismo email con que te inscribiste como arquitecto en APPARQ. El sistema te reconocerá automáticamente y tendrás acceso a tus proyectos asignados.
       </div>
+
+      <div class="mform-group">
+        <label class="mform-label">Email profesional</label>
+        <input class="mform-input" id="paEmail" type="email" placeholder="tu@correo.cl" autocomplete="email" />
+        <div id="paEmailHint" style="font-size:0.72rem;margin-top:3px;"></div>
+      </div>
+
       <div class="mform-group">
         <label class="mform-label">Contraseña</label>
-        <input class="mform-input" id="paPass" type="password" placeholder="••••••••" />
+        <input class="mform-input" id="paPass" type="password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" />
       </div>
-      <div id="paSignupHint" style="display:none;font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;background:var(--bg-soft);border-radius:var(--radius);padding:0.6rem 0.8rem;">
-        Crea tu cuenta con el mismo email que usaste al inscribirte como arquitecto. El sistema te reconocerá automáticamente.
+
+      <!-- Strength bar + confirm (solo en signup) -->
+      <div id="paPassStrengthWrap" style="display:none;margin-bottom:0.75rem;">
+        <div style="display:flex;gap:4px;margin-bottom:5px;">
+          <div class="pass-bar" id="passBar1"></div>
+          <div class="pass-bar" id="passBar2"></div>
+          <div class="pass-bar" id="passBar3"></div>
+          <div class="pass-bar" id="passBar4"></div>
+        </div>
+        <div id="paPassStrengthMsg" style="font-size:0.72rem;color:var(--muted);"></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:3px;">Debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo (ej: !@#$)</div>
       </div>
-      <button id="paAuthBtn" class="btn-modal-submit" style="width:100%;">Ingresar →</button>
-      <div id="paError" style="display:none;color:#DC2626;font-size:0.8rem;margin-top:0.5rem;text-align:center;"></div>
+
+      <div class="mform-group" id="paConfirmGroup" style="display:none;">
+        <label class="mform-label">Confirmar contraseña</label>
+        <input class="mform-input" id="paPassConfirm" type="password" placeholder="Repite tu contraseña" autocomplete="new-password" />
+        <div id="paConfirmHint" style="font-size:0.72rem;margin-top:3px;"></div>
+      </div>
+
+      <button id="paAuthBtn" class="btn-modal-submit" style="width:100%;margin-top:0.25rem;">Ingresar →</button>
+      <div id="paError" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius);color:#DC2626;font-size:0.8rem;margin-top:0.6rem;padding:0.6rem 0.85rem;text-align:center;"></div>
     </div>
 
     <!-- Projects dashboard -->
@@ -3588,25 +3617,109 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     /* Reabrir modal de inscripción si venía del flujo de inscripción */
   }
 
+  /* ── Password strength ─────────────────────────── */
+  function checkPasswordStrength(pass) {
+    let score = 0;
+    if (pass.length >= 8)                          score++;
+    if (/[A-Z]/.test(pass))                        score++;
+    if (/[0-9]/.test(pass))                        score++;
+    if (/[^A-Za-z0-9]/.test(pass))                 score++;
+    const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
+    const msgs   = ['', 'Muy débil', 'Débil', 'Aceptable', 'Contraseña segura ✓'];
+    for (let i = 1; i <= 4; i++) {
+      const bar = document.getElementById('passBar' + i);
+      bar.style.background = i <= score ? colors[score] : '#e2e8f0';
+    }
+    document.getElementById('paPassStrengthMsg').textContent = pass.length ? msgs[score] : '';
+    document.getElementById('paPassStrengthMsg').style.color = colors[score] || 'var(--muted)';
+    return score;
+  }
+
+  function paEmailValid(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  }
+
+  document.getElementById('paEmail').addEventListener('blur', () => {
+    const v = document.getElementById('paEmail').value.trim();
+    const hint = document.getElementById('paEmailHint');
+    if (!v) { hint.textContent = ''; return; }
+    if (!paEmailValid(v)) {
+      hint.textContent = 'Email inválido';
+      hint.style.color = '#ef4444';
+    } else {
+      hint.textContent = '';
+    }
+  });
+
+  document.getElementById('paPass').addEventListener('input', () => {
+    const action = document.getElementById('paAuthBtn').dataset.action;
+    if (action === 'signup') checkPasswordStrength(document.getElementById('paPass').value);
+    /* Confirm hint */
+    const confirm = document.getElementById('paPassConfirm').value;
+    const hint = document.getElementById('paConfirmHint');
+    if (confirm) {
+      const match = confirm === document.getElementById('paPass').value;
+      hint.textContent = match ? 'Las contraseñas coinciden ✓' : 'No coinciden';
+      hint.style.color  = match ? '#22c55e' : '#ef4444';
+    }
+  });
+
+  document.getElementById('paPassConfirm').addEventListener('input', () => {
+    const pass    = document.getElementById('paPass').value;
+    const confirm = document.getElementById('paPassConfirm').value;
+    const hint    = document.getElementById('paConfirmHint');
+    if (!confirm) { hint.textContent = ''; return; }
+    const match = confirm === pass;
+    hint.textContent = match ? 'Las contraseñas coinciden ✓' : 'No coinciden';
+    hint.style.color  = match ? '#22c55e' : '#ef4444';
+  });
+
   window.switchArqTab = function(tab) {
     document.getElementById('tabArqLogin').classList.toggle('active', tab === 'login');
     document.getElementById('tabArqSignup').classList.toggle('active', tab === 'signup');
     document.getElementById('paAuthBtn').textContent = tab === 'login' ? 'Ingresar →' : 'Crear cuenta →';
     document.getElementById('paSignupHint').style.display = tab === 'signup' ? '' : 'none';
+    document.getElementById('paPassStrengthWrap').style.display = tab === 'signup' ? '' : 'none';
+    document.getElementById('paConfirmGroup').style.display     = tab === 'signup' ? '' : 'none';
     document.getElementById('paAuthBtn').dataset.action = tab;
-    /* Ocultar opción inscripción si signup */
+    document.getElementById('paError').style.display = 'none';
+    /* Reset strength bars when switching tabs */
+    if (tab === 'login') {
+      for (let i = 1; i <= 4; i++) document.getElementById('passBar' + i).style.background = '#e2e8f0';
+      document.getElementById('paPassStrengthMsg').textContent = '';
+    }
   };
   switchArqTab('login');
 
   document.getElementById('paAuthBtn').onclick = async () => {
-    const email  = document.getElementById('paEmail').value.trim();
-    const pass   = document.getElementById('paPass').value;
-    const action = document.getElementById('paAuthBtn').dataset.action || 'login';
-    const errEl  = document.getElementById('paError');
+    const email   = document.getElementById('paEmail').value.trim();
+    const pass    = document.getElementById('paPass').value;
+    const confirm = document.getElementById('paPassConfirm').value;
+    const action  = document.getElementById('paAuthBtn').dataset.action || 'login';
+    const errEl   = document.getElementById('paError');
     errEl.style.display = 'none';
 
-    if (!email || !pass) { errEl.textContent = 'Completa email y contraseña.'; errEl.style.display = 'block'; return; }
-    if (pass.length < 6)  { errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.'; errEl.style.display = 'block'; return; }
+    if (!email || !pass) {
+      errEl.textContent = 'Completa email y contraseña.'; errEl.style.display = 'block'; return;
+    }
+    if (!paEmailValid(email)) {
+      errEl.textContent = 'Ingresa un email válido.'; errEl.style.display = 'block'; return;
+    }
+
+    if (action === 'signup') {
+      const strength = checkPasswordStrength(pass);
+      if (strength < 3) {
+        errEl.textContent = 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.';
+        errEl.style.display = 'block'; return;
+      }
+      if (pass !== confirm) {
+        errEl.textContent = 'Las contraseñas no coinciden.'; errEl.style.display = 'block'; return;
+      }
+    } else {
+      if (pass.length < 6) {
+        errEl.textContent = 'Contraseña incorrecta o demasiado corta.'; errEl.style.display = 'block'; return;
+      }
+    }
 
     const btn = document.getElementById('paAuthBtn');
     btn.disabled = true; btn.textContent = 'Verificando…';
@@ -3618,10 +3731,20 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       });
       const data = await res.json();
 
-      if (!res.ok || data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+      if (!res.ok || data.error) {
+        let msg = data.error || 'Error desconocido.';
+        if (msg.includes('email_not_confirmed') || msg.includes('confirmation')) {
+          msg = 'Tu cuenta requiere confirmación de email. Contacta a hola@apparq.cl para activarla.';
+        } else if (msg.includes('Invalid login')) {
+          msg = 'Email o contraseña incorrectos.';
+        } else if (msg.includes('already registered') || msg.includes('already exists')) {
+          msg = 'Este email ya tiene una cuenta. Usa "Ingresar".';
+        }
+        errEl.textContent = msg; errEl.style.display = 'block'; return;
+      }
 
       if (data.role !== 'architect') {
-        errEl.textContent = 'Este email no está registrado como arquitecto en APPARQ.';
+        errEl.textContent = 'Este email no está registrado como arquitecto en APPARQ. Escríbenos a hola@apparq.cl para registrarte.';
         errEl.style.display = 'block'; return;
       }
 
@@ -3631,7 +3754,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
       loadArqDash();
     } catch(e) {
-      errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block';
+      errEl.textContent = 'Error de conexión. Intenta nuevamente.'; errEl.style.display = 'block';
     } finally {
       btn.disabled = false;
       btn.textContent = (document.getElementById('paAuthBtn').dataset.action === 'login') ? 'Ingresar →' : 'Crear cuenta →';
