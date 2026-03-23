@@ -1817,7 +1817,7 @@
 
           <strong>2. Asignación de proyectos.</strong> APPARQ asignará proyectos al Arquitecto según la disponibilidad geográfica declarada. El Arquitecto podrá aceptar o rechazar proyectos dentro de las 24 horas siguientes a la notificación. El rechazo reiterado e injustificado podrá ser causal de suspensión de la red.<br><br>
 
-          <strong>3. Honorarios y comisión.</strong> Por cada etapa de pago que el cliente realice a APPARQ, el Arquitecto recibirá el <strong id="arqContractPctArq">75% del monto neto</strong> correspondiente a dicha etapa. APPARQ retendrá el <strong id="arqContractPctApp">25%</strong> en concepto de comisión por el uso de la plataforma, gestión administrativa y captación de clientes.<br><br>
+          <strong>3. Honorarios y comisión.</strong> Por cada etapa de pago que el cliente realice a APPARQ, el Arquitecto recibirá el <strong id="arqContractPctArq">80% del monto neto</strong> correspondiente a dicha etapa. APPARQ retendrá el <strong id="arqContractPctApp">20%</strong> en concepto de comisión por el uso de la plataforma, gestión administrativa y captación de clientes.<br><br>
 
           <strong>4. Forma y plazo de pago.</strong> APPARQ transferirá los honorarios al Arquitecto dentro de los <strong>10 días hábiles</strong> siguientes a la confirmación del pago de cada etapa por parte del cliente. El pago se realizará mediante transferencia bancaria a la cuenta indicada por el Arquitecto al momento de la inscripción.<br><br>
 
@@ -1871,7 +1871,7 @@
 
       <label class="mform-check" style="margin-top:0.75rem;align-items:flex-start;gap:0.6rem;">
         <input type="checkbox" id="arqContractCheck" style="margin-top:3px;width:16px;height:16px;accent-color:var(--orange);flex-shrink:0;" />
-        <span style="font-size:0.8rem;color:var(--mid);line-height:1.5;">He leído y acepto el <strong>Contrato de Colaboración Profesional</strong> con APPARQ, incluyendo la comisión del <span id="arqCheckPct">25%</span>, la obligatoriedad de uso exclusivo de la plataforma y las cláusulas de no captación directa.</span>
+        <span style="font-size:0.8rem;color:var(--mid);line-height:1.5;">He leído y acepto el <strong>Contrato de Colaboración Profesional</strong> con APPARQ, incluyendo la comisión del <span id="arqCheckPct">20%</span>, la obligatoriedad de uso exclusivo de la plataforma y las cláusulas de no captación directa.</span>
       </label>
 
       <!-- Contraseña -->
@@ -2592,8 +2592,8 @@ document.getElementById('arqContractCheck').addEventListener('change', function(
 /* ── Sin patente → ajustar comisión ── */
 document.getElementById('arqSinPatente').addEventListener('change', function() {
   const sinPatente = this.checked;
-  const pctApp = sinPatente ? '30%' : '25%';
-  const pctArq = sinPatente ? '70% del monto neto' : '75% del monto neto';
+  const pctApp = sinPatente ? '30%' : '20%';
+  const pctArq = sinPatente ? '70% del monto neto' : '80% del monto neto';
   document.getElementById('arqContractPctApp').textContent = pctApp;
   document.getElementById('arqContractPctArq').textContent = pctArq;
   document.getElementById('arqCheckPct').textContent       = pctApp;
