@@ -702,6 +702,34 @@
     }
     .btn-banner:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(-1px); }
 
+    /* ── PORTAL TABS ───────────────────────── */
+    .arq-tab {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: var(--radius-pill); padding: 0.4rem 1rem;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+      color: var(--muted); transition: all 0.15s;
+    }
+    .arq-tab.active {
+      background: var(--dark); border-color: var(--dark);
+      color: #fff;
+    }
+    /* ── PORTAL PROJECT CARD ────────────────── */
+    .pa-card {
+      background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.9rem 1.1rem;
+      cursor: pointer; transition: box-shadow 0.15s;
+    }
+    .pa-card:hover { box-shadow: var(--shadow); }
+    .pa-card-num { font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em; }
+    .pa-card-title { font-size:0.95rem;font-weight:800;color:var(--dark);margin:2px 0 4px; }
+    .pa-card-stage { display:inline-block;background:var(--orange-light);color:var(--orange);font-size:0.7rem;font-weight:700;padding:0.2rem 0.55rem;border-radius:var(--radius-pill); }
+    .pa-card-unread { display:inline-block;background:#DC2626;color:#fff;font-size:0.65rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:var(--radius-pill);margin-left:0.4rem; }
+    /* ── MESSAGES ───────────────────────────── */
+    .msg-bubble { padding:0.55rem 0.75rem;border-radius:10px;margin-bottom:0.4rem;font-size:0.78rem;line-height:1.5;max-width:85%; }
+    .msg-client { background:#e0f2fe;color:#0c4a6e;margin-left:auto;text-align:right; }
+    .msg-architect { background:#f0fdf4;color:#14532d; }
+    .msg-meta { font-size:0.65rem;color:var(--muted);margin-top:2px; }
+
     /* ── LEGAL MODALS ──────────────────────── */
     .legal-overlay {
       position: fixed; inset: 0; z-index: 500;
@@ -1078,6 +1106,7 @@
       <div class="nav-links">
         <a href="#como-funciona" class="nav-link">Cómo funciona</a>
         <a href="#servicios" class="nav-link">Servicios</a>
+        <button class="nav-link" id="navClienteBtn" style="background:none;border:1.5px solid var(--border);cursor:pointer;font-size:0.875rem;font-weight:600;color:var(--mid);padding:0.45rem 0.9rem;border-radius:var(--radius-pill);">Mi trámite</button>
         <button class="nav-cta" id="navArqBtn">Soy Arquitecto</button>
       </div>
     </div>
@@ -1850,6 +1879,122 @@
   <input name="destino" /><input name="precio_total" /><input name="precio_e1" />
   <input name="metodo_pago" /><input name="bot-field" />
 </form>
+
+<!-- ══════════════════════════════════════════════════
+     PORTAL CLIENTE
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="portalClienteModal" role="dialog" aria-modal="true" aria-label="Mi trámite">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-head">
+      <div>
+        <div class="modal-ico">📁</div>
+        <h3>Revisa tu trámite</h3>
+        <p class="modal-sub" id="portalClienteSub">Ingresa el número de trámite y tu email para ver el avance.</p>
+      </div>
+      <button class="modal-close" id="portalClienteClose" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- Lookup form -->
+    <div id="portalClienteForm">
+      <div class="mform-group">
+        <label class="mform-label">N° de trámite</label>
+        <input class="mform-input" id="pcNumero" type="text" placeholder="ARQ-2026-000001" style="text-transform:uppercase;letter-spacing:1px;" />
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Email con que te registraste</label>
+        <input class="mform-input" id="pcEmail" type="email" placeholder="tu@correo.cl" />
+      </div>
+      <button id="pcBuscar" class="btn-modal-submit" style="margin-top:0.5rem;width:100%;">Buscar mi trámite →</button>
+      <div id="pcError" style="display:none;color:#DC2626;font-size:0.8rem;margin-top:0.5rem;text-align:center;"></div>
+    </div>
+
+    <!-- Project details -->
+    <div id="portalClienteDetalle" style="display:none;">
+      <div id="pcProjectCard" style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">N° Trámite</div>
+            <div id="pcProjNum" style="font-size:1.1rem;font-weight:900;color:var(--orange);letter-spacing:1px;"></div>
+          </div>
+          <span id="pcProjStageLabel" style="background:var(--orange-light);color:var(--orange);font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:var(--radius-pill);"></span>
+        </div>
+        <div style="font-size:0.82rem;color:var(--mid);margin-bottom:0.5rem;" id="pcProjInfo"></div>
+        <!-- Progress bar -->
+        <div style="background:var(--border);border-radius:var(--radius-pill);height:6px;margin-bottom:0.4rem;">
+          <div id="pcProjBar" style="background:var(--grad);height:6px;border-radius:var(--radius-pill);transition:width 0.5s ease;width:0%;"></div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);" id="pcProjDesc"></div>
+      </div>
+
+      <!-- Messages -->
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:0.5rem;">💬 Mensajes del arquitecto</div>
+        <div id="pcMessages" style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;font-size:0.8rem;color:var(--mid);">
+          <em>Sin mensajes aún</em>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <input id="pcMsgInput" type="text" class="mform-input" placeholder="Escribe un mensaje al arquitecto…" style="flex:1;font-size:0.8rem;padding:0.5rem 0.75rem;" maxlength="500" />
+          <button id="pcMsgSend" style="background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.8rem;font-weight:700;cursor:pointer;">Enviar</button>
+        </div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem;">Los números de teléfono y correos son bloqueados automáticamente para tu seguridad.</div>
+      </div>
+
+      <button id="pcVolver" style="margin-top:1rem;background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.45rem 1rem;font-size:0.8rem;cursor:pointer;color:var(--muted);">← Buscar otro trámite</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PORTAL ARQUITECTO
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="portalArqModal" role="dialog" aria-modal="true" aria-label="Portal Arquitecto">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-head">
+      <div>
+        <div class="modal-ico">🏗</div>
+        <h3 id="portalArqTitle">Portal Arquitecto</h3>
+        <p class="modal-sub" id="portalArqSub">Ingresa con tu email y contraseña para ver tus proyectos.</p>
+      </div>
+      <button class="modal-close" id="portalArqClose" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="portalArqLogin">
+      <div id="portalArqLoginTabs" style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+        <button class="arq-tab active" id="tabArqLogin" onclick="switchArqTab('login')">Ingresar</button>
+        <button class="arq-tab" id="tabArqSignup" onclick="switchArqTab('signup')">Crear cuenta</button>
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Email</label>
+        <input class="mform-input" id="paEmail" type="email" placeholder="tu@correo.cl" />
+      </div>
+      <div class="mform-group">
+        <label class="mform-label">Contraseña</label>
+        <input class="mform-input" id="paPass" type="password" placeholder="••••••••" />
+      </div>
+      <div id="paSignupHint" style="display:none;font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;background:var(--bg-soft);border-radius:var(--radius);padding:0.6rem 0.8rem;">
+        Crea tu cuenta con el mismo email que usaste al inscribirte como arquitecto. El sistema te reconocerá automáticamente.
+      </div>
+      <button id="paAuthBtn" class="btn-modal-submit" style="width:100%;">Ingresar →</button>
+      <div id="paError" style="display:none;color:#DC2626;font-size:0.8rem;margin-top:0.5rem;text-align:center;"></div>
+    </div>
+
+    <!-- Projects dashboard -->
+    <div id="portalArqDash" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--dark);" id="paWelcome"></div>
+        <button id="paCerrarSesion" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:var(--muted);">Cerrar sesión</button>
+      </div>
+      <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:420px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Project detail (mensajes + etapa) -->
+    <div id="portalArqDetail" style="display:none;">
+      <button id="paBackToList" style="background:none;border:none;cursor:pointer;font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;padding:0;">← Volver a mis proyectos</button>
+      <div id="paDetailContent"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ── FOOTER ─────────────────────────────────────── -->
 <footer>
@@ -3146,8 +3291,19 @@ async function loadArchitectForCommune(commune) {
         commune,
         clp,
         e1: Math.round(clp * e1pct),
-        arquitecto: { nombre: arq.nombre, apellido: arq.apellido, comunas: arq.comunas, tramites: arq.tramites },
+        arquitecto: { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites },
       }),
+    }).then(r => r.json()).then(data => {
+      if (data.project_number) {
+        /* Mostrar número de trámite en el step 4 */
+        const infoBox = document.getElementById('wizArqInfo');
+        if (infoBox) {
+          const numBadge = document.createElement('div');
+          numBadge.style.cssText = 'background:#FFF7ED;border:2px solid #E8503A;border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.75rem;text-align:center;';
+          numBadge.innerHTML = `<div style="font-size:0.7rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Tu número de trámite</div><div style="font-size:1.3rem;font-weight:900;color:#E8503A;letter-spacing:2px;">${data.project_number}</div><div style="font-size:0.7rem;color:#78350F;margin-top:3px;">Guárdalo para revisar el avance en <strong>apparq.cl → Mi trámite</strong></div>`;
+          infoBox.parentNode.insertBefore(numBadge, infoBox);
+        }
+      }
     }).catch(err => console.warn('confirm-tramite error:', err));
 
     /* Badges: trámites + comuna match */
@@ -3284,6 +3440,359 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     return `Arquitecto de ${assignedCommune} · comuna vecina a ${targetCommune}`;
   return `Arquitecto de ${assignedCommune} · más cercano disponible a ${targetCommune}`;
 }
+
+/* ══════════════════════════════════════════════════
+   PORTAL CLIENTE
+══════════════════════════════════════════════════ */
+(function() {
+  const modal   = document.getElementById('portalClienteModal');
+  const btnOpen = document.getElementById('navClienteBtn');
+  const btnClose= document.getElementById('portalClienteClose');
+
+  btnOpen.onclick  = () => { modal.classList.add('open'); document.body.style.overflow = 'hidden'; };
+  btnClose.onclick = () => { modal.classList.remove('open'); document.body.style.overflow = ''; };
+  modal.addEventListener('click', e => { if (e.target === modal) { modal.classList.remove('open'); document.body.style.overflow = ''; } });
+
+  let currentProject = null;
+
+  document.getElementById('pcBuscar').onclick = async () => {
+    const num   = document.getElementById('pcNumero').value.trim().toUpperCase();
+    const email = document.getElementById('pcEmail').value.trim().toLowerCase();
+    const errEl = document.getElementById('pcError');
+    const btn   = document.getElementById('pcBuscar');
+    errEl.style.display = 'none';
+
+    if (!num || !email) { errEl.textContent = 'Completa el número de trámite y el email.'; errEl.style.display = 'block'; return; }
+
+    btn.textContent = 'Buscando…'; btn.disabled = true;
+    try {
+      const res  = await fetch('/.netlify/functions/portal-client', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_number: num, email }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { errEl.textContent = data.error || 'Error al buscar.'; errEl.style.display = 'block'; return; }
+
+      currentProject = data.project;
+      renderClientProject(data.project, data.messages, email);
+    } catch(e) {
+      errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
+    } finally {
+      btn.textContent = 'Buscar mi trámite →'; btn.disabled = false;
+    }
+  };
+
+  document.getElementById('pcVolver').onclick = () => {
+    document.getElementById('portalClienteDetalle').style.display = 'none';
+    document.getElementById('portalClienteForm').style.display = '';
+  };
+
+  function renderClientProject(p, msgs, clientEmail) {
+    document.getElementById('portalClienteForm').style.display = 'none';
+    document.getElementById('portalClienteDetalle').style.display = '';
+    document.getElementById('pcProjNum').textContent = p.project_number;
+    document.getElementById('pcProjStageLabel').textContent = p.stage_label;
+    document.getElementById('pcProjBar').style.width = (p.stage_pct || 0) + '%';
+    document.getElementById('pcProjDesc').textContent = p.stage_desc || '';
+
+    const SVC = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    document.getElementById('pcProjInfo').innerHTML =
+      `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
+
+    renderMessages(msgs, 'pcMessages', 'client');
+
+    document.getElementById('pcMsgSend').onclick = async () => {
+      const content = document.getElementById('pcMsgInput').value.trim();
+      if (!content) return;
+      const btn = document.getElementById('pcMsgSend');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/.netlify/functions/portal-client-send', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_number: p.project_number, email: clientEmail, content }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('pcMsgInput').value = '';
+          const msgBox = document.getElementById('pcMessages');
+          const bubble = createBubble(data.content, 'client', new Date().toISOString());
+          if (msgBox.querySelector('em')) msgBox.innerHTML = '';
+          msgBox.appendChild(bubble);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        }
+      } finally { btn.disabled = false; }
+    };
+  }
+
+  function renderMessages(msgs, containerId, myRole) {
+    const box = document.getElementById(containerId);
+    if (!msgs || !msgs.length) { box.innerHTML = '<em style="color:var(--muted)">Sin mensajes aún</em>'; return; }
+    box.innerHTML = '';
+    msgs.forEach(m => box.appendChild(createBubble(m.content, m.sender_role, m.created_at)));
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function createBubble(content, role, ts) {
+    const wrap = document.createElement('div');
+    const isClient = role === 'client';
+    wrap.innerHTML = `
+      <div class="msg-bubble ${isClient ? 'msg-client' : 'msg-architect'}">${content}</div>
+      <div class="msg-meta" style="text-align:${isClient?'right':'left'}">${isClient ? 'Tú' : 'Arquitecto'} · ${new Date(ts).toLocaleDateString('es-CL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>`;
+    return wrap;
+  }
+
+  window._renderMessages    = renderMessages;
+  window._createBubble      = createBubble;
+})();
+
+/* ══════════════════════════════════════════════════
+   PORTAL ARQUITECTO
+══════════════════════════════════════════════════ */
+(function() {
+  const modal    = document.getElementById('portalArqModal');
+  const btnClose = document.getElementById('portalArqClose');
+
+  /* Abrir desde "Soy Arquitecto" nav btn — lógica combinada */
+  const origOpen = openModal;
+  /* Reemplazamos el onclick del botón de nav para mostrar opciones */
+  document.getElementById('navArqBtn').onclick = () => {
+    /* Si ya hay sesión de arquitecto abierta */
+    const token = localStorage.getItem('arq_token');
+    if (token) { openPortalArq(); return; }
+    /* Mostrar modal de arquitecto con tabs Inscribirme | Ingresar */
+    openArqPortalLogin();
+  };
+
+  function openArqPortalLogin() {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('portalArqLogin').style.display = '';
+    document.getElementById('portalArqDash').style.display = 'none';
+    document.getElementById('portalArqDetail').style.display = 'none';
+    document.getElementById('portalArqTitle').textContent = 'Portal Arquitecto';
+    document.getElementById('paError').style.display = 'none';
+  }
+
+  function openPortalArq() {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    loadArqDash();
+  }
+
+  btnClose.onclick = () => closeArqPortal();
+  modal.addEventListener('click', e => { if (e.target === modal) closeArqPortal(); });
+
+  function closeArqPortal() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    /* Reabrir modal de inscripción si venía del flujo de inscripción */
+  }
+
+  window.switchArqTab = function(tab) {
+    document.getElementById('tabArqLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('tabArqSignup').classList.toggle('active', tab === 'signup');
+    document.getElementById('paAuthBtn').textContent = tab === 'login' ? 'Ingresar →' : 'Crear cuenta →';
+    document.getElementById('paSignupHint').style.display = tab === 'signup' ? '' : 'none';
+    document.getElementById('paAuthBtn').dataset.action = tab;
+    /* Ocultar opción inscripción si signup */
+  };
+  switchArqTab('login');
+
+  document.getElementById('paAuthBtn').onclick = async () => {
+    const email  = document.getElementById('paEmail').value.trim();
+    const pass   = document.getElementById('paPass').value;
+    const action = document.getElementById('paAuthBtn').dataset.action || 'login';
+    const errEl  = document.getElementById('paError');
+    errEl.style.display = 'none';
+
+    if (!email || !pass) { errEl.textContent = 'Completa email y contraseña.'; errEl.style.display = 'block'; return; }
+    if (pass.length < 6)  { errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.'; errEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('paAuthBtn');
+    btn.disabled = true; btn.textContent = 'Verificando…';
+
+    try {
+      const res  = await fetch('/.netlify/functions/auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, email, password: pass }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+
+      if (data.role !== 'architect') {
+        errEl.textContent = 'Este email no está registrado como arquitecto en APPARQ.';
+        errEl.style.display = 'block'; return;
+      }
+
+      localStorage.setItem('arq_token', data.token);
+      localStorage.setItem('arq_email', data.email);
+      localStorage.setItem('arq_nombre', data.architect ? `${data.architect.nombre} ${data.architect.apellido}` : data.email);
+
+      loadArqDash();
+    } catch(e) {
+      errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = (document.getElementById('paAuthBtn').dataset.action === 'login') ? 'Ingresar →' : 'Crear cuenta →';
+    }
+  };
+
+  document.getElementById('paCerrarSesion').onclick = () => {
+    localStorage.removeItem('arq_token');
+    localStorage.removeItem('arq_email');
+    localStorage.removeItem('arq_nombre');
+    document.getElementById('portalArqDash').style.display = 'none';
+    document.getElementById('portalArqLogin').style.display = '';
+    switchArqTab('login');
+  };
+
+  document.getElementById('paBackToList').onclick = () => {
+    document.getElementById('portalArqDetail').style.display = 'none';
+    document.getElementById('portalArqDash').style.display = '';
+  };
+
+  async function loadArqDash() {
+    const token = localStorage.getItem('arq_token');
+    const nombre = localStorage.getItem('arq_nombre') || 'Arquitecto';
+    document.getElementById('portalArqLogin').style.display = 'none';
+    document.getElementById('portalArqDash').style.display = '';
+    document.getElementById('paWelcome').textContent = `Hola, ${nombre}`;
+    document.getElementById('paProjects').innerHTML = '<div style="color:var(--muted);font-size:0.82rem;">Cargando proyectos…</div>';
+
+    try {
+      const res  = await fetch('/.netlify/functions/portal-architect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-projects', token }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        if (res.status === 401) { localStorage.removeItem('arq_token'); document.getElementById('portalArqDash').style.display = 'none'; document.getElementById('portalArqLogin').style.display = ''; return; }
+        document.getElementById('paProjects').innerHTML = `<div style="color:#DC2626;font-size:0.82rem;">${data.error}</div>`;
+        return;
+      }
+
+      renderArqProjects(data.projects, token);
+    } catch(e) {
+      document.getElementById('paProjects').innerHTML = '<div style="color:#DC2626;font-size:0.82rem;">Error de conexión.</div>';
+    }
+  }
+
+  const STAGES_NORMAL  = ['levantamiento','elaboracion','ingreso_dom','tramitacion','completado'];
+  const STAGES_INFORME = ['visita','elaboracion_inf','entrega_informe'];
+  const STAGE_LABELS   = {
+    levantamiento:'Levantamiento en terreno', elaboracion:'Elaboración de planos',
+    ingreso_dom:'Ingreso a la DOM', tramitacion:'Tramitación municipal', completado:'Trámite completado',
+    visita:'Visita a terreno', elaboracion_inf:'Elaboración del informe', entrega_informe:'Informe entregado',
+  };
+  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+
+  function renderArqProjects(projects, token) {
+    const box = document.getElementById('paProjects');
+    if (!projects.length) { box.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;">No tienes proyectos asignados aún.</div>'; return; }
+    box.innerHTML = '';
+    projects.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'pa-card';
+      card.innerHTML = `
+        <div class="pa-card-num">${p.project_number}</div>
+        <div class="pa-card-title">${SVC_LABELS[p.service_type]||p.service_type} · ${p.commune} · ${p.m2}m²</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">Cliente: ${p.client_nombre} ${p.client_apellido}</div>
+        <span class="pa-card-stage">${p.stage_label}</span>
+        ${p.unread_messages > 0 ? `<span class="pa-card-unread">${p.unread_messages} nuevo${p.unread_messages>1?'s':''}</span>` : ''}`;
+      card.onclick = () => openArqDetail(p, token);
+      box.appendChild(card);
+    });
+  }
+
+  async function openArqDetail(p, token) {
+    document.getElementById('portalArqDash').style.display = 'none';
+    document.getElementById('portalArqDetail').style.display = '';
+    const stages = p.service_type === 'informe' ? STAGES_INFORME : STAGES_NORMAL;
+
+    const stageOptions = stages.map(s =>
+      `<option value="${s}" ${p.stage===s?'selected':''}>${STAGE_LABELS[s]}</option>`
+    ).join('');
+
+    document.getElementById('paDetailContent').innerHTML = `
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">${p.project_number}</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--dark);margin:3px 0 8px;">${SVC_LABELS[p.service_type]||p.service_type} · ${p.commune}</div>
+      <div style="font-size:0.8rem;color:var(--mid);margin-bottom:0.75rem;">Cliente: ${p.client_nombre} ${p.client_apellido} · ${p.address}</div>
+
+      <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem;margin-bottom:1rem;">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.4rem;">Actualizar etapa del trámite</label>
+        <div style="display:flex;gap:0.5rem;">
+          <select id="paStageSelect" style="flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;font-size:0.82rem;">${stageOptions}</select>
+          <button id="paUpdateStage" style="background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Guardar</button>
+        </div>
+        <div id="paStageMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+      </div>
+
+      <div style="margin-top:0.75rem;">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:0.5rem;">💬 Mensajes con el cliente</div>
+        <div id="paDetailMessages" style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;font-size:0.78rem;color:var(--mid);">
+          <em>Cargando…</em>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+          <input id="paDetailMsgInput" type="text" class="mform-input" placeholder="Mensaje al cliente…" style="flex:1;font-size:0.8rem;padding:0.5rem 0.75rem;" maxlength="500" />
+          <button id="paDetailMsgSend" style="background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.8rem;font-weight:700;cursor:pointer;">Enviar</button>
+        </div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem;">Los números y correos son bloqueados automáticamente.</div>
+      </div>`;
+
+    /* Load messages */
+    try {
+      const res  = await fetch('/.netlify/functions/portal-architect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-messages', token, project_number: p.project_number }),
+      });
+      const data = await res.json();
+      window._renderMessages(data.messages || [], 'paDetailMessages', 'architect');
+    } catch(e) {}
+
+    /* Update stage */
+    document.getElementById('paUpdateStage').onclick = async () => {
+      const newStage = document.getElementById('paStageSelect').value;
+      const msgEl    = document.getElementById('paStageMsg');
+      const btn      = document.getElementById('paUpdateStage');
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try {
+        const res  = await fetch('/.netlify/functions/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update-stage', token, project_number: p.project_number, new_stage: newStage }),
+        });
+        const data = await res.json();
+        msgEl.style.display = '';
+        if (data.ok) { msgEl.style.color = '#059669'; msgEl.textContent = `✓ Etapa actualizada: ${data.stage_label}`; }
+        else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al actualizar'; }
+      } finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+    };
+
+    /* Send message */
+    document.getElementById('paDetailMsgSend').onclick = async () => {
+      const content = document.getElementById('paDetailMsgInput').value.trim();
+      if (!content) return;
+      const btn = document.getElementById('paDetailMsgSend');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/.netlify/functions/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'send-message', token, project_number: p.project_number, content }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('paDetailMsgInput').value = '';
+          const msgBox = document.getElementById('paDetailMessages');
+          const bubble = window._createBubble(data.content, 'architect', new Date().toISOString());
+          if (msgBox.querySelector('em')) msgBox.innerHTML = '';
+          msgBox.appendChild(bubble);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        }
+      } finally { btn.disabled = false; }
+    };
+  }
+})();
 </script>
 </body>
 </html>

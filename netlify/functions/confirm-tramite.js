@@ -6,6 +6,8 @@
 ══════════════════════════════════════════════════ */
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const SUPABASE_URL   = process.env.SUPABASE_URL;
+const SUPABASE_KEY   = process.env.SUPABASE_ANON_KEY;
 
 async function sendEmail({ to, subject, html }) {
   if (!RESEND_API_KEY) { console.warn('Sin RESEND_API_KEY'); return; }
@@ -43,6 +45,53 @@ exports.handler = async (event) => {
       arquitecto,   /* { nombre, apellido, comunas, tramites } o null */
     } = body;
 
+    /* ── Crear proyecto en Supabase ─────────────── */
+    let projectNumber = null;
+    if (SUPABASE_URL && SUPABASE_KEY && email) {
+      try {
+        /* Generar número secuencial: contar proyectos existentes */
+        const countRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/projects?select=id`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'count=exact' } }
+        );
+        const countHeader = parseInt(countRes.headers.get('content-range')?.split('/')[1] || '0', 10);
+        const seq = String(countHeader + 1).padStart(6, '0');
+        projectNumber = `ARQ-${new Date().getFullYear()}-${seq}`;
+
+        const architect_email = arquitecto ? (arquitecto.email || null) : null;
+
+        await fetch(`${SUPABASE_URL}/rest/v1/projects`, {
+          method: 'POST',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type':  'application/json',
+            'Prefer':        'return=minimal',
+          },
+          body: JSON.stringify({
+            project_number:   projectNumber,
+            client_email:     email.trim().toLowerCase(),
+            client_nombre:    nombre  || '',
+            client_apellido:  apellido || '',
+            client_telefono:  telefono || '',
+            client_rut:       rut      || '',
+            architect_email:  architect_email,
+            architect_nombre: arquitecto?.nombre  || '',
+            architect_apellido: arquitecto?.apellido || '',
+            service_type:     svc      || '',
+            address:          direccion || '',
+            commune:          commune  || '',
+            m2:               m2       || 0,
+            total_clp:        clp      || 0,
+            e1_clp:           e1       || 0,
+            stage:            'levantamiento',
+          }),
+        });
+      } catch (projErr) {
+        console.warn('Error creando proyecto:', projErr);
+      }
+    }
+
     const fecha     = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
     const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
     const svcName   = svcLabels[svc] || svc || 'Trámite';
@@ -62,6 +111,7 @@ exports.handler = async (event) => {
           <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
             <h2 style="margin-top:0;font-size:16px;color:#1a1a2e">📋 Datos del trámite</h2>
             <table style="width:100%;border-collapse:collapse;font-size:13px">
+              ${projectNumber ? `<tr style="background:#fffbeb"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:900;color:#E8503A;font-size:15px">${projectNumber}</td></tr>` : ''}
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Servicio</td><td style="padding:8px 10px;font-weight:700">${svcName}</td></tr>
               <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${direccion || '—'}</td></tr>
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Comuna</td><td style="padding:8px 10px">${commune || '—'}</td></tr>
@@ -109,6 +159,13 @@ exports.handler = async (event) => {
                 Hemos recibido tu pago y tu trámite ha sido activado. A continuación el resumen:
               </p>
 
+              ${projectNumber ? `
+              <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
+                <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700">TU NÚMERO DE TRÁMITE</p>
+                <p style="margin:0;font-size:28px;font-weight:900;color:#E8503A;letter-spacing:2px">${projectNumber}</p>
+                <p style="margin:6px 0 0;font-size:11px;color:#78350F">Guarda este número para revisar el avance en <strong>apparq.cl</strong></p>
+              </div>` : ''}
+
               <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0">
                 <p style="margin:0 0 6px;font-size:13px"><strong>✓ Servicio:</strong> ${svcName}</p>
                 <p style="margin:0 0 6px;font-size:13px"><strong>✓ Dirección:</strong> ${direccion || '—'}, ${commune}</p>
@@ -155,7 +212,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify({ ok: true, project_number: projectNumber }),
     };
 
   } catch (err) {

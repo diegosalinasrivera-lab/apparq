@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\")",
+      "Bash(node --version)",
+      "Bash(git --version)",
+      "Bash(gh --version)"
+    ]
+  }
+}
