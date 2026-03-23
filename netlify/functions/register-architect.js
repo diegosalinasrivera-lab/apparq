@@ -59,6 +59,7 @@ exports.handler = async (event) => {
       tramites,
       comunas,
       mensaje:     data.mensaje?.trim()     || null,
+      foto_url:    data.foto_url            || null,
       activo:      true,
     };
 

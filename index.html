@@ -1738,6 +1738,19 @@
       <input type="hidden" name="form-name" value="arquitecto" />
       <p style="display:none"><label>No llenar: <input name="bot-field" /></label></p>
 
+      <!-- Foto de perfil -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;margin-bottom:1.1rem;">
+        <div style="position:relative;">
+          <div id="arqPhotoCircle" style="width:80px;height:80px;border-radius:50%;background:#f1f5f9;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;border:2.5px dashed #cbd5e0;cursor:pointer;" onclick="document.getElementById('arqPhotoInput').click()">
+            <img id="arqPhotoPreview" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;" />
+            <span id="arqPhotoPlaceholder">📷</span>
+          </div>
+          <label for="arqPhotoInput" style="position:absolute;bottom:0;right:0;background:var(--orange);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;border:2px solid #fff;">+</label>
+          <input type="file" id="arqPhotoInput" accept="image/*" style="display:none;" />
+        </div>
+        <span style="font-size:0.75rem;color:var(--muted);text-align:center;">Foto de perfil <span style="color:#ef4444;">*</span><br><span style="font-size:0.7rem;">Es clave para la confianza del cliente</span></span>
+      </div>
+
       <div class="mform-row">
         <div class="mform-group">
           <label class="mform-label">Nombre</label>
@@ -2635,6 +2648,30 @@ document.getElementById('arqPasswordConfirm').addEventListener('input', () => {
   hint.style.color = confirm === pass ? '#22c55e' : '#ef4444';
 });
 
+/* ── Foto de perfil en formulario inscripción ── */
+let arqFotoBase64 = null;
+document.getElementById('arqPhotoInput').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  arqFotoBase64 = await new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 200;
+      const ctx = canvas.getContext('2d');
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, 200, 200);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+  document.getElementById('arqPhotoPreview').src = arqFotoBase64;
+  document.getElementById('arqPhotoPreview').style.display = 'block';
+  document.getElementById('arqPhotoPlaceholder').style.display = 'none';
+  document.getElementById('arqPhotoCircle').style.border = '2.5px solid var(--orange)';
+};
+
 document.getElementById('arqForm').onsubmit = async e => {
   e.preventDefault();
   const btn = document.getElementById('arqSubmitBtn');
@@ -2661,6 +2698,7 @@ document.getElementById('arqForm').onsubmit = async e => {
     setField(document.getElementById('arqRut'), document.getElementById('hintArqRut'), false, '✗ RUT inválido — revisa el dígito verificador');
     showToast('RUT inválido'); return;
   }
+  if (!arqFotoBase64) { showToast('Sube una foto de perfil para continuar'); return; }
   if (!arqPass) { showToast('Crea una contraseña para acceder al portal'); return; }
   /* Fuerza mínima: score >= 3 */
   let passScore = 0;
@@ -2699,6 +2737,7 @@ document.getElementById('arqForm').onsubmit = async e => {
       tramites:    tramites.join(', '),
       mensaje:     fd.get('mensaje')     || '',
       firma_data:  firmaData,
+      foto_url:    arqFotoBase64 || null,
     };
 
     /* 1. Crear cuenta en Supabase Auth */
@@ -2736,6 +2775,10 @@ document.getElementById('arqForm').onsubmit = async e => {
 
     closeModal();
     form.reset();
+    arqFotoBase64 = null;
+    document.getElementById('arqPhotoPreview').style.display = 'none';
+    document.getElementById('arqPhotoPlaceholder').style.display = '';
+    document.getElementById('arqPhotoCircle').style.border = '2.5px dashed #cbd5e0';
     document.querySelectorAll('#arqComunasPills .commune-pill').forEach(p => p.classList.remove('sel'));
     document.getElementById('arqComunasHidden').value = '';
 
