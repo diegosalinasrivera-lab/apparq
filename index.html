@@ -1522,10 +1522,10 @@
       <div class="wiz-step" id="wiz-s3">
         <div class="wiz-ico">💳</div>
         <div class="wiz-title">Pago del servicio</div>
-        <div class="wiz-sub">Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.</div>
+        <div class="wiz-sub" id="wizPaySub3">Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.</div>
 
         <div class="pay-amount-box">
-          <div class="pay-amount-lbl">Monto a pagar ahora · E1 (20%)</div>
+          <div class="pay-amount-lbl" id="wizPayAmtLbl">Monto a pagar ahora · E1 (20%)</div>
           <div class="pay-amount-val" id="wizPayAmt">$0</div>
           <div class="pay-amount-sub" id="wizPaySub">Del total de $0</div>
         </div>
@@ -1613,7 +1613,7 @@
         <div class="wiz-title">Tu proyecto está en marcha</div>
         <div class="wiz-sub" id="wizTrackSub">Sigue el avance de tu trámite hasta la Recepción Final aprobada.</div>
 
-        <div class="track-list">
+        <div class="track-list" id="wizTrackList">
           <div class="track-item">
             <div class="track-num done">✓</div>
             <div>
@@ -2394,6 +2394,28 @@ document.getElementById('arqContractCheck').addEventListener('change', function(
 document.getElementById('arqForm').onsubmit = async e => {
   e.preventDefault();
   const btn = document.getElementById('arqSubmitBtn');
+
+  /* Validar campos obligatorios del arquitecto */
+  const arqEmail = document.getElementById('arqEmail').value.trim();
+  const arqTel   = document.getElementById('arqTel').value.trim();
+  const arqRut   = document.getElementById('arqRut').value.trim();
+  if (!arqEmail || !arqTel || !arqRut) {
+    showToast('Completa todos los campos obligatorios (email, teléfono y RUT)');
+    return;
+  }
+  if (!emailValid(arqEmail)) {
+    setField(document.getElementById('arqEmail'), document.getElementById('hintArqEmail'), false, '✗ Formato de email inválido');
+    showToast('Email inválido'); return;
+  }
+  if (!telValid(arqTel)) {
+    setField(document.getElementById('arqTel'), document.getElementById('hintArqTel'), false, '✗ Ingresa un celular chileno válido (+56 9 XXXX XXXX)');
+    showToast('Teléfono inválido'); return;
+  }
+  if (!rutValid(arqRut)) {
+    setField(document.getElementById('arqRut'), document.getElementById('hintArqRut'), false, '✗ RUT inválido — revisa el dígito verificador');
+    showToast('RUT inválido'); return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Registrando…';
 
@@ -2718,6 +2740,38 @@ function prefillWizard() {
   document.getElementById('wizPayAmt').textContent = clpFmt(e1);
   document.getElementById('wizPaySub').textContent = 'Del total de ' + clpFmt(clp);
 
+  /* dynamic labels informe vs normal */
+  const isInforme = S.svc === 'informe';
+  const e1Label   = isInforme ? 'E1 (50%)' : 'E1 (20%)';
+  const payLbl    = document.getElementById('wizPayAmtLbl');
+  const paySub3   = document.getElementById('wizPaySub3');
+  if (payLbl)  payLbl.textContent  = `Monto a pagar ahora · ${e1Label}`;
+  if (paySub3) paySub3.textContent = isInforme
+    ? 'Paga el 50% inicial (Etapa 1) para que tu arquitecto comience el informe.'
+    : 'Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.';
+
+  /* tracking step 5 */
+  const trackList = document.getElementById('wizTrackList');
+  if (trackList) {
+    if (isInforme) {
+      trackList.innerHTML = `
+        <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Registro y contrato firmado</div><div class="track-status">Completado · Hoy</div></div></div>
+        <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Pago E1 (50%) confirmado</div><div class="track-status">Completado · Hoy</div></div></div>
+        <div class="track-item"><div class="track-num active">→</div><div><div class="track-label">Visita a terreno</div><div class="track-status cur">En progreso · Tu arquitecto coordinará la visita</div></div></div>
+        <div class="track-item"><div class="track-num">4</div><div><div class="track-label pending">Elaboración del informe técnico</div><div class="track-status">Plazo estimado: 2 semanas desde la visita</div></div></div>
+        <div class="track-item"><div class="track-num">5</div><div><div class="track-label pending">🎉 Entrega del informe</div><div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E2 (50%)</strong> por apparq.cl</div></div></div>`;
+    } else {
+      trackList.innerHTML = `
+        <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Registro y contrato firmado</div><div class="track-status">Completado · Hoy</div></div></div>
+        <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Pago E1 (20%) confirmado</div><div class="track-status">Completado · Hoy</div></div></div>
+        <div class="track-item"><div class="track-num active">→</div><div><div class="track-label">Levantamiento en terreno</div><div class="track-status cur">En progreso · Tu arquitecto coordinará la visita</div></div></div>
+        <div class="track-item"><div class="track-num">4</div><div><div class="track-label pending">Elaboración de planos</div><div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E2 (30%)</strong> por apparq.cl</div></div></div>
+        <div class="track-item"><div class="track-num">5</div><div><div class="track-label pending">Ingreso a la DOM</div><div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E3 (20%)</strong> por apparq.cl</div></div></div>
+        <div class="track-item"><div class="track-num">6</div><div><div class="track-label pending">Tramitación municipal</div><div class="track-status">Pendiente</div></div></div>
+        <div class="track-item"><div class="track-num">7</div><div><div class="track-label pending">🎉 Recepción Final aprobada</div><div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E4 (30%)</strong> por apparq.cl</div></div></div>`;
+    }
+  }
+
   /* architect commune badge */
   document.getElementById('wizArqComune').textContent = commune;
   document.getElementById('wizTrackSub').textContent =
@@ -2792,17 +2846,27 @@ wizBack.onclick = () => {
 /* ── validation per step ──────────────────────── */
 function wizCanAdvance() {
   if (wizStep === 0) {
-    const n = document.getElementById('wizNombre').value.trim();
-    const a = document.getElementById('wizApellido').value.trim();
-    const e = document.getElementById('wizEmail').value.trim();
-    const t = document.getElementById('wizTel').value.trim();
-    if (!n || !a || !e || !t) {
+    const n   = document.getElementById('wizNombre').value.trim();
+    const a   = document.getElementById('wizApellido').value.trim();
+    const e   = document.getElementById('wizEmail').value.trim();
+    const t   = document.getElementById('wizTel').value.trim();
+    const rut = document.getElementById('wizRut').value.trim();
+    if (!n || !a || !e || !t || !rut) {
       shakeNext(); showToast('Completa todos los campos obligatorios');
       return false;
     }
-    if (!emailValid(e)) { shakeNext(); showToast('Email inválido'); return false; }
-    const rut = document.getElementById('wizRut').value.trim();
-    if (rut && !rutValid(rut)) { shakeNext(); showToast('RUT inválido — revisa el dígito verificador'); return false; }
+    if (!emailValid(e)) {
+      setField(document.getElementById('wizEmail'), document.getElementById('hintWizEmail'), false, '✗ Formato de email inválido');
+      shakeNext(); showToast('Email inválido'); return false;
+    }
+    if (!telValid(t)) {
+      setField(document.getElementById('wizTel'), document.getElementById('hintWizTel'), false, '✗ Ingresa un celular chileno válido (+56 9 XXXX XXXX)');
+      shakeNext(); showToast('Teléfono inválido — ej: +56 9 1234 5678'); return false;
+    }
+    if (!rutValid(rut)) {
+      setField(document.getElementById('wizRut'), document.getElementById('hintWizRut'), false, '✗ RUT inválido — revisa el dígito verificador');
+      shakeNext(); showToast('RUT inválido — revisa el dígito verificador'); return false;
+    }
   }
   if (wizStep === 1) {
     if (!document.getElementById('wizTos').checked) {
@@ -2815,7 +2879,9 @@ function wizCanAdvance() {
     }
   }
   if (wizStep === 2) {
-    /* El pago se procesa en Mercado Pago — no validamos datos de tarjeta aquí */
+    /* El pago DEBE completarse en Mercado Pago — no se puede saltar */
+    shakeNext(); showToast('Completa el pago en Mercado Pago para continuar.');
+    return false;
   }
   return true;
 }
