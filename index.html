@@ -2011,7 +2011,7 @@
       </div>
       <button id="paAuthBtn" class="btn-modal-submit" style="width:100%;margin-top:0.25rem;">Ingresar →</button>
       <div id="paError" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius);color:#DC2626;font-size:0.8rem;margin-top:0.6rem;padding:0.6rem 0.85rem;text-align:center;"></div>
-      <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.75rem;">¿No tienes cuenta? Inscríbete en <strong>Quiero ser parte</strong></p>
+      <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.75rem;">¿No tienes cuenta? <a href="#" id="paOpenInscripcion" style="color:var(--orange);font-weight:700;text-decoration:none;">Únete a la red →</a></p>
     </div>
 
     <!-- Projects dashboard -->
@@ -3808,6 +3808,14 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     } finally {
       btn.disabled = false; btn.textContent = 'Ingresar →';
     }
+  };
+
+  document.getElementById('paOpenInscripcion').onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('portalArqModal').classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('arqModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
   };
 
   document.getElementById('paCerrarSesion').onclick = () => {
