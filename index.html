@@ -1870,8 +1870,29 @@
         <span style="font-size:0.8rem;color:var(--mid);line-height:1.5;">He leído y acepto el <strong>Contrato de Colaboración Profesional</strong> con APPARQ, incluyendo la comisión del 25%, la obligatoriedad de uso exclusivo de la plataforma y las cláusulas de no captación directa.</span>
       </label>
 
+      <!-- Contraseña -->
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <p style="font-size:0.78rem;font-weight:700;color:var(--dark);margin:0 0 0.6rem;">🔑 Crea tu contraseña de acceso al portal</p>
+        <div class="mform-group" style="margin-bottom:0.5rem;">
+          <label class="mform-label">Contraseña</label>
+          <input class="mform-input" id="arqPassword" type="password" placeholder="Mínimo 8 caracteres, mayúscula, número y símbolo" autocomplete="new-password" />
+          <div style="display:flex;gap:4px;margin-top:5px;">
+            <div class="pass-bar" id="arqPassBar1"></div>
+            <div class="pass-bar" id="arqPassBar2"></div>
+            <div class="pass-bar" id="arqPassBar3"></div>
+            <div class="pass-bar" id="arqPassBar4"></div>
+          </div>
+          <div id="arqPassMsg" style="font-size:0.7rem;color:var(--muted);margin-top:3px;"></div>
+        </div>
+        <div class="mform-group">
+          <label class="mform-label">Confirmar contraseña</label>
+          <input class="mform-input" id="arqPasswordConfirm" type="password" placeholder="Repite tu contraseña" autocomplete="new-password" />
+          <div id="arqPassConfirmHint" style="font-size:0.7rem;margin-top:3px;"></div>
+        </div>
+      </div>
+
       <button type="submit" class="btn-modal-submit" id="arqSubmitBtn" disabled style="margin-top:1rem;opacity:0.5;cursor:not-allowed;">Acepta el contrato para continuar</button>
-      <p class="modal-legal">Al enviar, tu solicitud quedará en revisión. APPARQ te confirmará la activación en tu(s) comuna(s) por email.</p>
+      <p class="modal-legal">Al enviar tu inscripción quedarás registrado y podrás acceder al portal de arquitecto con tu email y contraseña.</p>
     </form>
   </div>
 </div>
@@ -2547,7 +2568,19 @@ const closeModal = () => {
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; btn.textContent = 'Acepta el contrato para continuar'; }
 };
 
-document.getElementById('navArqBtn').onclick  = openModal;
+document.getElementById('navArqBtn').onclick = () => {
+  /* Si ya tiene sesión activa → abrir portal directo */
+  if (localStorage.getItem('arq_token')) {
+    const portalModal = document.getElementById('portalArqModal');
+    if (portalModal) {
+      portalModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      loadArqDash();
+    }
+    return;
+  }
+  openModal();
+};
 document.getElementById('bannerArqBtn').onclick = openModal;
 document.getElementById('modalClose').onclick = closeModal;
 arqModal.addEventListener('click', e => { if (e.target === arqModal) closeModal(); });
@@ -2569,17 +2602,51 @@ document.getElementById('arqContractCheck').addEventListener('change', function(
   }
 });
 
+/* ── Strength bar for arqPassword ─── */
+document.getElementById('arqPassword').addEventListener('input', () => {
+  const pass = document.getElementById('arqPassword').value;
+  let score = 0;
+  if (pass.length >= 8)        score++;
+  if (/[A-Z]/.test(pass))      score++;
+  if (/[0-9]/.test(pass))      score++;
+  if (/[^A-Za-z0-9]/.test(pass)) score++;
+  const colors = ['','#ef4444','#f97316','#eab308','#22c55e'];
+  const msgs   = ['','Muy débil','Débil','Aceptable','Contraseña segura ✓'];
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('arqPassBar'+i).style.background = i <= score ? colors[score] : '#e2e8f0';
+  }
+  document.getElementById('arqPassMsg').textContent  = pass.length ? msgs[score] : '';
+  document.getElementById('arqPassMsg').style.color  = colors[score] || 'var(--muted)';
+  /* Confirm hint */
+  const confirm = document.getElementById('arqPasswordConfirm').value;
+  if (confirm) {
+    const hint = document.getElementById('arqPassConfirmHint');
+    hint.textContent = confirm === pass ? 'Las contraseñas coinciden ✓' : 'No coinciden';
+    hint.style.color = confirm === pass ? '#22c55e' : '#ef4444';
+  }
+});
+document.getElementById('arqPasswordConfirm').addEventListener('input', () => {
+  const pass = document.getElementById('arqPassword').value;
+  const confirm = document.getElementById('arqPasswordConfirm').value;
+  const hint = document.getElementById('arqPassConfirmHint');
+  if (!confirm) { hint.textContent = ''; return; }
+  hint.textContent = confirm === pass ? 'Las contraseñas coinciden ✓' : 'No coinciden';
+  hint.style.color = confirm === pass ? '#22c55e' : '#ef4444';
+});
+
 document.getElementById('arqForm').onsubmit = async e => {
   e.preventDefault();
   const btn = document.getElementById('arqSubmitBtn');
 
-  /* Validar campos obligatorios del arquitecto */
+  /* Validar campos obligatorios */
   const arqEmail = document.getElementById('arqEmail').value.trim();
   const arqTel   = document.getElementById('arqTel').value.trim();
   const arqRut   = document.getElementById('arqRut').value.trim();
+  const arqPass  = document.getElementById('arqPassword').value;
+  const arqConf  = document.getElementById('arqPasswordConfirm').value;
+
   if (!arqEmail || !arqTel || !arqRut) {
-    showToast('Completa todos los campos obligatorios (email, teléfono y RUT)');
-    return;
+    showToast('Completa todos los campos obligatorios (email, teléfono y RUT)'); return;
   }
   if (!emailValid(arqEmail)) {
     setField(document.getElementById('arqEmail'), document.getElementById('hintArqEmail'), false, '✗ Formato de email inválido');
@@ -2593,61 +2660,97 @@ document.getElementById('arqForm').onsubmit = async e => {
     setField(document.getElementById('arqRut'), document.getElementById('hintArqRut'), false, '✗ RUT inválido — revisa el dígito verificador');
     showToast('RUT inválido'); return;
   }
+  if (!arqPass) { showToast('Crea una contraseña para acceder al portal'); return; }
+  /* Fuerza mínima: score >= 3 */
+  let passScore = 0;
+  if (arqPass.length >= 8)          passScore++;
+  if (/[A-Z]/.test(arqPass))        passScore++;
+  if (/[0-9]/.test(arqPass))        passScore++;
+  if (/[^A-Za-z0-9]/.test(arqPass)) passScore++;
+  if (passScore < 3) { showToast('La contraseña debe tener al menos 8 caracteres, una mayúscula y un número'); return; }
+  if (arqPass !== arqConf) { showToast('Las contraseñas no coinciden'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Registrando…';
 
   try {
-    const form    = e.target;
-    const fd      = new FormData(form);
+    const form = e.target;
+    const fd   = new FormData(form);
 
-    /* Recolectar trámites marcados */
     const tramites = [];
     if (fd.get('tramite_regularizacion')) tramites.push('Regularización');
     if (fd.get('tramite_ampliacion'))     tramites.push('Ampliación');
     if (fd.get('tramite_obra_nueva'))     tramites.push('Obra Nueva');
     if (fd.get('tramite_informe'))        tramites.push('Informe');
 
-    /* Capturar firma como imagen base64 */
     const sigCanvas = document.getElementById('sigCanvas');
     const firmaData = sigCanvas ? sigCanvas.toDataURL('image/png') : null;
 
     const payload = {
       nombre:      fd.get('nombre')      || '',
       apellido:    fd.get('apellido')    || '',
-      email:       fd.get('email')       || '',
-      telefono:    fd.get('telefono')    || '',
-      rut:         fd.get('rut')         || '',
+      email:       arqEmail,
+      telefono:    arqTel,
+      rut:         arqRut,
       experiencia: fd.get('experiencia') || '',
       patente:     fd.get('patente')     || '',
-      comunas:     fd.get('comunas')     || '',   /* string "Providencia, Las Condes, …" */
+      comunas:     fd.get('comunas')     || '',
       tramites:    tramites.join(', '),
       mensaje:     fd.get('mensaje')     || '',
       firma_data:  firmaData,
     };
 
-    const res = await fetch('/.netlify/functions/register-architect', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
+    /* 1. Crear cuenta en Supabase Auth */
+    const authRes  = await fetch('/.netlify/functions/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'signup', email: arqEmail, password: arqPass }),
     });
+    const authData = await authRes.json();
 
-    const json = await res.json();
+    let token = authData.token;
 
-    if (!res.ok || json.error) {
-      throw new Error(json.error || 'Error desconocido');
+    /* Si ya existe → intentar login */
+    if (!token && (authData.error?.includes('already') || authData.error?.includes('registered'))) {
+      const loginRes  = await fetch('/.netlify/functions/auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', email: arqEmail, password: arqPass }),
+      });
+      const loginData = await loginRes.json();
+      token = loginData.token;
+      if (!token) throw new Error('Email ya registrado. Revisa tu contraseña.');
+    } else if (!token) {
+      throw new Error(authData.error || 'Error al crear cuenta');
     }
 
+    /* 2. Guardar datos del arquitecto */
+    await fetch('/.netlify/functions/register-architect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    /* 3. Guardar sesión y abrir portal */
+    localStorage.setItem('arq_token',  token);
+    localStorage.setItem('arq_email',  arqEmail);
+    localStorage.setItem('arq_nombre', `${payload.nombre} ${payload.apellido}`.trim());
+
     closeModal();
-    showToast('✅ ¡Inscripción recibida! Quedas disponible en tu(s) comuna(s).');
     form.reset();
-    /* Limpiar pills */
     document.querySelectorAll('#arqComunasPills .commune-pill').forEach(p => p.classList.remove('sel'));
     document.getElementById('arqComunasHidden').value = '';
 
+    /* Abrir portal directo */
+    const portalModal = document.getElementById('portalArqModal');
+    if (portalModal) {
+      portalModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      loadArqDash();
+    } else {
+      showToast('✅ ¡Inscripción completada! Ya puedes acceder al portal con "Soy Arquitecto".');
+    }
+
   } catch (err) {
     console.error(err);
-    showToast('⚠️ Error al enviar. Intenta de nuevo.');
+    showToast('⚠️ ' + (err.message || 'Error al enviar. Intenta de nuevo.'));
   } finally {
     btn.disabled = false;
     btn.textContent = 'Enviar solicitud de inscripción →';
@@ -3594,27 +3697,6 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 (function() {
   const modal    = document.getElementById('portalArqModal');
   const btnClose = document.getElementById('portalArqClose');
-
-  /* Abrir desde "Soy Arquitecto" nav btn — lógica combinada */
-  const origOpen = openModal;
-  /* Reemplazamos el onclick del botón de nav para mostrar opciones */
-  document.getElementById('navArqBtn').onclick = () => {
-    /* Si ya hay sesión de arquitecto abierta */
-    const token = localStorage.getItem('arq_token');
-    if (token) { openPortalArq(); return; }
-    /* Mostrar modal de arquitecto con tabs Inscribirme | Ingresar */
-    openArqPortalLogin();
-  };
-
-  function openArqPortalLogin() {
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.getElementById('portalArqLogin').style.display = '';
-    document.getElementById('portalArqDash').style.display = 'none';
-    document.getElementById('portalArqDetail').style.display = 'none';
-    document.getElementById('portalArqTitle').textContent = 'Portal Arquitecto';
-    document.getElementById('paError').style.display = 'none';
-  }
 
   function openPortalArq() {
     modal.classList.add('open');
