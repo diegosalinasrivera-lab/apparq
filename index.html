@@ -1474,6 +1474,7 @@
           <div class="wiz-dot"></div>
           <div class="wiz-dot"></div>
           <div class="wiz-dot"></div>
+          <div class="wiz-dot"></div>
         </div>
       </div>
       <button class="wiz-close" id="wizClose" aria-label="Cerrar">✕</button>
@@ -1523,6 +1524,21 @@
             <label class="wiz-label">Dirección de la propiedad</label>
             <input class="wiz-input" id="wizAddr" type="text" readonly />
           </div>
+        </div>
+      </div>
+
+      <!-- ── STEP ARQ: Elige tu arquitecto ── -->
+      <div class="wiz-step" id="wiz-sarq">
+        <div class="wiz-ico">👷</div>
+        <div class="wiz-title">Elige tu arquitecto</div>
+        <div class="wiz-sub" id="wizArqPickSub">Selecciona un arquitecto disponible en tu comuna, o continúa y te asignamos uno automáticamente.</div>
+
+        <div id="wizArqPickLoading" style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem;">Buscando arquitectos disponibles…</div>
+        <div id="wizArqPickList" style="display:none;flex-direction:column;gap:0.6rem;max-height:300px;overflow-y:auto;"></div>
+
+        <div id="wizArqPickSelected" style="display:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#166534;margin-top:0.75rem;">
+          ✓ Arquitecto seleccionado: <strong id="wizArqPickName"></strong>
+          <button id="wizArqPickClear" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:0.75rem;margin-left:0.5rem;">Cambiar</button>
         </div>
       </div>
 
@@ -2446,11 +2462,14 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
         payment_id: paymentId || null,
       });
 
-      /* Abrir wizard directo en step 3 (asignación arquitecto) */
+      /* Abrir wizard directo en step 4 (asignación arquitecto) */
       document.addEventListener('DOMContentLoaded', () => {});
       openWizard();
-      wizStep = 3;
-      renderWizStep(3, false);
+      /* Restaurar arquitecto pre-seleccionado si venía guardado */
+      if (saved.selectedArqId)   S.selectedArqId   = saved.selectedArqId;
+      if (saved.selectedArqData) S.selectedArqData = saved.selectedArqData;
+      wizStep = 4;
+      renderWizStep(4, false);
 
       /* Pre-rellenar campos del wizard con datos guardados */
       setTimeout(() => {
@@ -2984,13 +3003,15 @@ function showToast(msg) {
    WIZARD — TRAMITE FLOW
 ══════════════════════════════════════════════════ */
 const WIZ_STEPS = [
-  { badge: 'Paso 1 de 5 · Registro',    pct: 20  },
-  { badge: 'Paso 2 de 5 · Contrato',    pct: 40  },
-  { badge: 'Paso 3 de 5 · Pago',        pct: 60  },
-  { badge: 'Paso 4 de 5 · Asignación',  pct: 80  },
-  { badge: 'Paso 5 de 5 · Seguimiento', pct: 100 },
+  { badge: 'Paso 1 de 6 · Registro',    pct: 17  },
+  { badge: 'Paso 2 de 6 · Arquitecto',  pct: 33  },
+  { badge: 'Paso 3 de 6 · Contrato',    pct: 50  },
+  { badge: 'Paso 4 de 6 · Pago',        pct: 67  },
+  { badge: 'Paso 5 de 6 · Asignación',  pct: 83  },
+  { badge: 'Paso 6 de 6 · Seguimiento', pct: 100 },
 ];
-let wizStep = 0;   // 0–4
+const STEP_IDS = ['wiz-s1', 'wiz-sarq', 'wiz-s2', 'wiz-s3', 'wiz-s4', 'wiz-s5'];
+let wizStep = 0;   // 0–5
 let sigHasDraw = false;
 let selectedPayMethod = 'webpay';
 
@@ -3006,6 +3027,8 @@ function openWizard() {
   wizStep = 0;
   sigHasDraw = false;
   selectedPayMethod = 'webpay';
+  S.selectedArqId   = null;
+  S.selectedArqData = null;
 
   /* pre-fill summary & fields */
   prefillWizard();
@@ -3124,7 +3147,7 @@ function renderWizStep(idx, goBack) {
     el.classList.remove('active', 'slide-back');
   });
 
-  const target = document.getElementById('wiz-s' + (idx + 1));
+  const target = document.getElementById(STEP_IDS[idx]);
   target.classList.add('active');
   if (goBack) target.classList.add('slide-back');
 
@@ -3137,24 +3160,20 @@ function renderWizStep(idx, goBack) {
     d.className = 'wiz-dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
   });
 
-  /* navigation buttons */
-  wizBack.style.display = idx > 0 ? '' : 'none';
-
   const isLast = idx === WIZ_STEPS.length - 1;
   wizNext.textContent = isLast ? '¡Ir a mi proyecto! →' : 'Continuar →';
   wizNext.disabled = false;
 
-  /* En el step de pago ocultamos el botón Continuar —
-     el avance solo ocurre vía retorno aprobado de Mercado Pago */
-  wizNext.style.display = (idx === 2) ? 'none' : '';
-  wizBack.style.display = (idx === 2 || idx === 3 || idx === 4) ? 'none' : (idx > 0 ? '' : 'none');
+  /* Pago (idx=3): ocultar Continuar — avance solo vía retorno MP */
+  wizNext.style.display = (idx === 3) ? 'none' : '';
+  wizBack.style.display = (idx === 3 || idx === 4 || idx === 5) ? 'none' : (idx > 0 ? '' : 'none');
 
   /* step-specific setup */
-  if (idx === 1) setupSignaturePad();
-  if (idx === 2) setupPaymentStep();
-  if (idx === 3) loadArchitectForCommune(S.commune || 'Santiago');
-  if (idx === 4) {
-    /* On the last step, change button to close */
+  if (idx === 1) loadArchitectPicker();
+  if (idx === 2) setupSignaturePad();
+  if (idx === 3) setupPaymentStep();
+  if (idx === 4) loadArchitectForCommune(S.commune || 'Santiago');
+  if (idx === 5) {
     wizNext.textContent = 'Cerrar y volver al inicio';
   }
 }
@@ -3207,7 +3226,7 @@ function wizCanAdvance() {
       shakeNext(); showToast('RUT inválido — revisa el dígito verificador'); return false;
     }
   }
-  if (wizStep === 1) {
+  if (wizStep === 2) {
     if (!document.getElementById('wizTos').checked) {
       shakeNext(); showToast('Debes aceptar los términos del contrato');
       return false;
@@ -3312,6 +3331,8 @@ function setupPaymentStep() {
         svc: S.svc, m2: S.m2, mat: S.mat, dest: S.dest,
         commune, clp, e1,
         firma_data: firmaData,
+        selectedArqId:   S.selectedArqId   || null,
+        selectedArqData: S.selectedArqData || null,
       }));
 
       const res  = await fetch('/.netlify/functions/create-payment', {
@@ -3434,13 +3455,30 @@ function markJourneyDone() {
    Consulta la función get-architect y rellena la card
 ══════════════════════════════════════════════════ */
 async function loadArchitectForCommune(commune) {
-  /* Reset UI a estado "buscando" */
   document.getElementById('wizArqAvatar').textContent = '⏳';
   document.getElementById('wizArqName').textContent   = 'Buscando arquitecto…';
   document.getElementById('wizArqRole').textContent   = '';
   document.getElementById('wizArqStars').textContent  = '';
   document.getElementById('wizArqBadges').innerHTML   = `<span class="arq-badge" id="wizArqComune">${commune}</span>`;
   document.getElementById('wizArqSub').textContent    = 'Buscando arquitecto disponible en tu comuna…';
+
+  /* Si el cliente eligió arquitecto, usarlo directamente */
+  if (S.selectedArqData) {
+    const arq = S.selectedArqData;
+    const nombreCompleto = `${arq.nombre} ${arq.apellido}`;
+    document.getElementById('wizArqAvatar').innerHTML = arq.foto_url
+      ? `<img src="${arq.foto_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
+      : '👷';
+    document.getElementById('wizArqName').textContent  = nombreCompleto;
+    document.getElementById('wizArqRole').textContent  = 'Arquitecto elegido · APPARQ';
+    document.getElementById('wizArqSub').textContent   = 'Arquitecto seleccionado. Se contactará contigo en las próximas 24 horas hábiles a través de apparq.cl.';
+    if (arq.calificacion) {
+      document.getElementById('wizArqStars').textContent = '★'.repeat(Math.round(arq.calificacion)) + '☆'.repeat(5 - Math.round(arq.calificacion));
+    }
+    /* Enviar confirmación con arquitecto elegido */
+    _sendTramiteConfirmation(commune, arq);
+    return;
+  }
 
   try {
     const res  = await fetch(`/.netlify/functions/get-architect?comuna=${encodeURIComponent(commune)}`);
@@ -3472,7 +3510,26 @@ async function loadArchitectForCommune(commune) {
     document.getElementById('wizArqSub').textContent    =
       `Tu arquitecto ha sido asignado. Se contactará contigo en las próximas 24 horas hábiles a través de apparq.cl.`;
 
-    /* Enviar emails de confirmación */
+    /* Badges */
+    const badges = document.getElementById('wizArqBadges');
+    badges.innerHTML = '';
+    (arq.tramites || []).forEach(t => {
+      const b = document.createElement('span'); b.className = 'arq-badge'; b.textContent = t; badges.appendChild(b);
+    });
+    const cb = document.createElement('span'); cb.className = 'arq-badge'; cb.id = 'wizArqComune';
+    cb.textContent = matchTexts[data.matchType] || data.matchCommune; badges.appendChild(cb);
+
+    _sendTramiteConfirmation(commune, arq);
+  } catch (err) {
+    console.warn('No se pudo cargar arquitecto:', err);
+    document.getElementById('wizArqAvatar').textContent = '👷';
+    document.getElementById('wizArqName').textContent   = 'Arquitecto APPARQ';
+    document.getElementById('wizArqRole').textContent   = 'Asignación confirmada por email';
+    document.getElementById('wizArqSub').textContent    = 'Te confirmaremos tu arquitecto por email en las próximas 2 horas hábiles.';
+  }
+}
+
+function _sendTramiteConfirmation(commune, arq) {
     const { clp } = calcTotal();
     const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
     fetch('/.netlify/functions/confirm-tramite', {
@@ -3485,49 +3542,105 @@ async function loadArchitectForCommune(commune) {
         telefono:  document.getElementById('wizTel')?.value      || '',
         rut:       document.getElementById('wizRut')?.value      || '',
         direccion: document.getElementById('wizAddr')?.value     || '',
-        svc:       S.svc,
-        m2:        S.m2,
-        commune,
-        clp,
+        svc: S.svc, m2: S.m2, commune, clp,
         e1: Math.round(clp * e1pct),
         arquitecto: { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites, foto_url: arq.foto_url || null, calificacion: arq.calificacion || null },
         firma_data: S.firma_data || null,
         payment_id: S.payment_id || null,
       }),
-    }).then(r => r.json()).then(data => {
-      if (data.project_number) {
-        /* Mostrar número de trámite en el step 4 */
+    }).then(r => r.json()).then(d => {
+      if (d.project_number) {
         const infoBox = document.getElementById('wizArqInfo');
         if (infoBox) {
           const numBadge = document.createElement('div');
           numBadge.style.cssText = 'background:#FFF7ED;border:2px solid #E8503A;border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.75rem;text-align:center;';
-          numBadge.innerHTML = `<div style="font-size:0.7rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Tu número de trámite</div><div style="font-size:1.3rem;font-weight:900;color:#E8503A;letter-spacing:2px;">${data.project_number}</div><div style="font-size:0.7rem;color:#78350F;margin-top:3px;">Guárdalo para revisar el avance en <strong>apparq.cl → Mi trámite</strong></div>`;
+          numBadge.innerHTML = `<div style="font-size:0.7rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Tu número de trámite</div><div style="font-size:1.3rem;font-weight:900;color:#E8503A;letter-spacing:2px;">${d.project_number}</div><div style="font-size:0.7rem;color:#78350F;margin-top:3px;">Guárdalo para revisar el avance en <strong>apparq.cl → Mi trámite</strong></div>`;
           infoBox.parentNode.insertBefore(numBadge, infoBox);
         }
       }
     }).catch(err => console.warn('confirm-tramite error:', err));
+}
 
-    /* Badges: trámites + comuna match */
-    const badges = document.getElementById('wizArqBadges');
-    badges.innerHTML = '';
-    (arq.tramites || []).forEach(t => {
-      const b = document.createElement('span');
-      b.className = 'arq-badge';
-      b.textContent = t;
-      badges.appendChild(b);
+/* ══════════════════════════════════════════════════
+   ARCHITECT PICKER — step 1 (opcional)
+══════════════════════════════════════════════════ */
+async function loadArchitectPicker() {
+  const listEl    = document.getElementById('wizArqPickList');
+  const loadingEl = document.getElementById('wizArqPickLoading');
+  const selEl     = document.getElementById('wizArqPickSelected');
+
+  listEl.style.display    = 'none';
+  loadingEl.style.display = '';
+  selEl.style.display     = 'none';
+
+  /* Si ya hay uno seleccionado, mostrarlo */
+  if (S.selectedArqData) {
+    document.getElementById('wizArqPickName').textContent = `${S.selectedArqData.nombre} ${S.selectedArqData.apellido}`;
+    selEl.style.display     = '';
+    loadingEl.style.display = 'none';
+  }
+
+  try {
+    const commune = S.commune || '';
+    const tramite = S.svc    || '';
+    const res  = await fetch(`/.netlify/functions/list-architects?comuna=${encodeURIComponent(commune)}&tramite=${encodeURIComponent(tramite)}`);
+    const data = await res.json();
+    const arqs = data.architects || [];
+
+    loadingEl.style.display = 'none';
+
+    if (!arqs.length) {
+      loadingEl.style.display = '';
+      loadingEl.textContent = 'No hay arquitectos registrados aún en tu comuna — te asignaremos uno automáticamente.';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    arqs.forEach(arq => {
+      const isSelected = S.selectedArqId === arq.id;
+      const stars = arq.calificacion ? '★'.repeat(Math.round(arq.calificacion)) + '☆'.repeat(5 - Math.round(arq.calificacion)) : '';
+      const card = document.createElement('div');
+      card.style.cssText = `display:flex;align-items:center;gap:0.85rem;padding:0.75rem 1rem;border:2px solid ${isSelected ? '#E8503A' : '#e2e8f0'};border-radius:10px;cursor:pointer;background:${isSelected ? '#fff5f3' : '#fff'};transition:border-color 0.2s,background 0.2s;`;
+      const avatarHtml = arq.foto_url
+        ? `<img src="${arq.foto_url}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
+        : `<div style="width:46px;height:46px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👷</div>`;
+      card.innerHTML = `
+        ${avatarHtml}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.88rem;font-weight:700;color:#1a1a2e;">${arq.nombre} ${arq.apellido}</div>
+          ${stars ? `<div style="font-size:0.8rem;color:#E8503A;">${stars}</div>` : ''}
+          ${arq.experiencia ? `<div style="font-size:0.75rem;color:#718096;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${arq.experiencia}</div>` : ''}
+        </div>
+        <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${isSelected ? '#E8503A' : '#cbd5e0'};background:${isSelected ? '#E8503A' : '#fff'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          ${isSelected ? '<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </div>`;
+      card.onclick = () => {
+        S.selectedArqId   = arq.id;
+        S.selectedArqData = arq;
+        document.getElementById('wizArqPickName').textContent = `${arq.nombre} ${arq.apellido}`;
+        selEl.style.display = '';
+        /* Refrescar cards */
+        loadArchitectPicker();
+      };
+      listEl.appendChild(card);
     });
-    const comunaBadge = document.createElement('span');
-    comunaBadge.className = 'arq-badge';
-    comunaBadge.id = 'wizArqComune';
-    comunaBadge.textContent = matchTexts[data.matchType] || data.matchCommune;
-    badges.appendChild(comunaBadge);
+    listEl.style.display = 'flex';
 
   } catch (err) {
-    console.warn('No se pudo cargar arquitecto:', err);
-    document.getElementById('wizArqAvatar').textContent = '👷';
-    document.getElementById('wizArqName').textContent   = 'Arquitecto APPARQ';
-    document.getElementById('wizArqRole').textContent   = 'Asignación confirmada por email';
-    document.getElementById('wizArqSub').textContent    = 'Te confirmaremos tu arquitecto por email en las próximas 2 horas hábiles.';
+    console.warn('Error cargando arquitectos:', err);
+    loadingEl.style.display = '';
+    loadingEl.textContent = 'No se pudo cargar la lista — continuaremos con asignación automática.';
+  }
+
+  /* Botón "Cambiar" limpia la selección */
+  const clearBtn = document.getElementById('wizArqPickClear');
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      S.selectedArqId   = null;
+      S.selectedArqData = null;
+      selEl.style.display = 'none';
+      loadArchitectPicker();
+    };
   }
 }
 
