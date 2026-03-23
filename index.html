@@ -1990,54 +1990,36 @@
 
     <!-- Login form -->
     <div id="portalArqLogin">
-      <div id="portalArqLoginTabs" style="display:flex;gap:0.5rem;margin-bottom:1.1rem;">
-        <button class="arq-tab active" id="tabArqLogin" onclick="switchArqTab('login')">Ingresar</button>
-        <button class="arq-tab" id="tabArqSignup" onclick="switchArqTab('signup')">Crear cuenta</button>
-      </div>
-
-      <!-- Signup hint -->
-      <div id="paSignupHint" style="display:none;font-size:0.76rem;color:#92400E;margin-bottom:0.85rem;background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:var(--radius);padding:0.7rem 0.9rem;line-height:1.55;">
-        <strong>¿Primera vez?</strong> Usa el mismo email con que te inscribiste como arquitecto en APPARQ. El sistema te reconocerá automáticamente y tendrás acceso a tus proyectos asignados.
-      </div>
-
       <div class="mform-group">
         <label class="mform-label">Email profesional</label>
         <input class="mform-input" id="paEmail" type="email" placeholder="tu@correo.cl" autocomplete="email" />
-        <div id="paEmailHint" style="font-size:0.72rem;margin-top:3px;"></div>
       </div>
-
       <div class="mform-group">
         <label class="mform-label">Contraseña</label>
-        <input class="mform-input" id="paPass" type="password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" />
+        <input class="mform-input" id="paPass" type="password" placeholder="Tu contraseña" autocomplete="current-password" />
       </div>
-
-      <!-- Strength bar + confirm (solo en signup) -->
-      <div id="paPassStrengthWrap" style="display:none;margin-bottom:0.75rem;">
-        <div style="display:flex;gap:4px;margin-bottom:5px;">
-          <div class="pass-bar" id="passBar1"></div>
-          <div class="pass-bar" id="passBar2"></div>
-          <div class="pass-bar" id="passBar3"></div>
-          <div class="pass-bar" id="passBar4"></div>
-        </div>
-        <div id="paPassStrengthMsg" style="font-size:0.72rem;color:var(--muted);"></div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:3px;">Debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo (ej: !@#$)</div>
-      </div>
-
-      <div class="mform-group" id="paConfirmGroup" style="display:none;">
-        <label class="mform-label">Confirmar contraseña</label>
-        <input class="mform-input" id="paPassConfirm" type="password" placeholder="Repite tu contraseña" autocomplete="new-password" />
-        <div id="paConfirmHint" style="font-size:0.72rem;margin-top:3px;"></div>
-      </div>
-
       <button id="paAuthBtn" class="btn-modal-submit" style="width:100%;margin-top:0.25rem;">Ingresar →</button>
       <div id="paError" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius);color:#DC2626;font-size:0.8rem;margin-top:0.6rem;padding:0.6rem 0.85rem;text-align:center;"></div>
+      <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.75rem;">¿No tienes cuenta? Inscríbete en <strong>Quiero ser parte</strong></p>
     </div>
 
     <!-- Projects dashboard -->
     <div id="portalArqDash" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <div style="font-size:0.85rem;font-weight:700;color:var(--dark);" id="paWelcome"></div>
-        <button id="paCerrarSesion" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:var(--muted);">Cerrar sesión</button>
+      <!-- Header: photo + welcome + logout -->
+      <div style="display:flex;align-items:center;gap:0.85rem;margin-bottom:1rem;">
+        <div style="position:relative;flex-shrink:0;">
+          <div id="paPhotoCircle" style="width:52px;height:52px;border-radius:50%;background:#e2e8f0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--border);">
+            <img id="paPhotoImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;" />
+            <span id="paPhotoPlaceholder">👷</span>
+          </div>
+          <label for="paPhotoInput" title="Subir foto de perfil" style="position:absolute;bottom:-2px;right:-2px;background:var(--orange);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;border:1.5px solid #fff;">📷</label>
+          <input type="file" id="paPhotoInput" accept="image/*" style="display:none;" />
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="paWelcome"></div>
+          <div style="font-size:0.7rem;color:var(--muted);">Portal Arquitecto · APPARQ</div>
+        </div>
+        <button id="paCerrarSesion" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:var(--muted);flex-shrink:0;">Salir</button>
       </div>
       <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:420px;overflow-y:auto;"></div>
     </div>
@@ -2573,17 +2555,19 @@ const closeModal = () => {
 };
 
 document.getElementById('navArqBtn').onclick = () => {
-  /* Si ya tiene sesión activa → abrir portal directo */
+  const portalModal = document.getElementById('portalArqModal');
+  portalModal.classList.add('open');
+  document.body.style.overflow = 'hidden';
   if (localStorage.getItem('arq_token')) {
-    const portalModal = document.getElementById('portalArqModal');
-    if (portalModal) {
-      portalModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      loadArqDash();
-    }
-    return;
+    loadArqDash();
+  } else {
+    document.getElementById('portalArqLogin').style.display = '';
+    document.getElementById('portalArqDash').style.display = 'none';
+    document.getElementById('portalArqDetail').style.display = 'none';
+    document.getElementById('paError').style.display = 'none';
+    document.getElementById('paEmail').value = '';
+    document.getElementById('paPass').value = '';
   }
-  openModal();
 };
 document.getElementById('bannerArqBtn').onclick = openModal;
 document.getElementById('modalClose').onclick = closeModal;
@@ -3732,108 +3716,17 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     /* Reabrir modal de inscripción si venía del flujo de inscripción */
   }
 
-  /* ── Password strength ─────────────────────────── */
-  function checkPasswordStrength(pass) {
-    let score = 0;
-    if (pass.length >= 8)                          score++;
-    if (/[A-Z]/.test(pass))                        score++;
-    if (/[0-9]/.test(pass))                        score++;
-    if (/[^A-Za-z0-9]/.test(pass))                 score++;
-    const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
-    const msgs   = ['', 'Muy débil', 'Débil', 'Aceptable', 'Contraseña segura ✓'];
-    for (let i = 1; i <= 4; i++) {
-      const bar = document.getElementById('passBar' + i);
-      bar.style.background = i <= score ? colors[score] : '#e2e8f0';
-    }
-    document.getElementById('paPassStrengthMsg').textContent = pass.length ? msgs[score] : '';
-    document.getElementById('paPassStrengthMsg').style.color = colors[score] || 'var(--muted)';
-    return score;
-  }
-
-  function paEmailValid(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-  }
-
-  document.getElementById('paEmail').addEventListener('blur', () => {
-    const v = document.getElementById('paEmail').value.trim();
-    const hint = document.getElementById('paEmailHint');
-    if (!v) { hint.textContent = ''; return; }
-    if (!paEmailValid(v)) {
-      hint.textContent = 'Email inválido';
-      hint.style.color = '#ef4444';
-    } else {
-      hint.textContent = '';
-    }
-  });
-
-  document.getElementById('paPass').addEventListener('input', () => {
-    const action = document.getElementById('paAuthBtn').dataset.action;
-    if (action === 'signup') checkPasswordStrength(document.getElementById('paPass').value);
-    /* Confirm hint */
-    const confirm = document.getElementById('paPassConfirm').value;
-    const hint = document.getElementById('paConfirmHint');
-    if (confirm) {
-      const match = confirm === document.getElementById('paPass').value;
-      hint.textContent = match ? 'Las contraseñas coinciden ✓' : 'No coinciden';
-      hint.style.color  = match ? '#22c55e' : '#ef4444';
-    }
-  });
-
-  document.getElementById('paPassConfirm').addEventListener('input', () => {
-    const pass    = document.getElementById('paPass').value;
-    const confirm = document.getElementById('paPassConfirm').value;
-    const hint    = document.getElementById('paConfirmHint');
-    if (!confirm) { hint.textContent = ''; return; }
-    const match = confirm === pass;
-    hint.textContent = match ? 'Las contraseñas coinciden ✓' : 'No coinciden';
-    hint.style.color  = match ? '#22c55e' : '#ef4444';
-  });
-
-  window.switchArqTab = function(tab) {
-    document.getElementById('tabArqLogin').classList.toggle('active', tab === 'login');
-    document.getElementById('tabArqSignup').classList.toggle('active', tab === 'signup');
-    document.getElementById('paAuthBtn').textContent = tab === 'login' ? 'Ingresar →' : 'Crear cuenta →';
-    document.getElementById('paSignupHint').style.display = tab === 'signup' ? '' : 'none';
-    document.getElementById('paPassStrengthWrap').style.display = tab === 'signup' ? '' : 'none';
-    document.getElementById('paConfirmGroup').style.display     = tab === 'signup' ? '' : 'none';
-    document.getElementById('paAuthBtn').dataset.action = tab;
-    document.getElementById('paError').style.display = 'none';
-    /* Reset strength bars when switching tabs */
-    if (tab === 'login') {
-      for (let i = 1; i <= 4; i++) document.getElementById('passBar' + i).style.background = '#e2e8f0';
-      document.getElementById('paPassStrengthMsg').textContent = '';
-    }
-  };
-  switchArqTab('login');
-
   document.getElementById('paAuthBtn').onclick = async () => {
-    const email   = document.getElementById('paEmail').value.trim();
-    const pass    = document.getElementById('paPass').value;
-    const confirm = document.getElementById('paPassConfirm').value;
-    const action  = document.getElementById('paAuthBtn').dataset.action || 'login';
-    const errEl   = document.getElementById('paError');
+    const email  = document.getElementById('paEmail').value.trim();
+    const pass   = document.getElementById('paPass').value;
+    const errEl  = document.getElementById('paError');
     errEl.style.display = 'none';
 
     if (!email || !pass) {
       errEl.textContent = 'Completa email y contraseña.'; errEl.style.display = 'block'; return;
     }
-    if (!paEmailValid(email)) {
-      errEl.textContent = 'Ingresa un email válido.'; errEl.style.display = 'block'; return;
-    }
-
-    if (action === 'signup') {
-      const strength = checkPasswordStrength(pass);
-      if (strength < 3) {
-        errEl.textContent = 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.';
-        errEl.style.display = 'block'; return;
-      }
-      if (pass !== confirm) {
-        errEl.textContent = 'Las contraseñas no coinciden.'; errEl.style.display = 'block'; return;
-      }
-    } else {
-      if (pass.length < 6) {
-        errEl.textContent = 'Contraseña incorrecta o demasiado corta.'; errEl.style.display = 'block'; return;
-      }
+    if (pass.length < 6) {
+      errEl.textContent = 'Contraseña inválida.'; errEl.style.display = 'block'; return;
     }
 
     const btn = document.getElementById('paAuthBtn');
@@ -3842,24 +3735,15 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     try {
       const res  = await fetch('/.netlify/functions/auth', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, email, password: pass }),
+        body: JSON.stringify({ action: 'login', email, password: pass }),
       });
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        let msg = data.error || 'Error desconocido.';
-        if (msg.includes('email_not_confirmed') || msg.includes('confirmation')) {
-          msg = 'Tu cuenta requiere confirmación de email. Contacta a hola@apparq.cl para activarla.';
-        } else if (msg.includes('Invalid login')) {
-          msg = 'Email o contraseña incorrectos.';
-        } else if (msg.includes('already registered') || msg.includes('already exists')) {
-          msg = 'Este email ya tiene una cuenta. Usa "Ingresar".';
-        }
-        errEl.textContent = msg; errEl.style.display = 'block'; return;
+        errEl.textContent = 'Email o contraseña incorrectos.'; errEl.style.display = 'block'; return;
       }
-
       if (data.role !== 'architect') {
-        errEl.textContent = 'Este email no está registrado como arquitecto en APPARQ. Escríbenos a hola@apparq.cl para registrarte.';
+        errEl.textContent = 'Este email no está registrado como arquitecto en APPARQ.';
         errEl.style.display = 'block'; return;
       }
 
@@ -3871,8 +3755,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     } catch(e) {
       errEl.textContent = 'Error de conexión. Intenta nuevamente.'; errEl.style.display = 'block';
     } finally {
-      btn.disabled = false;
-      btn.textContent = (document.getElementById('paAuthBtn').dataset.action === 'login') ? 'Ingresar →' : 'Crear cuenta →';
+      btn.disabled = false; btn.textContent = 'Ingresar →';
     }
   };
 
@@ -3882,7 +3765,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     localStorage.removeItem('arq_nombre');
     document.getElementById('portalArqDash').style.display = 'none';
     document.getElementById('portalArqLogin').style.display = '';
-    switchArqTab('login');
+    document.getElementById('paError').style.display = 'none';
+    document.getElementById('paEmail').value = '';
+    document.getElementById('paPass').value = '';
   };
 
   document.getElementById('paBackToList').onclick = () => {
@@ -3896,6 +3781,41 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('portalArqLogin').style.display = 'none';
     document.getElementById('portalArqDash').style.display = '';
     document.getElementById('paWelcome').textContent = `Hola, ${nombre}`;
+
+    /* ── Photo upload handler ── */
+    const photoInput = document.getElementById('paPhotoInput');
+    photoInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      /* Compress to 200x200 */
+      const base64 = await new Promise(resolve => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = 200;
+          const ctx = canvas.getContext('2d');
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, 200, 200);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.src = url;
+      });
+      /* Show preview immediately */
+      const imgEl = document.getElementById('paPhotoImg');
+      imgEl.src = base64; imgEl.style.display = 'block';
+      document.getElementById('paPhotoPlaceholder').style.display = 'none';
+      /* Save to backend */
+      try {
+        await fetch('/.netlify/functions/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update-photo', token, foto_url: base64 }),
+        });
+      } catch(err) { console.warn('Error guardando foto:', err); }
+    };
+
     document.getElementById('paProjects').innerHTML = '<div style="color:var(--muted);font-size:0.82rem;">Cargando proyectos…</div>';
 
     try {
@@ -3911,7 +3831,17 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         return;
       }
 
-      renderArqProjects(data.projects, token);
+      const projects = data.projects || [];
+
+      /* Show profile photo if exists */
+      if (data.architect?.foto_url) {
+        const imgEl = document.getElementById('paPhotoImg');
+        imgEl.src = data.architect.foto_url;
+        imgEl.style.display = 'block';
+        document.getElementById('paPhotoPlaceholder').style.display = 'none';
+      }
+
+      renderArqProjects(projects, token);
     } catch(e) {
       document.getElementById('paProjects').innerHTML = '<div style="color:#DC2626;font-size:0.82rem;">Error de conexión.</div>';
     }

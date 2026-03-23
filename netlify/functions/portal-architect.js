@@ -74,7 +74,7 @@ exports.handler = async (event) => {
 
     /* Verificar que el email existe en architects */
     const arqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}&select=id,nombre,apellido&limit=1`,
+      `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}&select=id,nombre,apellido,foto_url&limit=1`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     const arqData = await arqRes.json();
@@ -220,6 +220,30 @@ exports.handler = async (event) => {
       );
 
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ messages }) };
+    }
+
+    /* ── UPDATE-PHOTO ─────────────────────────── */
+    if (action === 'update-photo') {
+      const { foto_url } = rest;
+      if (!foto_url) {
+        return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Falta foto_url' }) };
+      }
+      const updRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify({ foto_url }),
+        }
+      );
+      if (!updRes.ok) {
+        return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al guardar foto' }) };
+      }
+      return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
     }
 
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Acción no reconocida' }) };
