@@ -2762,12 +2762,10 @@ function isReady() {
 }
 
 function calcTotal() {
-  const arch    = ARCH[S.svc] || 0;
-  const spec    = SPEC[S.dest] ?? 0;
-  const stru    = STRU[S.mat] ?? 0;
-  const ufRaw   = (arch + spec + stru) * S.m2;
-  const ufMin   = ARCH_MIN[S.svc] || 0;
-  const uf      = Math.max(ufRaw, ufMin);
+  const arch  = ARCH[S.svc] || 0;
+  const ufRaw = arch * S.m2;
+  const ufMin = ARCH_MIN[S.svc] || 0;
+  const uf    = Math.max(ufRaw, ufMin);
   return { uf, clp: uf * S.uf };
 }
 
