@@ -433,6 +433,8 @@
       box-shadow: 0 0 0 3px var(--orange-light);
     }
     .mform-input::placeholder { color: var(--light); }
+    .mform-input.input-ok  { border-color: #22c55e !important; background: #f0fdf4 !important; }
+    .mform-input.input-err { border-color: #ef4444 !important; background: #fef2f2 !important; }
     .mform-select { appearance: none; cursor: pointer; }
     .mform-divider {
       font-size: 0.68rem; font-weight: 700; color: var(--light);
@@ -885,6 +887,17 @@
     .wiz-input:focus  { border-color: var(--orange); background: #fff; box-shadow: 0 0 0 3px var(--orange-light); }
     .wiz-input::placeholder { color: var(--light); }
     .wiz-input[readonly] { opacity: 0.65; cursor: default; }
+
+    /* ── Validación campos ─────────────────────── */
+    .input-ok  { border-color: #22c55e !important; background: #f0fdf4 !important; }
+    .input-err { border-color: #ef4444 !important; background: #fef2f2 !important; }
+    .field-hint {
+      font-size: 0.68rem; margin-top: 2px; min-height: 1rem;
+      display: flex; align-items: center; gap: 0.25rem;
+    }
+    .hint-ok  { color: #16a34a; }
+    .hint-err { color: #dc2626; }
+
 
     /* contract */
     .contract-box {
@@ -1439,15 +1452,18 @@
           <div class="wiz-group">
             <label class="wiz-label">Correo electrónico</label>
             <input class="wiz-input" id="wizEmail" type="email" placeholder="tu@correo.cl" autocomplete="email" />
+            <div class="field-hint" id="hintWizEmail"></div>
           </div>
           <div class="wiz-row">
             <div class="wiz-group">
               <label class="wiz-label">Teléfono</label>
               <input class="wiz-input" id="wizTel" type="tel" placeholder="+56 9 XXXX XXXX" autocomplete="tel" />
+              <div class="field-hint" id="hintWizTel"></div>
             </div>
             <div class="wiz-group">
               <label class="wiz-label">RUT</label>
-              <input class="wiz-input" id="wizRut" type="text" placeholder="12.345.678-9" />
+              <input class="wiz-input" id="wizRut" type="text" placeholder="12.345.678-9" maxlength="12" />
+              <div class="field-hint" id="hintWizRut"></div>
             </div>
           </div>
           <div class="wiz-group">
@@ -1662,16 +1678,19 @@
       </div>
       <div class="mform-group">
         <label class="mform-label">Correo electrónico</label>
-        <input class="mform-input" name="email" type="email" placeholder="arquitecto@correo.cl" required />
+        <input class="mform-input" id="arqEmail" name="email" type="email" placeholder="arquitecto@correo.cl" required />
+        <div class="field-hint" id="hintArqEmail"></div>
       </div>
       <div class="mform-row">
         <div class="mform-group">
           <label class="mform-label">Teléfono</label>
-          <input class="mform-input" name="telefono" type="tel" placeholder="+56 9 XXXX XXXX" />
+          <input class="mform-input" id="arqTel" name="telefono" type="tel" placeholder="+56 9 XXXX XXXX" />
+          <div class="field-hint" id="hintArqTel"></div>
         </div>
         <div class="mform-group">
           <label class="mform-label">RUT</label>
-          <input class="mform-input" name="rut" type="text" placeholder="12.345.678-9" />
+          <input class="mform-input" id="arqRut" name="rut" type="text" placeholder="12.345.678-9" maxlength="12" />
+          <div class="field-hint" id="hintArqRut"></div>
         </div>
       </div>
       <div class="mform-row">
@@ -2000,6 +2019,117 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* ════════════════════════════════════════════════
+   VALIDACIÓN EN TIEMPO REAL
+════════════════════════════════════════════════ */
+
+/* ── Utilidades RUT chileno ─────────────────── */
+function rutFormat(raw) {
+  let v = raw.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (v.length < 2) return v;
+  const dv   = v.slice(-1);
+  let body   = v.slice(0, -1);
+  body = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return body + '-' + dv;
+}
+
+function rutDigit(body) {
+  let sum = 0, mul = 2;
+  for (let i = String(body).replace(/\./g, '').length - 1; i >= 0; i--) {
+    sum += parseInt(String(body).replace(/\./g, '')[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  const r = 11 - (sum % 11);
+  return r === 11 ? '0' : r === 10 ? 'K' : String(r);
+}
+
+function rutValid(rut) {
+  const clean = rut.replace(/[.\-]/g, '').toUpperCase();
+  if (clean.length < 2) return false;
+  const body = clean.slice(0, -1);
+  const dv   = clean.slice(-1);
+  if (!/^\d+$/.test(body)) return false;
+  const num = parseInt(body);
+  if (num < 1000000 || num > 99999999) return false;
+  return rutDigit(num) === dv;
+}
+
+function emailValid(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
+}
+
+function telValid(t) {
+  return /^(\+?56)?[\s\-]?9[\s\-]?\d{4}[\s\-]?\d{4}$/.test(t.trim());
+}
+
+/* ── Aplicar estado visual ──────────────────── */
+function setField(input, hintEl, ok, msg) {
+  if (!input) return;
+  input.classList.toggle('input-ok',  ok === true);
+  input.classList.toggle('input-err', ok === false);
+  if (hintEl) {
+    hintEl.className = 'field-hint ' + (ok === true ? 'hint-ok' : ok === false ? 'hint-err' : '');
+    hintEl.textContent = msg || '';
+  }
+}
+
+/* ── Watcher para un campo RUT (auto-formato) ── */
+function watchRut(inputId, hintId) {
+  const inp  = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  if (!inp) return;
+  inp.addEventListener('input', () => {
+    const formatted = rutFormat(inp.value);
+    inp.value = formatted;
+    if (formatted.length < 4) { setField(inp, hint, null, ''); return; }
+    const ok = rutValid(formatted);
+    setField(inp, hint, ok, ok ? '✓ RUT válido' : '✗ RUT inválido — revisa el dígito verificador');
+  });
+  inp.addEventListener('blur', () => {
+    if (!inp.value) return;
+    const ok = rutValid(inp.value);
+    setField(inp, hint, ok, ok ? '✓ RUT válido' : '✗ RUT inválido — revisa el dígito verificador');
+  });
+}
+
+function watchEmail(inputId, hintId) {
+  const inp  = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  if (!inp) return;
+  inp.addEventListener('blur', () => {
+    if (!inp.value) { setField(inp, hint, null, ''); return; }
+    const ok = emailValid(inp.value);
+    setField(inp, hint, ok, ok ? '✓ Email válido' : '✗ Formato de email inválido');
+  });
+  inp.addEventListener('input', () => {
+    if (inp.classList.contains('input-err') && emailValid(inp.value))
+      setField(inp, hint, true, '✓ Email válido');
+  });
+}
+
+function watchTel(inputId, hintId) {
+  const inp  = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  if (!inp) return;
+  inp.addEventListener('blur', () => {
+    if (!inp.value) { setField(inp, hint, null, ''); return; }
+    const ok = telValid(inp.value);
+    setField(inp, hint, ok, ok ? '✓ Teléfono válido' : '✗ Ingresa un celular chileno válido (+56 9 XXXX XXXX)');
+  });
+}
+
+/* ── Activar watchers al cargar ─────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  /* Wizard cliente */
+  watchRut  ('wizRut',   'hintWizRut');
+  watchEmail('wizEmail', 'hintWizEmail');
+  watchTel  ('wizTel',   'hintWizTel');
+  /* Formulario arquitecto */
+  watchRut  ('arqRut',   'hintArqRut');
+  watchEmail('arqEmail', 'hintArqEmail');
+  watchTel  ('arqTel',   'hintArqTel');
+});
+
 /* ────────────────────────────────────────────────
    PRICING ENGINE
 ──────────────────────────────────────────────── */
@@ -2587,7 +2717,9 @@ function wizCanAdvance() {
       shakeNext(); showToast('Completa todos los campos obligatorios');
       return false;
     }
-    if (!e.includes('@')) { shakeNext(); showToast('Email inválido'); return false; }
+    if (!emailValid(e)) { shakeNext(); showToast('Email inválido'); return false; }
+    const rut = document.getElementById('wizRut').value.trim();
+    if (rut && !rutValid(rut)) { shakeNext(); showToast('RUT inválido — revisa el dígito verificador'); return false; }
   }
   if (wizStep === 1) {
     if (!document.getElementById('wizTos').checked) {
