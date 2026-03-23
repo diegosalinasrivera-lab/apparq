@@ -2402,8 +2402,9 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
    Detecta ?pago=aprobado|pendiente|rechazado en la URL
 ══════════════════════════════════════════════════ */
 (function handleMPReturn() {
-  const params = new URLSearchParams(window.location.search);
-  const pago   = params.get('pago');
+  const params     = new URLSearchParams(window.location.search);
+  const pago       = params.get('pago');
+  const paymentId  = params.get('payment_id') || params.get('collection_id') || null;
   if (!pago) return;
 
   /* Limpiar la URL sin recargar */
@@ -2412,15 +2413,18 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
   if (pago === 'aprobado') {
     /* Restaurar estado del wizard desde localStorage */
     const saved = JSON.parse(localStorage.getItem('apparq_wiz') || '{}');
+    if (paymentId) saved.payment_id = paymentId;
 
     if (saved.svc) {
       /* Restaurar estado global S */
       Object.assign(S, {
-        svc:     saved.svc,
-        m2:      saved.m2,
-        mat:     saved.mat,
-        dest:    saved.dest,
-        commune: saved.commune,
+        svc:        saved.svc,
+        m2:         saved.m2,
+        mat:        saved.mat,
+        dest:       saved.dest,
+        commune:    saved.commune,
+        firma_data: saved.firma_data || null,
+        payment_id: paymentId || null,
       });
 
       /* Abrir wizard directo en step 3 (asignación arquitecto) */
@@ -2604,6 +2608,10 @@ document.getElementById('arqForm').onsubmit = async e => {
     if (fd.get('tramite_obra_nueva'))     tramites.push('Obra Nueva');
     if (fd.get('tramite_informe'))        tramites.push('Informe');
 
+    /* Capturar firma como imagen base64 */
+    const sigCanvas = document.getElementById('sigCanvas');
+    const firmaData = sigCanvas ? sigCanvas.toDataURL('image/png') : null;
+
     const payload = {
       nombre:      fd.get('nombre')      || '',
       apellido:    fd.get('apellido')    || '',
@@ -2615,6 +2623,7 @@ document.getElementById('arqForm').onsubmit = async e => {
       comunas:     fd.get('comunas')     || '',   /* string "Providencia, Las Condes, …" */
       tramites:    tramites.join(', '),
       mensaje:     fd.get('mensaje')     || '',
+      firma_data:  firmaData,
     };
 
     const res = await fetch('/.netlify/functions/register-architect', {
@@ -3130,6 +3139,10 @@ function setupPaymentStep() {
       const commune = S.commune || 'Santiago';
       const email   = document.getElementById('wizEmail')?.value || 'cliente@apparq.cl';
 
+      /* Capturar firma antes del redirect */
+      const sigCv = document.getElementById('sigCanvas');
+      const firmaData = (sigCv && sigHasDraw) ? sigCv.toDataURL('image/png') : null;
+
       /* Guardar estado en localStorage para recuperar tras redirect */
       localStorage.setItem('apparq_wiz', JSON.stringify({
         nombre:   document.getElementById('wizNombre')?.value,
@@ -3140,6 +3153,7 @@ function setupPaymentStep() {
         addr:     document.getElementById('wizAddr')?.value,
         svc: S.svc, m2: S.m2, mat: S.mat, dest: S.dest,
         commune, clp, e1,
+        firma_data: firmaData,
       }));
 
       const res  = await fetch('/.netlify/functions/create-payment', {
@@ -3318,7 +3332,9 @@ async function loadArchitectForCommune(commune) {
         commune,
         clp,
         e1: Math.round(clp * e1pct),
-        arquitecto: { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites },
+        arquitecto: { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites, foto_url: arq.foto_url || null, calificacion: arq.calificacion || null },
+        firma_data: S.firma_data || null,
+        payment_id: S.payment_id || null,
       }),
     }).then(r => r.json()).then(data => {
       if (data.project_number) {

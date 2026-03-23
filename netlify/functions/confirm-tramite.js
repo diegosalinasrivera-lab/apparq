@@ -42,7 +42,9 @@ exports.handler = async (event) => {
     const {
       nombre, apellido, email, telefono, rut, direccion,
       svc, m2, commune, clp, e1,
-      arquitecto,   /* { nombre, apellido, comunas, tramites } o null */
+      arquitecto,   /* { nombre, apellido, comunas, tramites, foto_url, calificacion } o null */
+      firma_data,   /* base64 PNG de la firma del cliente */
+      payment_id,   /* ID de pago de Mercado Pago */
     } = body;
 
     /* ── Crear proyecto en Supabase ─────────────── */
@@ -98,6 +100,22 @@ exports.handler = async (event) => {
     const nombreCliente = `${nombre || ''} ${apellido || ''}`.trim();
     const arqNombre = arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Por asignar';
 
+    /* ── Bloque de firma del cliente ── */
+    const firmaClienteBlock = firma_data
+      ? `<div style="margin-top:12px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+           <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente</p>
+           <img src="${firma_data}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
+         </div>`
+      : '';
+
+    /* ── Bloque arquitecto para email cliente ── */
+    const arqFotoBlock = arquitecto?.foto_url
+      ? `<img src="${arquitecto.foto_url}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-right:14px;border:2px solid #e2e8f0;" alt="${arqNombre}" />`
+      : `<div style="width:64px;height:64px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;margin-right:14px;font-size:28px;flex-shrink:0;">👷</div>`;
+    const arqStarsBlock = arquitecto?.calificacion
+      ? `<div style="font-size:13px;color:#D97706;margin-top:3px;">${'★'.repeat(Math.round(arquitecto.calificacion))}${'☆'.repeat(5 - Math.round(arquitecto.calificacion))} <span style="color:#718096;font-size:11px;">${Number(arquitecto.calificacion).toFixed(1)}/5</span></div>`
+      : '';
+
     /* ── Email interno a hola@apparq.cl ────────── */
     await sendEmail({
       to:      'hola@apparq.cl',
@@ -118,6 +136,7 @@ exports.handler = async (event) => {
               <tr><td style="padding:8px 10px;color:#718096">Superficie</td><td style="padding:8px 10px">${m2 ? m2 + ' m²' : '—'}</td></tr>
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Total</td><td style="padding:8px 10px;font-weight:700">${clpFmt(clp)}</td></tr>
               <tr><td style="padding:8px 10px;color:#718096">E1 pagado</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(e1)} ✓</td></tr>
+              ${payment_id ? `<tr style="background:#f0fdf4"><td style="padding:8px 10px;color:#718096">ID Pago MP</td><td style="padding:8px 10px;font-family:monospace;font-size:12px">${payment_id}</td></tr>` : ''}
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Fecha</td><td style="padding:8px 10px">${fecha}</td></tr>
             </table>
 
@@ -129,10 +148,14 @@ exports.handler = async (event) => {
               <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px">${rut || '—'}</td></tr>
             </table>
 
+            ${firmaClienteBlock}
+
             <h2 style="margin-top:24px;font-size:16px;color:#1a1a2e">🏗 Arquitecto asignado</h2>
             <table style="width:100%;border-collapse:collapse;font-size:13px">
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Nombre</td><td style="padding:8px 10px;font-weight:700">${arqNombre}</td></tr>
-              ${arquitecto?.comunas ? `<tr><td style="padding:8px 10px;color:#718096">Comunas</td><td style="padding:8px 10px">${arquitecto.comunas.join(', ')}</td></tr>` : ''}
+              ${arquitecto?.email ? `<tr><td style="padding:8px 10px;color:#718096">Email arq.</td><td style="padding:8px 10px">${arquitecto.email}</td></tr>` : ''}
+              ${arquitecto?.comunas ? `<tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Comunas</td><td style="padding:8px 10px">${arquitecto.comunas.join(', ')}</td></tr>` : ''}
+              ${arquitecto?.tramites ? `<tr><td style="padding:8px 10px;color:#718096">Trámites</td><td style="padding:8px 10px">${arquitecto.tramites.join(', ')}</td></tr>` : ''}
             </table>
 
             <p style="margin-top:24px;font-size:11px;color:#a0aec0">APPARQ — Sistema automático · ${fecha}</p>
@@ -163,21 +186,29 @@ exports.handler = async (event) => {
               <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
                 <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700">TU NÚMERO DE TRÁMITE</p>
                 <p style="margin:0;font-size:28px;font-weight:900;color:#E8503A;letter-spacing:2px">${projectNumber}</p>
-                <p style="margin:6px 0 0;font-size:11px;color:#78350F">Guarda este número para revisar el avance en <strong>apparq.cl</strong></p>
+                <p style="margin:6px 0 0;font-size:11px;color:#78350F">Guarda este número para revisar el avance en <strong>apparq.cl → Mi trámite</strong></p>
               </div>` : ''}
 
               <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0">
                 <p style="margin:0 0 6px;font-size:13px"><strong>✓ Servicio:</strong> ${svcName}</p>
                 <p style="margin:0 0 6px;font-size:13px"><strong>✓ Dirección:</strong> ${direccion || '—'}, ${commune}</p>
                 <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago E1 recibido:</strong> ${clpFmt(e1)}</p>
-                <p style="margin:0;font-size:13px"><strong>✓ Total del proyecto:</strong> ${clpFmt(clp)}</p>
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Total del proyecto:</strong> ${clpFmt(clp)}</p>
+                ${payment_id ? `<p style="margin:4px 0 0;font-size:11px;color:#718096">ID comprobante: ${payment_id}</p>` : ''}
               </div>
 
               <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">🏗 Tu arquitecto asignado</h3>
-              <div style="background:#f7fafc;border-radius:8px;padding:14px 18px;margin-bottom:20px">
-                <p style="margin:0;font-size:14px;font-weight:700">${arqNombre}</p>
-                <p style="margin:4px 0 0;font-size:12px;color:#718096">Arquitecto APPARQ · ${commune}</p>
+              <div style="background:#f7fafc;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center">
+                ${arqFotoBlock}
+                <div>
+                  <p style="margin:0;font-size:15px;font-weight:700">${arqNombre}</p>
+                  <p style="margin:3px 0 0;font-size:12px;color:#718096">Arquitecto APPARQ · ${commune}</p>
+                  ${arqStarsBlock}
+                </div>
               </div>
+
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">📝 Tu contrato firmado</h3>
+              ${firmaClienteBlock || '<p style="font-size:12px;color:#a0aec0;font-style:italic;">Contrato firmado digitalmente en apparq.cl</p>'}
 
               <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">⏱ ¿Qué sigue?</h3>
               <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0">
