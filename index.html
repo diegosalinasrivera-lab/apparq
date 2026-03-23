@@ -667,6 +667,9 @@
     .inc-list { display: flex; flex-direction: column; gap: 0.28rem; }
     .inc { font-size: 0.79rem; color: var(--mid); display: flex; align-items: center; gap: 0.45rem; }
     .inc::before { content: '✓'; color: var(--orange); font-weight: 800; font-size: 0.85rem; }
+    .exc { font-size: 0.79rem; color: #aaa; display: flex; align-items: center; gap: 0.45rem; }
+    .exc::before { content: '✕'; color: #ccc; font-weight: 700; font-size: 0.82rem; }
+    .inc-section-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin: 0.6rem 0 0.2rem; color: var(--muted); }
     .svc-range {
       margin-top: 1.1rem; padding-top: 0.9rem;
       border-top: 1px solid var(--border-light);
@@ -1302,11 +1305,21 @@
           <h3>Regularización</h3>
           <p>Para construcciones sin permiso municipal. Legalizamos tu obra y obtenemos la recepción final.</p>
           <div class="inc-list">
-            <div class="inc">Solicitud CIP y desarchivo</div>
-            <div class="inc">Levantamiento en terreno</div>
-            <div class="inc">Planos de arquitectura y especialidades</div>
-            <div class="inc">Ingreso y tramitación DOM</div>
-            <div class="inc">Recepción Final</div>
+            <div class="inc-section-label">Incluye</div>
+            <div class="inc">Levantamiento arquitectónico de lo existente</div>
+            <div class="inc">Planos de regularización</div>
+            <div class="inc">Cuadro de superficies</div>
+            <div class="inc">Ajuste a normativa vigente</div>
+            <div class="inc">Preparación expediente municipal</div>
+            <div class="inc">Ingreso DOM</div>
+            <div class="inc">Respuesta a observaciones simples</div>
+            <div class="inc-section-label">No incluye</div>
+            <div class="exc">Levantamiento topográfico</div>
+            <div class="exc">Cálculo estructural</div>
+            <div class="exc">Especialidades (sanitaria, eléctrica, gas)</div>
+            <div class="exc">Regularización estructural compleja</div>
+            <div class="exc">Render o imágenes</div>
+            <div class="exc">Dirección de obra</div>
           </div>
         </div>
 
@@ -1315,11 +1328,22 @@
           <h3>Ampliación</h3>
           <p>¿Quieres sumar una habitación, baño o cocina? Desarrollamos el proyecto y gestionamos el permiso.</p>
           <div class="inc-list">
-            <div class="inc">Diseño arquitectónico</div>
-            <div class="inc">Planos de especialidades</div>
-            <div class="inc">Permiso de Obra Municipal</div>
-            <div class="inc">Supervisión de obra</div>
-            <div class="inc">Recepción Final</div>
+            <div class="inc-section-label">Incluye</div>
+            <div class="inc">Levantamiento básico existente (para conexión)</div>
+            <div class="inc">Anteproyecto ampliación</div>
+            <div class="inc">Planos arquitectura municipales</div>
+            <div class="inc">Cuadro de superficies</div>
+            <div class="inc">Cumplimiento normativo</div>
+            <div class="inc">Preparación expediente DOM</div>
+            <div class="inc">Ingreso municipal</div>
+            <div class="inc">Respuesta observaciones</div>
+            <div class="inc-section-label">No incluye</div>
+            <div class="exc">Regularización de lo existente</div>
+            <div class="exc">Cálculo estructural</div>
+            <div class="exc">Especialidades (sanitario, eléctrico, gas)</div>
+            <div class="exc">Detalles constructivos</div>
+            <div class="exc">Render</div>
+            <div class="exc">Dirección de obra</div>
           </div>
         </div>
 
@@ -1328,11 +1352,23 @@
           <h3>Obra Nueva</h3>
           <p>Construye desde cero. Proyecto completo con todos los permisos necesarios para edificar legalmente.</p>
           <div class="inc-list">
-            <div class="inc">Proyecto de arquitectura</div>
-            <div class="inc">Planos estructurales y especialidades</div>
-            <div class="inc">Permiso de Edificación</div>
-            <div class="inc">Supervisión de obra</div>
-            <div class="inc">Recepción Final</div>
+            <div class="inc-section-label">Incluye</div>
+            <div class="inc">Anteproyecto arquitectura</div>
+            <div class="inc">Proyecto municipal completo</div>
+            <div class="inc">Implantación en terreno</div>
+            <div class="inc">Plantas, cortes y elevaciones</div>
+            <div class="inc">Cuadro de superficies</div>
+            <div class="inc">Cumplimiento normativo completo</div>
+            <div class="inc">Preparación expediente DOM</div>
+            <div class="inc">Ingreso municipal</div>
+            <div class="inc">Respuesta observaciones</div>
+            <div class="inc-section-label">No incluye</div>
+            <div class="exc">Cálculo estructural</div>
+            <div class="exc">Especialidades (sanitario, eléctrico, gas)</div>
+            <div class="exc">Detalles constructivos</div>
+            <div class="exc">Render / visualización 3D</div>
+            <div class="exc">Diseño interior</div>
+            <div class="exc">Dirección de obra</div>
           </div>
         </div>
 
@@ -1975,7 +2011,8 @@
 /* ────────────────────────────────────────────────
    PRICING ENGINE
 ──────────────────────────────────────────────── */
-const ARCH = { regularizacion: 0.40, ampliacion: 0.80, 'obra-nueva': 0.80, informe: 0.05 };
+const ARCH     = { regularizacion: 0.60, ampliacion: 0.90, 'obra-nueva': 1.00, informe: 0.05 };
+const ARCH_MIN = { regularizacion: 20,   ampliacion: 25,   'obra-nueva': 35,   informe: 3    };
 const SPEC = { dormitorio: 0.20, living: 0.20, bodega: 0.00, baño: 0.80, cocina: 0.80, casa: 0.80 };
 const STRU = { metalcon: 0, madera: 0, albanileria: 0.30, hormigon: 0.30 };
 const STAGES_NORMAL = [
@@ -2330,10 +2367,12 @@ function isReady() {
 }
 
 function calcTotal() {
-  const arch = ARCH[S.svc] || 0;
-  const spec = SPEC[S.dest] ?? 0;
-  const stru = STRU[S.mat] ?? 0;
-  const uf   = (arch + spec + stru) * S.m2;
+  const arch    = ARCH[S.svc] || 0;
+  const spec    = SPEC[S.dest] ?? 0;
+  const stru    = STRU[S.mat] ?? 0;
+  const ufRaw   = (arch + spec + stru) * S.m2;
+  const ufMin   = ARCH_MIN[S.svc] || 0;
+  const uf      = Math.max(ufRaw, ufMin);
   return { uf, clp: uf * S.uf };
 }
 
