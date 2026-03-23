@@ -2043,6 +2043,86 @@
   </div>
 </div>
 
+<!-- ── FAQ ───────────────────────────────────────── -->
+<section id="faq" style="background:#f8fafc;padding:clamp(3rem,6vw,5rem) 0;">
+  <div class="container">
+    <div class="section-eyebrow">Preguntas frecuentes</div>
+    <h2 class="section-h2">Todo lo que necesitas saber</h2>
+    <p class="section-sub">Resolvemos las dudas más comunes sobre trámites municipales, arquitectura y cómo funciona APPARQ.</p>
+
+    <div id="faqList" style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:0.5rem;"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  const faqs = [
+    ["¿Qué es un trámite municipal?","Es un proceso que se realiza ante la Dirección de Obras Municipales (DOM) para obtener autorización o regularizar una construcción, ampliación, modificación, demolición o cambio de destino, según la Ley General de Urbanismo y Construcciones y su Ordenanza."],
+    ["¿Qué es la DOM?","La DOM es la Dirección de Obras Municipales. Es el organismo de cada municipalidad encargado de aprobar permisos de edificación, regularizaciones y otorgar recepciones finales."],
+    ["¿Qué es una regularización?","Es el trámite que permite legalizar una construcción existente que fue construida sin permiso municipal o sin recepción final."],
+    ["¿Por qué debo regularizar una propiedad?","Regularizar permite:<ul><li>Acceder a créditos hipotecarios</li><li>Vender la propiedad sin problemas legales</li><li>Evitar multas municipales</li><li>Aumentar la plusvalía</li><li>Actualizar avalúo fiscal</li><li>Tramitar herencias sin complicaciones</li><li>Declarar correctamente en el SII</li></ul>"],
+    ["¿Cuándo debo regularizar una propiedad?","Debes regularizar cuando:<ul><li>Construiste sin permiso municipal</li><li>Hiciste una ampliación sin autorización</li><li>No tienes recepción final</li><li>La superficie construida no coincide con el SII</li><li>Compraste una propiedad no regularizada</li></ul>"],
+    ["¿Quién puede realizar el trámite de regularización?","El trámite debe ser patrocinado por un arquitecto, quien prepara los planos y documentos exigidos por la municipalidad."],
+    ["¿Cuáles son las etapas de una regularización?","Las etapas normalmente son:<ol><li>Evaluación de factibilidad</li><li>Levantamiento de la propiedad</li><li>Desarrollo de planos</li><li>Ingreso a la DOM</li><li>Observaciones municipales (si existen)</li><li>Aprobación del expediente</li><li>Pago derechos municipales</li><li>Obtención Recepción Final</li></ol>"],
+    ["¿Qué es el CIP?","El Certificado de Informaciones Previas (CIP) es un documento municipal que indica las normas urbanísticas del terreno:<ul><li>Uso de suelo</li><li>Altura máxima</li><li>Constructibilidad</li><li>Distanciamientos</li><li>Antejardín</li><li>Densidad</li></ul>"],
+    ["¿Cómo obtengo el CIP?","Se solicita en la Dirección de Obras Municipales correspondiente al rol de la propiedad. Puede solicitarlo el propietario o un arquitecto."],
+    ["¿Qué es una ampliación?","Es el aumento de la superficie construida de una propiedad existente. Ejemplos:<ul><li>Cerrar terraza</li><li>Agregar dormitorio</li><li>Construir segundo piso</li><li>Ampliar living</li></ul>"],
+    ["¿Qué se considera obra nueva?","Es una construcción completamente nueva en un terreno sin edificación previa o independiente de la existente."],
+    ["¿Qué es la materialidad de la construcción?","Se refiere al sistema constructivo utilizado, por ejemplo:<ul><li>Hormigón armado</li><li>Albañilería</li><li>Metalcón</li><li>Madera</li><li>Material liviano</li></ul>"],
+    ["¿Qué es material liviano?","Construcción realizada con estructura liviana como:<ul><li>Metalcón</li><li>Madera</li><li>Panel SIP</li><li>Steel frame</li></ul>"],
+    ["¿Qué es metalcón?","Sistema constructivo de perfiles de acero galvanizado liviano utilizado para muros y techumbres."],
+    ["¿Qué es hormigón?","Sistema constructivo estructural sólido formado por cemento, arena, grava y acero de refuerzo."],
+    ["¿Qué es albañilería?","Sistema constructivo de muros hechos con ladrillo o bloques unidos con mortero."],
+    ["¿Qué es un proyecto de arquitectura?","Es el conjunto de planos y documentos técnicos necesarios para solicitar permisos municipales. Incluye:<ul><li>Plantas</li><li>Cortes</li><li>Elevaciones</li><li>Cuadros de superficie</li><li>Normativa urbanística</li></ul>"],
+    ["¿Qué es un proyecto eléctrico?","Es el diseño de la instalación eléctrica exigido en algunos trámites, especialmente para obra nueva o ampliaciones mayores."],
+    ["¿Qué es un permiso de obra?","Es la autorización otorgada por la DOM para construir, ampliar o modificar una edificación."],
+    ["¿Qué es la recepción final?","Es el documento que certifica que la construcción fue ejecutada correctamente y cumple con la normativa. Sin recepción final, la propiedad no está regularizada."],
+    ["¿Cómo calcular los metros cuadrados?","Se calcula multiplicando Largo × Ancho. Ejemplo: 5 m × 4 m = 20 m²."],
+    ["¿Qué es el destino de la construcción?","Es el uso autorizado del inmueble:<ul><li>Vivienda</li><li>Comercial</li><li>Oficina</li><li>Bodega</li><li>Industrial</li></ul>"],
+    ["¿Qué son los derechos municipales?","Son los pagos que exige la municipalidad por revisar y aprobar el trámite. Los paga el propietario."],
+    ["¿Quiénes deben firmar los trámites?","Firman:<ul><li>Propietario</li><li>Arquitecto</li><li>Profesional responsable (si aplica)</li></ul>"],
+    ["¿Cuánto demora regularizar una propiedad?","Depende de la municipalidad, pero normalmente:<ul><li>Evaluación: 1 a 3 días</li><li>Desarrollo de planos: 3 a 10 días</li><li>Revisión municipal: 2 a 8 semanas</li></ul>"],
+    ["¿Qué pasa si mi propiedad no se puede regularizar?","Si no cumple la normativa:<ul><li>Puede modificarse el proyecto</li><li>Reducir superficie</li><li>Ajustar a normativa</li><li>O declararse no viable</li></ul>"],
+    ["¿Qué significa que el trámite sea no viable?","Significa que la construcción no cumple distanciamientos, uso de suelo, altura máxima, constructibilidad o normativa del plan regulador."],
+    ["¿Qué pasa si la municipalidad rechaza el trámite?","Se deben corregir las observaciones y reingresar el expediente."],
+    ["¿Qué es la Ley del Mono?","Es una normativa especial que permite regularizar viviendas construidas sin permiso bajo ciertas condiciones de superficie y antigüedad."],
+    ["¿Qué pasa si la propiedad no está regularizada?","Puede generar:<ul><li>Multas municipales</li><li>Dificultad para vender</li><li>Problemas para herencias</li><li>Imposibilidad de crédito hipotecario</li><li>Menor valor de la propiedad</li></ul>"],
+    ["¿Cómo saber si mi casa está regularizada?","Puedes revisar:<ul><li>Recepción final municipal</li><li>Plano aprobado</li><li>Superficie construida en el SII</li><li>Carpeta municipal</li></ul>"],
+    ["¿Cómo elijo al arquitecto en APPARQ?","APPARQ te muestra arquitectos disponibles según tipo de trámite, ubicación, presupuesto y experiencia. Puedes comparar y elegir."],
+    ["¿Qué pasa si no puedo pagar la siguiente etapa?","Puedes pausar el trámite. El expediente queda guardado hasta continuar."],
+    ["¿Qué pasa si realizo el trámite con APPARQ?","APPARQ evalúa factibilidad, asigna arquitecto, desarrolla planos, ingresa a municipalidad, gestiona observaciones y obtiene la recepción final."],
+  ];
+
+  const list = document.getElementById('faqList');
+  faqs.forEach(([q, a], i) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;';
+    item.innerHTML = `
+      <button style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;background:none;border:none;cursor:pointer;text-align:left;gap:1rem;" aria-expanded="false">
+        <span style="font-size:0.9rem;font-weight:600;color:#1a1a2e;line-height:1.4;">${i+1}. ${q}</span>
+        <svg style="flex-shrink:0;transition:transform 0.25s;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div style="display:none;padding:0 1.25rem 1rem;font-size:0.85rem;color:#4a5568;line-height:1.7;">${a}</div>`;
+    const btn = item.querySelector('button');
+    const content = item.querySelector('div');
+    const icon = item.querySelector('svg');
+    btn.onclick = () => {
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', !open);
+      content.style.display = open ? 'none' : 'block';
+      icon.style.transform = open ? '' : 'rotate(180deg)';
+      item.style.borderColor = open ? '#e2e8f0' : '#E8503A';
+    };
+    list.appendChild(item);
+  });
+
+  /* Estilos para listas dentro del FAQ */
+  const style = document.createElement('style');
+  style.textContent = '#faqList ul,#faqList ol{margin:0.4rem 0 0 1rem;padding:0;}#faqList li{margin-bottom:0.2rem;}';
+  document.head.appendChild(style);
+})();
+</script>
+
 <!-- ── FOOTER ─────────────────────────────────────── -->
 <footer>
   <div class="container">
