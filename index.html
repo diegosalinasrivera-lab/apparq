@@ -1779,7 +1779,11 @@
         </div>
         <div class="mform-group">
           <label class="mform-label">N° de patente</label>
-          <input class="mform-input" name="patente" type="text" placeholder="Ej: 12345" />
+          <input class="mform-input" id="arqPatenteInput" name="patente" type="text" placeholder="Ej: 12345" />
+          <label class="mform-check" style="margin-top:0.4rem;gap:0.5rem;">
+            <input type="checkbox" id="arqSinPatente" style="accent-color:var(--orange);width:15px;height:15px;" />
+            <span style="font-size:0.78rem;color:var(--mid);">No tengo patente profesional</span>
+          </label>
         </div>
       </div>
       <div class="mform-group">
@@ -1813,7 +1817,7 @@
 
           <strong>2. Asignación de proyectos.</strong> APPARQ asignará proyectos al Arquitecto según la disponibilidad geográfica declarada. El Arquitecto podrá aceptar o rechazar proyectos dentro de las 24 horas siguientes a la notificación. El rechazo reiterado e injustificado podrá ser causal de suspensión de la red.<br><br>
 
-          <strong>3. Honorarios y comisión.</strong> Por cada etapa de pago que el cliente realice a APPARQ, el Arquitecto recibirá el <strong>75% del monto neto</strong> correspondiente a dicha etapa. APPARQ retendrá el <strong>25%</strong> en concepto de comisión por el uso de la plataforma, gestión administrativa y captación de clientes.<br><br>
+          <strong>3. Honorarios y comisión.</strong> Por cada etapa de pago que el cliente realice a APPARQ, el Arquitecto recibirá el <strong id="arqContractPctArq">75% del monto neto</strong> correspondiente a dicha etapa. APPARQ retendrá el <strong id="arqContractPctApp">25%</strong> en concepto de comisión por el uso de la plataforma, gestión administrativa y captación de clientes.<br><br>
 
           <strong>4. Forma y plazo de pago.</strong> APPARQ transferirá los honorarios al Arquitecto dentro de los <strong>10 días hábiles</strong> siguientes a la confirmación del pago de cada etapa por parte del cliente. El pago se realizará mediante transferencia bancaria a la cuenta indicada por el Arquitecto al momento de la inscripción.<br><br>
 
@@ -1867,7 +1871,7 @@
 
       <label class="mform-check" style="margin-top:0.75rem;align-items:flex-start;gap:0.6rem;">
         <input type="checkbox" id="arqContractCheck" style="margin-top:3px;width:16px;height:16px;accent-color:var(--orange);flex-shrink:0;" />
-        <span style="font-size:0.8rem;color:var(--mid);line-height:1.5;">He leído y acepto el <strong>Contrato de Colaboración Profesional</strong> con APPARQ, incluyendo la comisión del 25%, la obligatoriedad de uso exclusivo de la plataforma y las cláusulas de no captación directa.</span>
+        <span style="font-size:0.8rem;color:var(--mid);line-height:1.5;">He leído y acepto el <strong>Contrato de Colaboración Profesional</strong> con APPARQ, incluyendo la comisión del <span id="arqCheckPct">25%</span>, la obligatoriedad de uso exclusivo de la plataforma y las cláusulas de no captación directa.</span>
       </label>
 
       <!-- Contraseña -->
@@ -2600,6 +2604,21 @@ document.getElementById('arqContractCheck').addEventListener('change', function(
     btn.style.cursor = 'not-allowed';
     btn.textContent = 'Acepta el contrato para continuar';
   }
+});
+
+/* ── Sin patente → ajustar comisión ── */
+document.getElementById('arqSinPatente').addEventListener('change', function() {
+  const sinPatente = this.checked;
+  const pctApp = sinPatente ? '30%' : '25%';
+  const pctArq = sinPatente ? '70% del monto neto' : '75% del monto neto';
+  document.getElementById('arqContractPctApp').textContent = pctApp;
+  document.getElementById('arqContractPctArq').textContent = pctArq;
+  document.getElementById('arqCheckPct').textContent       = pctApp;
+  /* Bloquear campo patente cuando no tiene */
+  const inp = document.getElementById('arqPatenteInput');
+  inp.disabled = sinPatente;
+  inp.value    = sinPatente ? '' : inp.value;
+  inp.style.opacity = sinPatente ? '0.4' : '1';
 });
 
 /* ── Strength bar for arqPassword ─── */
