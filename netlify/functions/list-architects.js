@@ -71,7 +71,7 @@ exports.handler = async (event) => {
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&select=id,nombre,apellido,comunas,tramites,experiencia,foto_url,calificacion`,
+      `${SUPABASE_URL}/rest/v1/architects?select=id,nombre,apellido,comunas,tramites,experiencia,foto_url,calificacion,activo`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
 
@@ -79,11 +79,20 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error de base de datos' }) };
     }
 
-    const all = await res.json();
+    const raw = await res.json();
+
+    /* Normalizar comunas y tramites (pueden venir como array o string) */
+    const all = raw
+      .filter(a => a.activo !== false)  /* excluir solo los explícitamente desactivados */
+      .map(a => ({
+        ...a,
+        comunas:  Array.isArray(a.comunas)  ? a.comunas  : (a.comunas  ? String(a.comunas).split(',').map(s=>s.trim()).filter(Boolean)  : []),
+        tramites: Array.isArray(a.tramites) ? a.tramites : (a.tramites ? String(a.tramites).split(',').map(s=>s.trim()).filter(Boolean) : []),
+      }));
 
     /* Filtrar por trámite si se especificó */
     const byTramite = tramiteLabel
-      ? all.filter(a => Array.isArray(a.tramites) && a.tramites.some(t => t.toLowerCase().includes(tramiteLabel.toLowerCase())))
+      ? all.filter(a => a.tramites.some(t => t.toLowerCase().includes(tramiteLabel.toLowerCase())))
       : all;
 
     const inCommune = (c) => byTramite.filter(a => Array.isArray(a.comunas) && a.comunas.includes(c));
