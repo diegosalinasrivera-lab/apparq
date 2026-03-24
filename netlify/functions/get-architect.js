@@ -91,9 +91,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    /* Traer todos los arquitectos activos */
+    /* Traer todos los arquitectos */
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&select=id,nombre,apellido,email,telefono,comunas,tramites,experiencia,foto_url,calificacion`,
+      `${SUPABASE_URL}/rest/v1/architects?select=id,nombre,apellido,email,telefono,comunas,tramites,experiencia,foto_url,calificacion,activo`,
       {
         headers: {
           'apikey':        SUPABASE_KEY,
@@ -108,7 +108,15 @@ exports.handler = async (event) => {
       return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al consultar la base de datos' }) };
     }
 
-    const architects = await res.json();
+    const raw = await res.json();
+
+    /* Normalizar comunas (puede venir como array o string CSV) y filtrar activos */
+    const architects = raw
+      .filter(a => a.activo !== false)
+      .map(a => ({
+        ...a,
+        comunas: Array.isArray(a.comunas) ? a.comunas : (a.comunas ? String(a.comunas).split(',').map(s => s.trim()).filter(Boolean) : []),
+      }));
 
     if (!architects?.length) {
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ architect: null, matchType: 'none' }) };
