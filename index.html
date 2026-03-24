@@ -1727,6 +1727,9 @@
 
     </div><!-- /wiz-body -->
 
+    <!-- Error inline wizard -->
+    <div id="wizStepError" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.83rem;color:#b91c1c;margin:0 0 0.75rem;"></div>
+
     <!-- Footer navigation -->
     <div class="wiz-foot">
       <button class="wiz-btn-back" id="wizBack" style="display:none">← Volver</button>
@@ -3242,6 +3245,8 @@ function renderWizStep(idx, goBack) {
   wizNext.style.display = (idx === 3) ? 'none' : '';
   wizBack.style.display = (idx === 3 || idx === 4 || idx === 5) ? 'none' : (idx > 0 ? '' : 'none');
 
+  clearWizError();
+
   /* step-specific setup */
   if (idx === 1) loadArchitectPicker();
   if (idx === 2) setupSignaturePad();
@@ -3276,7 +3281,19 @@ wizBack.onclick = () => {
 };
 
 /* ── validation per step ──────────────────────── */
+function showWizError(msg) {
+  const el = document.getElementById('wizStepError');
+  el.textContent = msg;
+  el.style.display = '';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function clearWizError() {
+  const el = document.getElementById('wizStepError');
+  if (el) el.style.display = 'none';
+}
+
 function wizCanAdvance() {
+  clearWizError();
   if (wizStep === 0) {
     const n   = document.getElementById('wizNombre').value.trim();
     const a   = document.getElementById('wizApellido').value.trim();
@@ -3284,36 +3301,31 @@ function wizCanAdvance() {
     const t   = document.getElementById('wizTel').value.trim();
     const rut = document.getElementById('wizRut').value.trim();
     if (!n || !a || !e || !t || !rut) {
-      shakeNext(); showToast('Completa todos los campos obligatorios');
+      shakeNext(); showWizError('Completa todos los campos obligatorios');
       return false;
     }
     if (!emailValid(e)) {
       setField(document.getElementById('wizEmail'), document.getElementById('hintWizEmail'), false, '✗ Formato de email inválido');
-      shakeNext(); showToast('Email inválido'); return false;
+      shakeNext(); showWizError('Email inválido'); return false;
     }
     if (!telValid(t)) {
       setField(document.getElementById('wizTel'), document.getElementById('hintWizTel'), false, '✗ Ingresa un celular chileno válido (+56 9 XXXX XXXX)');
-      shakeNext(); showToast('Teléfono inválido — ej: +56 9 1234 5678'); return false;
+      shakeNext(); showWizError('Teléfono inválido — ej: +56 9 1234 5678'); return false;
     }
     if (!rutValid(rut)) {
       setField(document.getElementById('wizRut'), document.getElementById('hintWizRut'), false, '✗ RUT inválido — revisa el dígito verificador');
-      shakeNext(); showToast('RUT inválido — revisa el dígito verificador'); return false;
+      shakeNext(); showWizError('RUT inválido — revisa el dígito verificador'); return false;
     }
   }
   if (wizStep === 2) {
     if (!document.getElementById('wizTos').checked) {
-      shakeNext(); showToast('Debes aceptar los términos del contrato');
+      shakeNext(); showWizError('Debes aceptar los términos del contrato');
       return false;
     }
     if (!sigHasDraw) {
-      shakeNext(); showToast('Por favor firma el contrato');
+      shakeNext(); showWizError('Por favor firma el contrato antes de continuar');
       return false;
     }
-  }
-  if (wizStep === 2) {
-    /* El pago DEBE completarse en Mercado Pago — no se puede saltar */
-    shakeNext(); showToast('Completa el pago en Mercado Pago para continuar.');
-    return false;
   }
   return true;
 }
