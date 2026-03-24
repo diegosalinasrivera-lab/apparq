@@ -64,23 +64,27 @@ exports.handler = async (event) => {
     };
 
     /* Guardar en Supabase */
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/architects`, {
-      method: 'POST',
-      headers: {
-        'apikey':        SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type':  'application/json',
-        'Prefer':        'return=representation',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      console.error('Supabase error:', await res.text());
-      return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al guardar en la base de datos' }) };
+    let saved = [{}];
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/architects`, {
+        method: 'POST',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type':  'application/json',
+          'Prefer':        'return=representation',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('Supabase error:', errText);
+      } else {
+        saved = await res.json();
+      }
+    } catch (dbErr) {
+      console.error('Supabase fetch error:', dbErr);
     }
-
-    const saved = await res.json();
     const nombreCompleto = `${payload.nombre} ${payload.apellido}`;
     const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
 
