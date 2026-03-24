@@ -7,8 +7,19 @@
    Actions: 'get-projects' | 'update-stage' | 'send-message' | 'get-messages'
 ══════════════════════════════════════════════════ */
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_URL   = process.env.SUPABASE_URL;
+const SUPABASE_KEY   = process.env.SUPABASE_ANON_KEY;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+async function sendEmail({ to, subject, html }) {
+  if (!RESEND_API_KEY) return;
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: 'APPARQ <hola@apparq.cl>', to, subject, html }),
+  });
+  if (!res.ok) console.error('Resend error:', await res.text());
+}
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -149,6 +160,47 @@ exports.handler = async (event) => {
 
       if (!updRes.ok) {
         return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al actualizar etapa' }) };
+      }
+
+      /* Enviar email a hola@apparq.cl con la actualización */
+      try {
+        const projRes2 = await fetch(
+          `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&select=*&limit=1`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        const projData = projRes2.ok ? await projRes2.json() : [];
+        if (projData.length) {
+          const p = projData[0];
+          const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+          await sendEmail({
+            to: 'hola@apparq.cl',
+            subject: `📊 Avance de trámite — ${project_number} → ${STAGE_LABELS[new_stage]}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                  <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Actualización de trámite</h1>
+                </div>
+                <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                  <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin-bottom:20px">
+                    <p style="margin:0 0 4px;font-size:12px;color:#718096;font-weight:700">NUEVA ETAPA</p>
+                    <p style="margin:0;font-size:20px;font-weight:900;color:#059669">${STAGE_LABELS[new_stage]}</p>
+                  </div>
+                  <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+                    <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcLabels[p.service_type] || p.service_type}</td></tr>
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
+                    <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido} · ${p.architect_email}</td></tr>
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+                    <tr><td style="padding:8px 10px;color:#718096">Actualizado</td><td style="padding:8px 10px">${fecha}</td></tr>
+                  </table>
+                </div>
+              </div>
+            `,
+          });
+        }
+      } catch (emailErr) {
+        console.warn('Error enviando email de avance:', emailErr);
       }
 
       return {

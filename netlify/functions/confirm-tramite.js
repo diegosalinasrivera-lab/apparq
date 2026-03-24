@@ -212,15 +212,20 @@ exports.handler = async (event) => {
 
               <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">⏱ ¿Qué sigue?</h3>
               <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0">
-                <li>Tu arquitecto te contactará en las próximas <strong>24 horas hábiles</strong> vía apparq.cl</li>
-                <li>Coordinarán la visita a terreno para el levantamiento</li>
+                <li>Tu arquitecto actualizará los avances directamente en <strong>apparq.cl</strong></li>
+                <li>Podrás coordinar y comunicarte con tu arquitecto a través de la plataforma</li>
                 ${esInforme
                   ? '<li>Recibirás tu informe en <strong>aproximadamente 2 semanas</strong></li>'
                   : '<li>Una vez entregados los planos, recibirás el aviso del pago E2</li><li>El trámite completo toma entre <strong>3 y 6 meses</strong></li>'
                 }
               </ol>
 
-              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:24px">
+              <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
+                <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Sigue el avance de tu trámite en:</p>
+                <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
+              </div>
+
+              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
                 <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
                 <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
                   Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>.
@@ -233,6 +238,82 @@ exports.handler = async (event) => {
                 APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
                 ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a>
                 o por <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a>
+              </p>
+            </div>
+          </div>
+        `,
+      });
+    }
+
+    /* ── Email al arquitecto asignado ─────────── */
+    const arqEmail = arquitecto?.email;
+    if (arqEmail) {
+      const esInforme = svc === 'informe';
+      await sendEmail({
+        to:      arqEmail,
+        subject: `🏗 Nuevo trámite asignado — ${svcName} en ${commune} — APPARQ`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+              <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Portal del arquitecto</p>
+            </div>
+            <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <h2 style="margin-top:0;color:#1a1a2e">¡Hola ${arquitecto.nombre}! Se te ha asignado un nuevo trámite</h2>
+              <p style="color:#4a5568;font-size:14px;line-height:1.7">
+                Un cliente ha iniciado un trámite y has sido asignado como arquitecto responsable. A continuación los detalles:
+              </p>
+
+              ${projectNumber ? `
+              <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
+                <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700">N° DE TRÁMITE</p>
+                <p style="margin:0;font-size:28px;font-weight:900;color:#E8503A;letter-spacing:2px">${projectNumber}</p>
+              </div>` : ''}
+
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">📋 Datos del trámite</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Servicio</td><td style="padding:8px 10px;font-weight:700">${svcName}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${direccion || '—'}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Comuna</td><td style="padding:8px 10px">${commune || '—'}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Superficie</td><td style="padding:8px 10px">${m2 ? m2 + ' m²' : '—'}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Total</td><td style="padding:8px 10px;font-weight:700">${clpFmt(clp)}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Fecha inicio</td><td style="padding:8px 10px">${fecha}</td></tr>
+              </table>
+
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">👤 Datos del cliente</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Nombre</td><td style="padding:8px 10px;font-weight:700">${nombreCliente}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Teléfono</td><td style="padding:8px 10px">${telefono || '—'}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px">${rut || '—'}</td></tr>
+              </table>
+
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">⏱ Próximos pasos</h3>
+              <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0">
+                <li>Ingresa a <strong>apparq.cl → Soy Arquitecto</strong> con tu cuenta</li>
+                <li>Coordina la visita a terreno con el cliente a través de la plataforma</li>
+                ${esInforme
+                  ? '<li>Elabora el informe y actualiza el avance en la plataforma</li><li>Entrega el informe antes de 2 semanas desde la visita</li>'
+                  : '<li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
+                }
+              </ol>
+
+              <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
+                <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Actualiza los avances del trámite en:</p>
+                <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Soy Arquitecto</a>
+              </div>
+
+              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
+                <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
+                <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
+                  Toda coordinación con el cliente debe realizarse a través de <strong>apparq.cl</strong>.
+                  No compartas tu teléfono ni correo personal con el cliente.
+                </p>
+              </div>
+
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
+              <p style="font-size:11px;color:#a0aec0;margin:0">
+                APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+                ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a>
               </p>
             </div>
           </div>
