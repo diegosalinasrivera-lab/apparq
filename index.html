@@ -4149,11 +4149,10 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       <div style="font-size:0.8rem;color:var(--mid);margin-bottom:0.75rem;">Cliente: ${p.client_nombre} ${p.client_apellido} · ${p.address}</div>
 
       <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem;margin-bottom:1rem;">
-        <label style="font-size:0.78rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.4rem;">Actualizar etapa del trámite</label>
-        <div style="display:flex;gap:0.5rem;">
-          <select id="paStageSelect" style="flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;font-size:0.82rem;">${stageOptions}</select>
-          <button id="paUpdateStage" style="background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Guardar</button>
-        </div>
+        <label style="font-size:0.78rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.4rem;">Agregar avance del trámite</label>
+        <select id="paStageSelect" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;font-size:0.82rem;margin-bottom:0.5rem;">${stageOptions}</select>
+        <textarea id="paStageNota" placeholder="Describe el avance o novedad para el cliente (opcional)…" maxlength="600" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 0.75rem;font-size:0.8rem;font-family:inherit;resize:vertical;min-height:64px;box-sizing:border-box;margin-bottom:0.5rem;"></textarea>
+        <button id="paUpdateStage" style="width:100%;background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Notificar avance al cliente</button>
         <div id="paStageMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
       </div>
 
@@ -4182,19 +4181,23 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     /* Update stage */
     document.getElementById('paUpdateStage').onclick = async () => {
       const newStage = document.getElementById('paStageSelect').value;
+      const nota     = document.getElementById('paStageNota').value.trim();
       const msgEl    = document.getElementById('paStageMsg');
       const btn      = document.getElementById('paUpdateStage');
-      btn.disabled = true; btn.textContent = 'Guardando…';
+      btn.disabled = true; btn.textContent = 'Enviando…';
       try {
         const res  = await fetch('/.netlify/functions/portal-architect', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update-stage', token, project_number: p.project_number, new_stage: newStage }),
+          body: JSON.stringify({ action: 'update-stage', token, project_number: p.project_number, new_stage: newStage, nota }),
         });
         const data = await res.json();
         msgEl.style.display = '';
-        if (data.ok) { msgEl.style.color = '#059669'; msgEl.textContent = `✓ Etapa actualizada: ${data.stage_label}`; }
-        else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al actualizar'; }
-      } finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+        if (data.ok) {
+          msgEl.style.color = '#059669';
+          msgEl.textContent = `✓ Avance notificado: ${data.stage_label}`;
+          document.getElementById('paStageNota').value = '';
+        } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al actualizar'; }
+      } finally { btn.disabled = false; btn.textContent = 'Notificar avance al cliente'; }
     };
 
     /* Send message */

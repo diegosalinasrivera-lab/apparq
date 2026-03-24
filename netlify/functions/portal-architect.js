@@ -121,7 +121,7 @@ exports.handler = async (event) => {
 
     /* ── UPDATE-STAGE ─────────────────────────── */
     if (action === 'update-stage') {
-      const { project_number, new_stage } = rest;
+      const { project_number, new_stage, nota } = rest;
       if (!project_number || !new_stage) {
         return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Faltan datos' }) };
       }
@@ -173,6 +173,54 @@ exports.handler = async (event) => {
           const p = projData[0];
           const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
           const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+          const svcName   = svcLabels[p.service_type] || p.service_type;
+          const notaBlock = nota
+            ? `<div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin:16px 0;">
+                 <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700">NOTA DEL ARQUITECTO</p>
+                 <p style="margin:0;font-size:13px;color:#78350F;line-height:1.6;">${nota}</p>
+               </div>`
+            : '';
+
+          const tableBase = `
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">Nueva etapa</td><td style="padding:8px 10px;font-weight:700;color:#059669">${STAGE_LABELS[new_stage]}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcName}</td></tr>
+              <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Fecha</td><td style="padding:8px 10px">${fecha}</td></tr>
+            </table>`;
+
+          /* Email al cliente */
+          if (p.client_email) {
+            await sendEmail({
+              to: p.client_email,
+              subject: `📊 Avance de tu trámite ${project_number} — ${STAGE_LABELS[new_stage]}`,
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                  <div style="background:#1a1a2e;padding:28px 32px;text-align:center;border-radius:8px 8px 0 0">
+                    <h1 style="color:#fff;margin:0;font-size:22px">APPARQ</h1>
+                    <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Actualización de tu trámite</p>
+                  </div>
+                  <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                    <h2 style="margin-top:0;color:#1a1a2e;">Hola ${p.client_nombre}, tu trámite avanzó</h2>
+                    <p style="color:#4a5568;font-size:14px;">Tu arquitecto <strong>${p.architect_nombre} ${p.architect_apellido}</strong> ha registrado un nuevo avance:</p>
+                    <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin:16px 0;">
+                      <p style="margin:0 0 4px;font-size:12px;color:#718096;font-weight:700">NUEVA ETAPA</p>
+                      <p style="margin:0;font-size:20px;font-weight:900;color:#059669;">${STAGE_LABELS[new_stage]}</p>
+                    </div>
+                    ${notaBlock}
+                    ${tableBase}
+                    <div style="text-align:center;margin-top:20px;">
+                      <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ver detalle en apparq.cl</a>
+                    </div>
+                    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                  </div>
+                </div>`,
+            });
+          }
+
+          /* Email a hola@apparq.cl */
           await sendEmail({
             to: 'hola@apparq.cl',
             subject: `📊 Avance de trámite — ${project_number} → ${STAGE_LABELS[new_stage]}`,
@@ -182,21 +230,14 @@ exports.handler = async (event) => {
                   <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Actualización de trámite</h1>
                 </div>
                 <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
-                  <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin-bottom:20px">
-                    <p style="margin:0 0 4px;font-size:12px;color:#718096;font-weight:700">NUEVA ETAPA</p>
-                    <p style="margin:0;font-size:20px;font-weight:900;color:#059669">${STAGE_LABELS[new_stage]}</p>
-                  </div>
-                  <table style="width:100%;border-collapse:collapse;font-size:13px">
-                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
-                    <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcLabels[p.service_type] || p.service_type}</td></tr>
-                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
+                  ${tableBase}
+                  ${notaBlock}
+                  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px">
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Cliente</td><td style="padding:8px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
                     <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido} · ${p.architect_email}</td></tr>
-                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
-                    <tr><td style="padding:8px 10px;color:#718096">Actualizado</td><td style="padding:8px 10px">${fecha}</td></tr>
                   </table>
                 </div>
-              </div>
-            `,
+              </div>`,
           });
         }
       } catch (emailErr) {
