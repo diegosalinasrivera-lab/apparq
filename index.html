@@ -2877,7 +2877,10 @@ function buildAddr(item) {
   const num  = a.house_number || '';
   if (road && num) return `${road} ${num}`;
   if (road)        return road;
-  return item.display_name.split(',').slice(0, 2).join(',').trim();
+  // Fallback: si display_name empieza con número (ej: "4826, Pucará, Ñuñoa...")
+  const parts = item.display_name.split(',').map(p => p.trim());
+  if (parts.length >= 2 && /^\d+$/.test(parts[0])) return `${parts[1]} ${parts[0]}`;
+  return parts.slice(0, 2).join(', ');
 }
 
 function showSugg(data) {
