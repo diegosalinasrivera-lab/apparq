@@ -3025,7 +3025,7 @@ function isReady() {
 }
 
 function calcTotal() {
-  if (S.svc === 'informe' && S.m2 === 1) return { uf: 0.5, clp: 0.5 * S.uf };
+  if (S.svc === 'informe' && S.m2 === 1) return { uf: 0.1, clp: 0.1 * S.uf };
   const arch  = ARCH[S.svc] || 0;
   const ufRaw = arch * S.m2;
   const ufMin = ARCH_MIN[S.svc] || 0;
