@@ -2423,7 +2423,7 @@ document.addEventListener('DOMContentLoaded', () => {
    PRICING ENGINE
 ──────────────────────────────────────────────── */
 const ARCH     = { regularizacion: 0.60, ampliacion: 0.90, 'obra-nueva': 1.00, informe: 0.05 };
-const ARCH_MIN = { regularizacion: 15,   ampliacion: 15,   'obra-nueva': 35,   informe: 1    };
+const ARCH_MIN = { regularizacion: 15,   ampliacion: 15,   'obra-nueva': 35,   informe: 3    };
 const SPEC = { dormitorio: 0.20, living: 0.20, bodega: 0.00, baño: 0.80, cocina: 0.80, casa: 0.80 };
 const STRU = { metalcon: 0, madera: 0, albanileria: 0.30, hormigon: 0.30 };
 const STAGES_NORMAL = [
@@ -3025,6 +3025,7 @@ function isReady() {
 }
 
 function calcTotal() {
+  if (S.svc === 'informe' && S.m2 === 1) return { uf: 0.5, clp: 0.5 * S.uf };
   const arch  = ARCH[S.svc] || 0;
   const ufRaw = arch * S.m2;
   const ufMin = ARCH_MIN[S.svc] || 0;
