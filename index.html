@@ -1923,6 +1923,7 @@
         </div>
       </div>
 
+      <div id="arqFormError" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#b91c1c;margin-top:0.75rem;"></div>
       <button type="submit" class="btn-modal-submit" id="arqSubmitBtn" disabled style="margin-top:1rem;opacity:0.5;cursor:not-allowed;">Acepta el contrato para continuar</button>
       <p class="modal-legal">Al enviar tu inscripción quedarás registrado y podrás acceder al portal de arquitecto con tu email y contraseña.</p>
     </form>
@@ -2709,38 +2710,51 @@ document.getElementById('arqForm').onsubmit = async e => {
   e.preventDefault();
   const btn = document.getElementById('arqSubmitBtn');
 
+  function showArqError(msg) {
+    const el = document.getElementById('arqFormError');
+    el.textContent = msg;
+    el.style.display = '';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  document.getElementById('arqFormError').style.display = 'none';
+
   /* Validar campos obligatorios */
   const arqEmail = document.getElementById('arqEmail').value.trim();
   const arqTel   = document.getElementById('arqTel').value.trim();
   const arqRut   = document.getElementById('arqRut').value.trim();
   const arqPass  = document.getElementById('arqPassword').value;
   const arqConf  = document.getElementById('arqPasswordConfirm').value;
+  const arqPatente   = document.getElementById('arqPatenteInput').value.trim();
+  const arqSinPatente = document.getElementById('arqSinPatente').checked;
 
   if (!arqEmail || !arqTel || !arqRut) {
-    showToast('Completa todos los campos obligatorios (email, teléfono y RUT)'); return;
+    showArqError('Completa todos los campos obligatorios: email, teléfono y RUT.'); return;
   }
   if (!emailValid(arqEmail)) {
     setField(document.getElementById('arqEmail'), document.getElementById('hintArqEmail'), false, '✗ Formato de email inválido');
-    showToast('Email inválido'); return;
+    showArqError('El formato del email es inválido.'); return;
   }
   if (!telValid(arqTel)) {
     setField(document.getElementById('arqTel'), document.getElementById('hintArqTel'), false, '✗ Ingresa un celular chileno válido (+56 9 XXXX XXXX)');
-    showToast('Teléfono inválido'); return;
+    showArqError('Ingresa un celular chileno válido (+56 9 XXXX XXXX).'); return;
   }
   if (!rutValid(arqRut)) {
     setField(document.getElementById('arqRut'), document.getElementById('hintArqRut'), false, '✗ RUT inválido — revisa el dígito verificador');
-    showToast('RUT inválido'); return;
+    showArqError('RUT inválido — revisa el dígito verificador.'); return;
   }
-  if (!arqFotoBase64) { showToast('Sube una foto de perfil para continuar'); return; }
-  if (!arqPass) { showToast('Crea una contraseña para acceder al portal'); return; }
+  if (!arqPatente && !arqSinPatente) {
+    showArqError('Ingresa tu número de patente profesional, o marca "No tengo patente profesional".'); return;
+  }
+  if (!arqFotoBase64) { showArqError('Sube una foto de perfil para continuar.'); return; }
+  if (!arqPass) { showArqError('Crea una contraseña para acceder al portal.'); return; }
   /* Fuerza mínima: score >= 3 */
   let passScore = 0;
   if (arqPass.length >= 8)          passScore++;
   if (/[A-Z]/.test(arqPass))        passScore++;
   if (/[0-9]/.test(arqPass))        passScore++;
   if (/[^A-Za-z0-9]/.test(arqPass)) passScore++;
-  if (passScore < 3) { showToast('La contraseña debe tener al menos 8 caracteres, una mayúscula y un número'); return; }
-  if (arqPass !== arqConf) { showToast('Las contraseñas no coinciden'); return; }
+  if (passScore < 3) { showArqError('La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.'); return; }
+  if (arqPass !== arqConf) { showArqError('Las contraseñas no coinciden.'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Registrando…';
@@ -2835,7 +2849,10 @@ document.getElementById('arqForm').onsubmit = async e => {
 
   } catch (err) {
     console.error(err);
-    showToast('⚠️ ' + (err.message || 'Error al enviar. Intenta de nuevo.'));
+    const errEl = document.getElementById('arqFormError');
+    errEl.textContent = '⚠️ ' + (err.message || 'Error al enviar. Intenta de nuevo.');
+    errEl.style.display = '';
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } finally {
     btn.disabled = false;
     btn.textContent = 'Enviar solicitud de inscripción →';
