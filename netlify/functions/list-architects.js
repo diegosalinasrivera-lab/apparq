@@ -71,7 +71,7 @@ exports.handler = async (event) => {
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?select=id,nombre,apellido,comunas,tramites,experiencia,foto_url,calificacion,activo`,
+      `${SUPABASE_URL}/rest/v1/architects?select=id,nombre,apellido,comunas,tramites,experiencia,foto_url,activo`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
 
