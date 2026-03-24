@@ -2785,6 +2785,7 @@ document.getElementById('arqForm').onsubmit = async e => {
       mensaje:     fd.get('mensaje')     || '',
       firma_data:  firmaData,
       foto_url:    arqFotoBase64 || null,
+      sin_patente: document.getElementById('arqSinPatente').checked,
     };
 
     /* 1. Crear cuenta en Supabase Auth */
