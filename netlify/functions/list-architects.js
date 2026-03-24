@@ -90,12 +90,13 @@ exports.handler = async (event) => {
         tramites: Array.isArray(a.tramites) ? a.tramites : (a.tramites ? String(a.tramites).split(',').map(s=>s.trim()).filter(Boolean) : []),
       }));
 
-    /* Filtrar por trámite si se especificó */
+    /* Filtrar por trámite si se especificó; si no hay coincidencia usar todos */
     const byTramite = tramiteLabel
       ? all.filter(a => a.tramites.some(t => t.toLowerCase().includes(tramiteLabel.toLowerCase())))
       : all;
+    const pool = byTramite.length ? byTramite : all;
 
-    const inCommune = (c) => byTramite.filter(a => Array.isArray(a.comunas) && a.comunas.includes(c));
+    const inCommune = (c) => pool.filter(a => Array.isArray(a.comunas) && a.comunas.includes(c));
 
     /* Buscar primero en la comuna exacta, luego adyacentes */
     let result = inCommune(targetCommune);
@@ -106,7 +107,7 @@ exports.handler = async (event) => {
       }
     }
 
-    if (!result.length) result = byTramite;
+    if (!result.length) result = pool;
 
     /* Ordenar: con foto primero, luego por calificacion descendente */
     result.sort((a, b) => {
