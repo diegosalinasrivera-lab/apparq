@@ -108,6 +108,7 @@ exports.handler = async (event) => {
           </div>
           <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
             <h2 style="margin-top:0;font-size:16px;color:#1a1a2e">👤 Datos del arquitecto</h2>
+            ${data.foto_url ? `<div style="margin-bottom:16px;"><img src="${data.foto_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0;" alt="${nombreCompleto}" /></div>` : ''}
             <table style="width:100%;border-collapse:collapse;font-size:13px">
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:38%">Nombre</td><td style="padding:8px 10px;font-weight:700">${nombreCompleto}</td></tr>
               <tr><td style="padding:8px 10px;color:#718096">Email</td><td style="padding:8px 10px">${payload.email}</td></tr>
