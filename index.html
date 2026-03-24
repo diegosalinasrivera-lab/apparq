@@ -2864,8 +2864,32 @@ document.addEventListener('click', e => {
 async function doSearch(q) {
   addrSpin.classList.add('on');
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ', Santiago, Chile')}&format=json&addressdetails=1&limit=6&countrycodes=cl&bounded=1&viewbox=-71.7,-33.7,-70.4,-33.2&accept-language=es`;
-    const data = await (await fetch(url, { headers: { 'User-Agent': 'APPARQ/1.0' } })).json();
+    const headers = { 'User-Agent': 'APPARQ/1.0' };
+    const base = 'https://nominatim.openstreetmap.org/search';
+    const common = '&format=json&addressdetails=1&limit=6&countrycodes=cl&accept-language=es';
+
+    /* Intento 1: búsqueda libre con bounding box Santiago */
+    let url = `${base}?q=${encodeURIComponent(q + ', Chile')}${common}&bounded=1&viewbox=-71.7,-33.7,-70.4,-33.2`;
+    let data = await (await fetch(url, { headers })).json();
+
+    /* Intento 2: búsqueda estructurada separando número y calle */
+    if (!data?.length) {
+      const m = q.match(/^(.+?)\s+(\d+)\s*(?:,\s*(.+))?$/);
+      if (m) {
+        const street = encodeURIComponent(m[1].trim());
+        const num    = encodeURIComponent(m[2].trim());
+        const city   = encodeURIComponent((m[3] || 'Santiago').trim());
+        url = `${base}?street=${num}+${street}&city=${city}&country=Chile${common}`;
+        data = await (await fetch(url, { headers })).json();
+      }
+    }
+
+    /* Intento 3: solo nombre de calle sin número, Chile completo */
+    if (!data?.length) {
+      url = `${base}?q=${encodeURIComponent(q + ', Chile')}${common}`;
+      data = await (await fetch(url, { headers })).json();
+    }
+
     data?.length ? showSugg(data) : closeSugg();
   } catch { closeSugg(); }
   finally { addrSpin.classList.remove('on'); }
