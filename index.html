@@ -2890,7 +2890,7 @@ async function doSearch(q) {
       data = await (await fetch(url, { headers })).json();
     }
 
-    data?.length ? showSugg(data) : closeSugg();
+    data?.length ? showSugg(data) : showNoResults();
   } catch { closeSugg(); }
   finally { addrSpin.classList.remove('on'); }
 }
@@ -2947,6 +2947,14 @@ function extractCommune(addr) {
   return '';
 }
 function closeSugg() { suggBox.classList.remove('open'); suggBox.innerHTML = ''; }
+
+function showNoResults() {
+  suggBox.innerHTML = `<div style="padding:14px 16px;font-size:12px;color:#718096;line-height:1.6;">
+    No encontramos esa dirección.<br>
+    <strong style="color:#1a1a2e;">Escríbela manualmente</strong> y selecciona tu comuna con el selector de abajo.
+  </div>`;
+  suggBox.classList.add('open');
+}
 
 /* ── Service buttons ──────────────────────── */
 document.querySelectorAll('.sbtn').forEach(b => {
