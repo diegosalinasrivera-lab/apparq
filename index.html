@@ -2098,6 +2098,7 @@
         <span class="logo-wordmark">APPARQ</span>
       </a>
       <div class="footer-links">
+        <a href="#" id="openQuienesSomos">Quiénes somos</a>
         <a href="#" id="openTerminos">Términos</a>
         <a href="#" id="openPrivacidad">Privacidad</a>
         <a href="#" id="openFaq">FAQ</a>
@@ -2132,6 +2133,33 @@
     </div>
   </div>
 </footer>
+
+<!-- ── MODAL: QUIÉNES SOMOS ──────────────────── -->
+<div class="legal-overlay" id="modalQuienesSomos">
+  <div class="legal-box">
+    <div class="legal-head">
+      <div>
+        <h3>Quiénes somos</h3>
+      </div>
+      <button class="legal-close" id="closeQuienesSomos">✕</button>
+    </div>
+    <div class="legal-body">
+
+      <p>APPARQ es una plataforma que conecta personas que necesitan realizar trámites municipales con arquitectos independientes especializados, de forma rápida, transparente y confiable.</p>
+
+      <p>Nace con el objetivo de simplificar un proceso que hoy suele ser lento, poco claro y difícil de gestionar, permitiendo cotizar, comparar y contratar arquitectos verificados en un solo lugar.</p>
+
+      <p>APPARQ está impulsada por un equipo con más de 20 años de experiencia en arquitectura, desarrollo de proyectos y gestión de trámites municipales, lo que permite estandarizar procesos, definir honorarios de mercado y asegurar un servicio profesional desde el primer contacto.</p>
+
+      <p>Trabajamos con arquitectos independientes previamente evaluados, especializados en regularizaciones, ampliaciones, obra nueva, certificados municipales e informes técnicos.</p>
+
+      <p>Nuestro objetivo es hacer que los trámites municipales sean simples, transparentes y accesibles, tanto para clientes como para arquitectos.</p>
+
+      <p><strong>APPARQ moderniza la forma de gestionar arquitectura, combinando experiencia profesional con tecnología.</strong></p>
+
+    </div>
+  </div>
+</div>
 
 <!-- ── MODAL: TÉRMINOS Y CONDICIONES ──────────────────── -->
 <div class="legal-overlay" id="modalTerminos">
@@ -3541,12 +3569,14 @@ function markJourneyDone() {
     document.body.style.overflow = '';
   }
 
+  document.getElementById('openQuienesSomos').addEventListener('click', e => { e.preventDefault(); openLegal('modalQuienesSomos'); });
   document.getElementById('openTerminos').addEventListener('click', e => { e.preventDefault(); openLegal('modalTerminos'); });
   document.getElementById('openPrivacidad').addEventListener('click', e => { e.preventDefault(); openLegal('modalPrivacidad'); });
+  document.getElementById('closeQuienesSomos').addEventListener('click', () => closeLegal('modalQuienesSomos'));
   document.getElementById('closeTerminos').addEventListener('click', () => closeLegal('modalTerminos'));
   document.getElementById('closePrivacidad').addEventListener('click', () => closeLegal('modalPrivacidad'));
 
-  ['modalTerminos','modalPrivacidad'].forEach(id => {
+  ['modalQuienesSomos','modalTerminos','modalPrivacidad'].forEach(id => {
     document.getElementById(id).addEventListener('click', e => {
       if (e.target === document.getElementById(id)) closeLegal(id);
     });
@@ -3554,6 +3584,7 @@ function markJourneyDone() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      closeLegal('modalQuienesSomos');
       closeLegal('modalTerminos');
       closeLegal('modalPrivacidad');
     }
