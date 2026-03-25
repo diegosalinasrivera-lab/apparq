@@ -3048,6 +3048,7 @@ function isReady() {
 
 function calcTotal() {
   if (S.svc === 'informe' && S.m2 === 1) return { uf: 0.1, clp: 0.1 * S.uf };
+  if (S.m2 === 1 && ['regularizacion','ampliacion','obra-nueva'].includes(S.svc)) return { uf: 0.05, clp: 0.05 * S.uf };
   const arch  = ARCH[S.svc] || 0;
   const ufRaw = arch * S.m2;
   const ufMin = ARCH_MIN[S.svc] || 0;
