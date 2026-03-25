@@ -38,6 +38,7 @@ const STAGE_LABELS   = {
   visita:           'Visita a terreno',
   elaboracion_inf:  'Elaboración del informe',
   entrega_informe:  'Informe entregado',
+  no_viable:        'Trámite no viable',
 };
 
 /* Verifica token con Supabase Auth y devuelve el email */
@@ -283,6 +284,108 @@ exports.handler = async (event) => {
       }
 
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true, content: clean }) };
+    }
+
+    /* ── DECLARE-INVIABLE ─────────────────────── */
+    if (action === 'declare-inviable') {
+      const { project_number, informe } = rest;
+      if (!project_number || !informe?.trim()) {
+        return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Debes ingresar el informe técnico de inviabilidad' }) };
+      }
+
+      /* Verificar que el proyecto pertenece al arquitecto */
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=*&limit=1`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const checkData = await checkRes.json();
+      if (!checkData.length) {
+        return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Proyecto no encontrado' }) };
+      }
+      const p = checkData[0];
+
+      /* Actualizar stage a no_viable y guardar informe */
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}`,
+        {
+          method: 'PATCH',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stage: 'no_viable', inviabilidad_informe: informe.trim(), updated_at: new Date().toISOString() }),
+        }
+      );
+
+      const fecha   = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+      const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+      const svcName = svcLabels[p.service_type] || p.service_type;
+
+      /* Email al cliente */
+      if (p.client_email) {
+        await sendEmail({
+          to: p.client_email,
+          subject: `⚠️ Informe de inviabilidad — Trámite ${project_number} — APPARQ`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+              <div style="background:#1a1a2e;padding:28px 32px;text-align:center;border-radius:8px 8px 0 0">
+                <h1 style="color:#fff;margin:0;font-size:22px">APPARQ</h1>
+                <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Informe de inviabilidad técnica</p>
+              </div>
+              <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                <h2 style="margin-top:0;color:#1a1a2e;">Estimado/a ${p.client_nombre},</h2>
+                <p style="color:#4a5568;font-size:14px;line-height:1.7;">El arquitecto asignado a tu trámite ha determinado que la propiedad no es viable para la tramitación solicitada. A continuación el informe técnico:</p>
+
+                <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:16px 20px;margin:16px 0;">
+                  <p style="margin:0 0 6px;font-size:12px;color:#991B1B;font-weight:700;">INFORME TÉCNICO DE INVIABILIDAD</p>
+                  <p style="margin:0;font-size:13px;color:#7F1D1D;line-height:1.7;">${informe.trim()}</p>
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px">
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcName}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Fecha</td><td style="padding:8px 10px">${fecha}</td></tr>
+                </table>
+
+                <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
+                  <p style="margin:0 0 6px;font-size:12px;color:#92400E;font-weight:700;">⚠️ Política de reembolsos (Cláusula 10)</p>
+                  <p style="margin:0;font-size:12px;color:#78350F;line-height:1.6;">El pago E1 no es reembolsable, ya que cubre los costos del diagnóstico profesional y trabajo ejecutado hasta esta etapa, conforme a las condiciones del contrato firmado digitalmente en apparq.cl.</p>
+                </div>
+
+                <p style="font-size:13px;color:#4a5568;margin-top:16px;">Si tienes dudas o deseas más información, contáctanos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a>.</p>
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+              </div>
+            </div>`,
+        });
+      }
+
+      /* Email a hola@apparq.cl */
+      await sendEmail({
+        to: 'hola@apparq.cl',
+        subject: `⚠️ Trámite declarado no viable — ${project_number}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Trámite no viable</h1>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+                <p style="margin:0 0 6px;font-size:12px;color:#991B1B;font-weight:700;">INFORME TÉCNICO</p>
+                <p style="margin:0;font-size:13px;color:#7F1D1D;line-height:1.7;">${informe.trim()}</p>
+              </div>
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcName}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido} · ${p.architect_email}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Fecha</td><td style="padding:8px 10px">${fecha}</td></tr>
+              </table>
+            </div>
+          </div>`,
+      });
+
+      return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
     }
 
     /* ── GET-MESSAGES ─────────────────────────── */

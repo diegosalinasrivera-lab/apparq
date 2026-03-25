@@ -4190,6 +4190,16 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       </div>
 
       <div style="margin-top:0.75rem;">
+        <details style="margin-bottom:1rem;border:1.5px solid #FECACA;border-radius:var(--radius);overflow:hidden;">
+          <summary style="background:#FEF2F2;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#991B1B;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">⚠️ Declarar trámite no viable <span style="font-weight:400;font-size:0.72rem;">▼</span></summary>
+          <div style="padding:0.85rem 1rem;background:#fff;">
+            <p style="font-size:0.78rem;color:#7F1D1D;margin:0 0 0.6rem;line-height:1.5;">Si la propiedad no es técnicamente viable, debes dejar constancia con un informe fundado. Se notificará al cliente y a APPARQ. El pago E1 no es reembolsable.</p>
+            <textarea id="paInviableInforme" placeholder="Describe las razones técnicas de inviabilidad (normativa, distanciamientos, uso de suelo, etc.)…" maxlength="1200" style="width:100%;min-height:90px;border:1px solid #FECACA;border-radius:var(--radius);padding:0.5rem 0.75rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;margin-bottom:0.5rem;"></textarea>
+            <button id="paDeclareInviable" style="width:100%;background:#DC2626;color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Declarar no viable y notificar</button>
+            <div id="paInviableMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+          </div>
+        </details>
+
         <div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:0.5rem;">💬 Mensajes con el cliente</div>
         <div id="paDetailMessages" style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;font-size:0.78rem;color:var(--mid);">
           <em>Cargando…</em>
@@ -4240,6 +4250,29 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           document.getElementById('paStageNota').value = '';
         } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al actualizar'; }
       } finally { btn.disabled = false; btn.textContent = 'Notificar avance al cliente'; }
+    };
+
+    /* Declare inviable */
+    document.getElementById('paDeclareInviable').onclick = async () => {
+      const informe = document.getElementById('paInviableInforme').value.trim();
+      const msgEl   = document.getElementById('paInviableMsg');
+      const btn     = document.getElementById('paDeclareInviable');
+      if (!informe) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Debes ingresar el informe técnico.'; return; }
+      if (!confirm('¿Confirmas declarar este trámite como NO VIABLE? Se notificará al cliente y a APPARQ. Esta acción no se puede deshacer.')) return;
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        const res  = await fetch('/.netlify/functions/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'declare-inviable', token, project_number: p.project_number, informe }),
+        });
+        const data = await res.json();
+        msgEl.style.display = '';
+        if (data.ok) {
+          msgEl.style.color = '#059669';
+          msgEl.textContent = '✓ Declaración enviada. Cliente y APPARQ fueron notificados.';
+          btn.style.display = 'none';
+        } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al enviar'; }
+      } finally { btn.disabled = false; if (btn.style.display !== 'none') btn.textContent = 'Declarar no viable y notificar'; }
     };
 
     /* Send message */
