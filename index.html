@@ -674,6 +674,19 @@
     .exc { font-size: 0.79rem; color: #aaa; display: flex; align-items: center; gap: 0.45rem; }
     .exc::before { content: '✕'; color: #ccc; font-weight: 700; font-size: 0.82rem; }
     .inc-section-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin: 0.6rem 0 0.2rem; color: var(--muted); }
+    .saber-mas-btn { margin-top: 1rem; background: none; border: 1.5px solid var(--orange); color: var(--orange); border-radius: 6px; padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; width: 100%; transition: background 0.15s, color 0.15s; }
+    .saber-mas-btn:hover { background: var(--orange); color: #fff; }
+    /* Saber más modal */
+    #saberMasModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9000; overflow-y:auto; padding:2rem 1rem; }
+    #saberMasModal.open { display:flex; align-items:flex-start; justify-content:center; }
+    #saberMasBox { background:#fff; border-radius:14px; max-width:680px; width:100%; padding:2rem; position:relative; margin:auto; }
+    #saberMasBox h2 { margin:0 0 1.5rem; font-size:1.25rem; color:var(--dark); }
+    .sm-step { display:flex; gap:1rem; margin-bottom:1.25rem; }
+    .sm-step-num { flex-shrink:0; width:32px; height:32px; border-radius:50%; background:var(--orange); color:#fff; font-weight:900; font-size:0.85rem; display:flex; align-items:center; justify-content:center; }
+    .sm-step-body h4 { margin:0 0 0.3rem; font-size:0.92rem; font-weight:800; color:var(--dark); }
+    .sm-step-body p { margin:0; font-size:0.82rem; color:#555; line-height:1.65; }
+    .sm-step-body ul { margin:0.4rem 0 0; padding-left:1.1rem; font-size:0.82rem; color:#555; line-height:1.8; }
+    #saberMasClose { position:absolute; top:1rem; right:1.1rem; background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--muted); line-height:1; }
     .svc-range {
       margin-top: 1.1rem; padding-top: 0.9rem;
       border-top: 1px solid var(--border-light);
@@ -1378,6 +1391,7 @@
             <div class="exc">Especialidades (sanitaria, eléctrica, gas)</div>
             <div class="exc">Modificaciones de diseño</div>
           </div>
+          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('regularizacion')">Saber más →</button>
         </div>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
@@ -1401,6 +1415,7 @@
             <div class="exc">Render</div>
             <div class="exc">Dirección de obra</div>
           </div>
+          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('ampliacion')">Saber más →</button>
         </div>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
@@ -1426,6 +1441,7 @@
             <div class="exc">Diseño interior</div>
             <div class="exc">Dirección de obra</div>
           </div>
+          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('obra-nueva')">Saber más →</button>
         </div>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
@@ -4345,6 +4361,85 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   document.getElementById('openFaq').addEventListener('click', e => { e.preventDefault(); openFaqModal(); });
   document.getElementById('closeFaq').addEventListener('click', closeFaqModal);
   document.getElementById('modalFaq').addEventListener('click', e => { if (e.target === document.getElementById('modalFaq')) closeFaqModal(); });
+})();
+</script>
+
+<!-- ── SABER MÁS MODAL ───────────────────────── -->
+<div id="saberMasModal">
+  <div id="saberMasBox">
+    <button id="saberMasClose" aria-label="Cerrar">✕</button>
+    <h2 id="saberMasTitle"></h2>
+    <div id="saberMasContent"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const CONTENT = {
+    regularizacion: {
+      title: '📋 Regularización — Proceso paso a paso',
+      steps: [
+        { n:1, title:'Diagnóstico previo', body:'Verificar fecha de construcción: si es anterior al 31.07.1959, aplica procedimiento simplificado (Art. 5.1.4 N°2 letra B OGUC). Si es posterior, se tramita como regularización general o bajo Ley 20.898 ("Ley del Mono") si aplica.' },
+        { n:2, title:'Documentos base', body:'Certificado de Avalúo Fiscal detallado, inscripción del Conservador de Bienes Raíces, boleta de agua, cédula de identidad del propietario, permisos y planos anteriores si existen.' },
+        { n:3, title:'Levantamiento y proyecto', body:'Un arquitecto realiza el levantamiento de lo construido y elabora planos de arquitectura, estructura e instalaciones según corresponda.' },
+        { n:4, title:'Certificaciones SEC', body:'Según los recintos regularizados: el <strong>TE1</strong> (declaración de instalación eléctrica interior) es obligatorio para cualquier espacio habitable con instalación eléctrica. El <strong>TC6</strong> (declaración de instalaciones interiores de gas) se exige únicamente si existe cocina u otro artefacto a gas. Ambos los tramita un instalador autorizado SEC, no el arquitecto.' },
+        { n:5, title:'Ingreso a DOM', body:'Se presenta la Solicitud de Permiso de Edificación correspondiente (Formulario 1-1.3 o 1-1.4 según el caso), el expediente completo de planos y especificaciones, y se paga el derecho municipal (aprox. 1,5% del costo declarado de la obra).' },
+        { n:6, title:'Revisión', body:'La DOM revisa en plazo máximo de 30 días. Puede observar o aprobar. Si hay observaciones, el profesional subsana y reingresa.' },
+        { n:7, title:'Certificado de Regularización', body:'Una vez aprobado, la DOM emite el certificado. No requiere recepción de obra adicional.' },
+      ]
+    },
+    ampliacion: {
+      title: '🔨 Ampliación — Proceso paso a paso',
+      steps: [
+        { n:1, title:'Certificado de Informaciones Previas (CIP)', body:'Se solicita a la DOM antes de proyectar. Entrega línea de edificación, uso de suelo, coeficientes de constructibilidad y ocupación, rasantes y afectaciones.' },
+        { n:2, title:'Anteproyecto', body:'Se ingresa a la DOM para congelar norma urbanística por 180 días prorrogables. Plazo de respuesta: 15 días hábiles.<br><br><strong>Nota:</strong> Ampliación ≤ 100 m² → Obra Menor (Art. 5.1.4 N°1 letra A OGUC), procedimiento simplificado. Ampliación > 100 m² → se tramita igual que Obra Nueva.' },
+        { n:3, title:'Desarrollo del proyecto', body:'Arquitecto elabora planos de arquitectura, cálculo estructural si aplica, y proyectos de instalaciones (electricidad, agua potable, alcantarillado, gas según corresponda).' },
+        { n:4, title:'Ingreso del permiso', body:'Se presenta la Solicitud de Permiso de Edificación correspondiente (Formulario 1-1.1 para ampliación hasta 100 m², o Formulario 2-3.2 para ampliación mayor a 100 m²), firmada por propietario, arquitecto, constructor e ingeniero civil según corresponda. Expediente completo. Pago de derechos municipales.' },
+        { n:5, title:'Revisión DOM', body:'Plazo: 30 días corridos. La DOM puede formular observaciones; el profesional subsana y reingresa.' },
+        { n:6, title:'Inicio de obras', body:'Con permiso aprobado se puede iniciar. Se debe contratar ITO si corresponde.' },
+        { n:7, title:'Certificaciones SEC previas a la recepción', body:'Una vez terminada la obra y antes de solicitar la recepción, se deben obtener:<ul><li><strong>TE1</strong> — obligatorio para cualquier ampliación con instalación eléctrica (dormitorio, living, baño, cocina, etc.).</li><li><strong>TC6</strong> — obligatorio solo si la ampliación incluye cocina u otro artefacto a gas.</li></ul>Ambos los gestiona un instalador autorizado SEC independiente del arquitecto.' },
+        { n:8, title:'Recepción Definitiva', body:'Se presentan planos As-Built junto a los certificados SEC correspondientes (TE1 y/o TC6) y se solicita la Recepción Final a la DOM (Formulario 1-5.1 o 2-7.2 según tamaño). La DOM inspecciona en terreno y emite el certificado correspondiente.' },
+      ]
+    },
+    'obra-nueva': {
+      title: '🏠 Obra Nueva — Proceso paso a paso',
+      steps: [
+        { n:1, title:'Certificado de Informaciones Previas (CIP)', body:'Obligatorio. Entrega todos los parámetros normativos del predio según el Plan Regulador Comunal vigente.' },
+        { n:2, title:'Anteproyecto', body:'Se recomienda siempre ingresarlo para congelar norma (Formulario 2-1.1). Aprobado en 15 días hábiles. Vigencia: 180 días prorrogables.' },
+        { n:3, title:'Proyecto completo', body:'Arquitectura, cálculo estructural, instalaciones sanitarias, eléctricas, gas y climatización según destino. Todos firmados por profesionales competentes.' },
+        { n:4, title:'Ingreso del permiso de edificación', body:'Se presenta la Solicitud de Permiso de Edificación Obra Nueva (Formulario 2-3.1) + expediente completo + pago de derechos municipales (≈ 1,5% del costo declarado). Se ingresa vía DOM en Línea.' },
+        { n:5, title:'Revisión y aprobación', body:'30 días hábiles. La DOM puede formular observaciones una sola vez; el profesional subsana y reingresa.' },
+        { n:6, title:'Inicio de obras', body:'Se entrega aviso de inicio de obras a la DOM. Se designa ITO si la obra lo requiere.' },
+        { n:7, title:'Inspecciones durante la obra', body:'La DOM puede inspeccionar en cualquier etapa. El ITO lleva libro de obras.' },
+        { n:8, title:'Certificaciones SEC previas a la recepción', body:'Antes de solicitar la Recepción Definitiva se deben obtener:<ul><li><strong>TE1</strong> — obligatorio para toda obra nueva con instalación eléctrica interior, sin excepción.</li><li><strong>TC6</strong> — obligatorio si la obra incluye cocina, calefón, caldera u otro artefacto a gas.</li></ul>Ambos los gestiona un instalador autorizado SEC independiente del arquitecto.' },
+        { n:9, title:'Recepción Definitiva', body:'Se presenta la Solicitud de Recepción Definitiva (Formulario 2-7.1) junto a planos As-Built y certificados SEC (TE1 y/o TC6). La DOM inspecciona y emite el Certificado de Recepción Definitiva, que habilita el uso legal del inmueble.' },
+      ]
+    }
+  };
+
+  window.openSaberMas = function(svc) {
+    const data = CONTENT[svc]; if (!data) return;
+    document.getElementById('saberMasTitle').textContent = data.title;
+    document.getElementById('saberMasContent').innerHTML = data.steps.map(s => `
+      <div class="sm-step">
+        <div class="sm-step-num">${s.n}</div>
+        <div class="sm-step-body"><h4>${s.title}</h4><p>${s.body}</p></div>
+      </div>`).join('');
+    const modal = document.getElementById('saberMasModal');
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  document.getElementById('saberMasClose').onclick = () => {
+    document.getElementById('saberMasModal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  document.getElementById('saberMasModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('saberMasModal')) {
+      document.getElementById('saberMasModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
 })();
 </script>
 </body>
