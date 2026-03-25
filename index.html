@@ -3855,6 +3855,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   modal.addEventListener('click', e => { if (e.target === modal) { modal.classList.remove('open'); document.body.style.overflow = ''; } });
 
   let currentProject = null;
+  let pcMsgPollInterval = null;
+
+  function pcStopPolling() { if (pcMsgPollInterval) { clearInterval(pcMsgPollInterval); pcMsgPollInterval = null; } }
 
   document.getElementById('pcBuscar').onclick = async () => {
     const num   = document.getElementById('pcNumero').value.trim().toUpperCase();
@@ -3884,11 +3887,13 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   };
 
   document.getElementById('pcVolver').onclick = () => {
+    pcStopPolling();
     document.getElementById('portalClienteDetalle').style.display = 'none';
     document.getElementById('portalClienteForm').style.display = '';
   };
 
   function renderClientProject(p, msgs, clientEmail) {
+    pcStopPolling();
     document.getElementById('portalClienteForm').style.display = 'none';
     document.getElementById('portalClienteDetalle').style.display = '';
     document.getElementById('pcProjNum').textContent = p.project_number;
@@ -3901,6 +3906,23 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
 
     renderMessages(msgs, 'pcMessages', 'client');
+
+    /* Poll messages every 5s */
+    pcMsgPollInterval = setInterval(async () => {
+      try {
+        const r = await fetch('/.netlify/functions/portal-client', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_number: p.project_number, email: clientEmail }),
+        });
+        const d = await r.json();
+        if (d.messages) {
+          const box = document.getElementById('pcMessages');
+          const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+          renderMessages(d.messages, 'pcMessages', 'client');
+          if (atBottom) box.scrollTop = box.scrollHeight;
+        }
+      } catch(e) {}
+    }, 5000);
 
     document.getElementById('pcMsgSend').onclick = async () => {
       const content = document.getElementById('pcMsgInput').value.trim();
@@ -4031,6 +4053,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   };
 
   document.getElementById('paBackToList').onclick = () => {
+    if (window._paMsgPollInterval) { clearInterval(window._paMsgPollInterval); window._paMsgPollInterval = null; }
     document.getElementById('portalArqDetail').style.display = 'none';
     document.getElementById('portalArqDash').style.display = '';
   };
@@ -4168,15 +4191,24 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         <div style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem;">Los números y correos son bloqueados automáticamente.</div>
       </div>`;
 
-    /* Load messages */
-    try {
-      const res  = await fetch('/.netlify/functions/portal-architect', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get-messages', token, project_number: p.project_number }),
-      });
-      const data = await res.json();
-      window._renderMessages(data.messages || [], 'paDetailMessages', 'architect');
-    } catch(e) {}
+    /* Load messages + start polling */
+    if (window._paMsgPollInterval) clearInterval(window._paMsgPollInterval);
+    async function paFetchMessages() {
+      try {
+        const res  = await fetch('/.netlify/functions/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get-messages', token, project_number: p.project_number }),
+        });
+        const data = await res.json();
+        const box = document.getElementById('paDetailMessages');
+        if (!box) { clearInterval(window._paMsgPollInterval); return; }
+        const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+        window._renderMessages(data.messages || [], 'paDetailMessages', 'architect');
+        if (atBottom) box.scrollTop = box.scrollHeight;
+      } catch(e) {}
+    }
+    await paFetchMessages();
+    window._paMsgPollInterval = setInterval(paFetchMessages, 5000);
 
     /* Update stage */
     document.getElementById('paUpdateStage').onclick = async () => {
