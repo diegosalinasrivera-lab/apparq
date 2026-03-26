@@ -3155,8 +3155,7 @@ function isReady() {
 }
 
 function calcTotal() {
-  /* Valores especiales para 1 m² */
-  if (S.svc === 'informe' && S.m2 === 1) return { uf: 0.1,  clp: 0.1  * S.uf };
+  /* Valor especial para 1 m² (solo trámites por superficie, no informe) */
   if (S.m2 === 1 && ['regularizacion','ampliacion','obra-nueva'].includes(S.svc)) return { uf: 0.05, clp: 0.05 * S.uf };
   /* Informe: precio fijo 7 UF independiente de los m² */
   if (S.svc === 'informe') return { uf: 7, clp: 7 * S.uf };
