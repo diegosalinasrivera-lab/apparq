@@ -153,7 +153,7 @@ exports.handler = async (event) => {
             <h2 style="margin-top:24px;font-size:16px;color:#1a1a2e">🏗 Arquitecto asignado</h2>
             <table style="width:100%;border-collapse:collapse;font-size:13px">
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Nombre</td><td style="padding:8px 10px;font-weight:700">${arqNombre}</td></tr>
-              ${arquitecto?.email ? `<tr><td style="padding:8px 10px;color:#718096">Email arq.</td><td style="padding:8px 10px">${arquitecto.email}</td></tr>` : ''}
+              <tr><td style="padding:8px 10px;color:#718096">Email arq.</td><td style="padding:8px 10px${!arquitecto?.email ? ';color:#dc2626;font-weight:700' : ''}">${arquitecto?.email || '⚠️ SIN EMAIL — revisar DB'}</td></tr>
               ${arquitecto?.comunas ? `<tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Comunas</td><td style="padding:8px 10px">${arquitecto.comunas.join(', ')}</td></tr>` : ''}
               ${arquitecto?.tramites ? `<tr><td style="padding:8px 10px;color:#718096">Trámites</td><td style="padding:8px 10px">${arquitecto.tramites.join(', ')}</td></tr>` : ''}
             </table>
@@ -246,12 +246,41 @@ exports.handler = async (event) => {
     }
 
     /* ── Email al arquitecto asignado ─────────── */
-    const arqEmail = arquitecto?.email;
-    if (arqEmail) {
-      const esInforme = svc === 'informe';
+    const arqEmail = arquitecto?.email || null;
+    console.log('Arquitecto email:', arqEmail, '| objeto arq:', JSON.stringify(arquitecto));
+
+    if (!arqEmail) {
+      console.warn('⚠️  Sin email de arquitecto — no se envía correo de asignación. arquitecto:', JSON.stringify(arquitecto));
+    } else {
+      const esInforme  = svc === 'informe';
+      const ARQ_PCT    = 0.80;   /* 80 % para el arquitecto */
+      const APP_PCT    = 0.20;   /* 20 % comisión APPARQ   */
+
+      /* Honorarios netos por etapa (descontando comisión APPARQ) */
+      const arqTotal = Math.round((clp || 0) * ARQ_PCT);
+      const arqE1    = Math.round((e1  || 0) * ARQ_PCT);
+
+      /* Etapas de pago para regularización / ampliación / obra nueva */
+      const etapasBlock = esInforme
+        ? `<tr><td style="padding:8px 10px;color:#718096">Visita + elaboración</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>
+           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Entrega de informe</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>`
+        : `<tr><td style="padding:8px 10px;color:#718096">E1 · Levantamiento (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
+           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Elaboración de planos</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>
+           <tr><td style="padding:8px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.20*ARQ_PCT))}</td></tr>
+           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E4 · Recepción final</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>`;
+
+      /* Firma del cliente (contrato de servicio) */
+      const firmaArqBlock = firma_data
+        ? `<div style="margin-top:8px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+             <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente — ${nombreCliente}</p>
+             <img src="${firma_data}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
+             <p style="margin:8px 0 0;font-size:11px;color:#a0aec0;">Firmado el ${fecha} en apparq.cl · Contrato de prestación de servicios con DSR ARQ SPA</p>
+           </div>`
+        : `<p style="font-size:12px;color:#718096;font-style:italic;margin:4px 0;">Contrato firmado digitalmente por el cliente el ${fecha} en apparq.cl</p>`;
+
       await sendEmail({
         to:      arqEmail,
-        subject: `🏗 Nuevo trámite asignado — ${svcName} en ${commune} — APPARQ`,
+        subject: `🏗 Nuevo trámite asignado — ${projectNumber || svcName} · ${commune} — APPARQ`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
             <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
@@ -259,42 +288,64 @@ exports.handler = async (event) => {
               <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Portal del arquitecto</p>
             </div>
             <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
-              <h2 style="margin-top:0;color:#1a1a2e">¡Hola ${arquitecto.nombre}! Se te ha asignado un nuevo trámite</h2>
+              <h2 style="margin-top:0;color:#1a1a2e">¡Hola ${arquitecto.nombre}! Se te ha asignado un nuevo trámite 🎉</h2>
               <p style="color:#4a5568;font-size:14px;line-height:1.7">
                 Un cliente ha iniciado un trámite y has sido asignado como arquitecto responsable. A continuación los detalles:
               </p>
 
-              ${projectNumber ? `
+              <!-- N° TRÁMITE -->
               <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
-                <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700">N° DE TRÁMITE</p>
-                <p style="margin:0;font-size:28px;font-weight:900;color:#E8503A;letter-spacing:2px">${projectNumber}</p>
-              </div>` : ''}
+                <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700;text-transform:uppercase;">N° de Trámite</p>
+                <p style="margin:0;font-size:30px;font-weight:900;color:#E8503A;letter-spacing:2px">${projectNumber || '—'}</p>
+                <p style="margin:6px 0 0;font-size:11px;color:#78350F">Usa este número para gestionar el trámite en <strong>apparq.cl → Soy Arquitecto</strong></p>
+              </div>
 
+              <!-- HONORARIOS NETOS -->
+              <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:16px 20px;margin:20px 0">
+                <p style="margin:0 0 10px;font-size:13px;font-weight:800;color:#15803d;">💰 Tus honorarios netos (descontado ${Math.round(APP_PCT*100)}% APPARQ)</p>
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                  ${etapasBlock}
+                  <tr style="border-top:2px solid #86efac">
+                    <td style="padding:10px 10px;color:#15803d;font-weight:800">TOTAL a recibir</td>
+                    <td style="padding:10px 10px;font-weight:900;color:#15803d;font-size:15px">${clpFmt(arqTotal)}</td>
+                  </tr>
+                </table>
+                <p style="margin:10px 0 0;font-size:11px;color:#4ade80;">* El pago de cada etapa se transfiere dentro de los 10 días hábiles desde la confirmación del pago del cliente, previa emisión de boleta electrónica.</p>
+              </div>
+
+              <!-- DATOS DEL TRÁMITE -->
               <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">📋 Datos del trámite</h3>
               <table style="width:100%;border-collapse:collapse;font-size:13px">
-                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Servicio</td><td style="padding:8px 10px;font-weight:700">${svcName}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Servicio</td><td style="padding:8px 10px;font-weight:700">${svcName}</td></tr>
                 <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${direccion || '—'}</td></tr>
                 <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Comuna</td><td style="padding:8px 10px">${commune || '—'}</td></tr>
                 <tr><td style="padding:8px 10px;color:#718096">Superficie</td><td style="padding:8px 10px">${m2 ? m2 + ' m²' : '—'}</td></tr>
-                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Total</td><td style="padding:8px 10px;font-weight:700">${clpFmt(clp)}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Valor total proyecto</td><td style="padding:8px 10px;font-weight:700">${clpFmt(clp)}</td></tr>
                 <tr><td style="padding:8px 10px;color:#718096">Fecha inicio</td><td style="padding:8px 10px">${fecha}</td></tr>
               </table>
 
+              <!-- DATOS DEL CLIENTE -->
               <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">👤 Datos del cliente</h3>
               <table style="width:100%;border-collapse:collapse;font-size:13px">
-                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Nombre</td><td style="padding:8px 10px;font-weight:700">${nombreCliente}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Nombre</td><td style="padding:8px 10px;font-weight:700">${nombreCliente}</td></tr>
                 <tr><td style="padding:8px 10px;color:#718096">Teléfono</td><td style="padding:8px 10px">${telefono || '—'}</td></tr>
                 <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px">${rut || '—'}</td></tr>
               </table>
 
+              <!-- CONTRATO FIRMADO -->
+              <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">📄 Contrato firmado por el cliente</h3>
+              ${firmaArqBlock}
+
+              <!-- PRÓXIMOS PASOS -->
               <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">⏱ Próximos pasos</h3>
               <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0">
-                <li>Ingresa a <strong>apparq.cl → Soy Arquitecto</strong> con tu cuenta</li>
+                <li>Ingresa a <strong>apparq.cl → Soy Arquitecto</strong> con tu correo</li>
                 <li>Coordina la visita a terreno con el cliente a través de la plataforma</li>
                 ${esInforme
                   ? '<li>Elabora el informe y actualiza el avance en la plataforma</li><li>Entrega el informe antes de 2 semanas desde la visita</li>'
                   : '<li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
                 }
+                <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ para recibir cada pago</li>
               </ol>
 
               <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
@@ -307,6 +358,7 @@ exports.handler = async (event) => {
                 <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
                   Toda coordinación con el cliente debe realizarse a través de <strong>apparq.cl</strong>.
                   No compartas tu teléfono ni correo personal con el cliente.
+                  Recuerda emitir tu boleta electrónica a APPARQ para recibir cada pago.
                 </p>
               </div>
 
