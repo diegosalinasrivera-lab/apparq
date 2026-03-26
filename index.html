@@ -2915,7 +2915,7 @@ document.getElementById('arqForm').onsubmit = async e => {
     };
 
     /* 1. Crear cuenta en Supabase Auth */
-    const authRes  = await fetch('/.netlify/functions/auth', {
+    const authRes  = await fetch('/api/auth', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'signup', email: arqEmail, password: arqPass }),
     });
@@ -2925,7 +2925,7 @@ document.getElementById('arqForm').onsubmit = async e => {
 
     /* Si ya existe → intentar login */
     if (!token && (authData.error?.includes('already') || authData.error?.includes('registered'))) {
-      const loginRes  = await fetch('/.netlify/functions/auth', {
+      const loginRes  = await fetch('/api/auth', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', email: arqEmail, password: arqPass }),
       });
@@ -2937,7 +2937,7 @@ document.getElementById('arqForm').onsubmit = async e => {
     }
 
     /* 2. Guardar datos del arquitecto */
-    await fetch('/.netlify/functions/register-architect', {
+    await fetch('/api/register-architect', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
@@ -3555,7 +3555,7 @@ function setupPaymentStep() {
         selectedArqData: S.selectedArqData || null,
       }));
 
-      const res  = await fetch('/.netlify/functions/create-payment', {
+      const res  = await fetch('/api/create-payment', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3704,7 +3704,7 @@ async function loadArchitectForCommune(commune) {
   }
 
   try {
-    const res  = await fetch(`/.netlify/functions/get-architect?comuna=${encodeURIComponent(commune)}`);
+    const res  = await fetch(`/api/get-architect?comuna=${encodeURIComponent(commune)}`);
     const data = await res.json();
 
     if (!data.architect) {
@@ -3765,7 +3765,7 @@ function _sendTramiteConfirmation(commune, arq) {
     const telefono  = S.telefono  || document.getElementById('wizTel')?.value      || '';
     const rut       = S.rut       || document.getElementById('wizRut')?.value      || '';
     const direccion = S.direccion || document.getElementById('wizAddr')?.value     || '';
-    fetch('/.netlify/functions/confirm-tramite', {
+    fetch('/api/confirm-tramite', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3821,7 +3821,7 @@ async function loadArchitectPicker() {
   try {
     const commune = S.commune || '';
     const tramite = S.svc    || '';
-    const res  = await fetch(`/.netlify/functions/list-architects?comuna=${encodeURIComponent(commune)}&tramite=${encodeURIComponent(tramite)}`);
+    const res  = await fetch(`/api/list-architects?comuna=${encodeURIComponent(commune)}&tramite=${encodeURIComponent(tramite)}`);
     const data = await res.json();
     const arqs = data.architects || [];
 
@@ -4018,7 +4018,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
     btn.textContent = 'Buscando…'; btn.disabled = true;
     try {
-      const res  = await fetch('/.netlify/functions/portal-client', {
+      const res  = await fetch('/api/portal-client', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_number: num, email }),
       });
@@ -4061,7 +4061,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       if (!nota) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Escribe tu consulta antes de enviar.'; return; }
       btn.disabled = true; btn.textContent = 'Enviando…';
       try {
-        const res = await fetch('/.netlify/functions/portal-client', {
+        const res = await fetch('/api/portal-client', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'send-note', project_number: p.project_number, email: clientEmail, nota }),
         });
@@ -4081,7 +4081,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     const box = document.getElementById('pcUpdates');
     box.innerHTML = '<em style="font-size:0.8rem;color:var(--muted);">Cargando…</em>';
     try {
-      const res  = await fetch('/.netlify/functions/portal-client', {
+      const res  = await fetch('/api/portal-client', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-updates', project_number: projectNumber }),
       });
@@ -4158,7 +4158,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     btn.disabled = true; btn.textContent = 'Verificando…';
 
     try {
-      const res  = await fetch('/.netlify/functions/auth', {
+      const res  = await fetch('/api/auth', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', email, password: pass }),
       });
@@ -4242,7 +4242,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       document.getElementById('paPhotoPlaceholder').style.display = 'none';
       /* Save to backend */
       try {
-        await fetch('/.netlify/functions/portal-architect', {
+        await fetch('/api/portal-architect', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'update-photo', token, foto_url: base64 }),
         });
@@ -4252,7 +4252,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('paProjects').innerHTML = '<div style="color:var(--muted);font-size:0.82rem;">Cargando proyectos…</div>';
 
     try {
-      const res  = await fetch('/.netlify/functions/portal-architect', {
+      const res  = await fetch('/api/portal-architect', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-projects', token }),
       });
@@ -4379,7 +4379,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       const box = document.getElementById('paUpdatesBox');
       if (!box) return;
       try {
-        const res  = await fetch('/.netlify/functions/portal-client', {
+        const res  = await fetch('/api/portal-client', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get-updates', project_number: p.project_number }),
         });
@@ -4422,7 +4422,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       const btn      = document.getElementById('paUpdateStage');
       btn.disabled = true; btn.textContent = 'Enviando…';
       try {
-        const res  = await fetch('/.netlify/functions/portal-architect', {
+        const res  = await fetch('/api/portal-architect', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'update-stage', token, project_number: p.project_number, new_stage: newStage, nota }),
         });
@@ -4446,7 +4446,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       if (!confirm('¿Confirmas declarar este trámite como NO VIABLE? Se notificará al cliente y a APPARQ. Esta acción no se puede deshacer.')) return;
       btn.disabled = true; btn.textContent = 'Enviando…';
       try {
-        const res  = await fetch('/.netlify/functions/portal-architect', {
+        const res  = await fetch('/api/portal-architect', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'declare-inviable', token, project_number: p.project_number, informe }),
         });
@@ -4469,7 +4469,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       if (!confirm('¿Confirmas rechazar este trámite? APPARQ asignará automáticamente otro arquitecto y notificará al cliente.')) return;
       btn.disabled = true; btn.textContent = 'Procesando…';
       try {
-        const res  = await fetch('/.netlify/functions/portal-architect', {
+        const res  = await fetch('/api/portal-architect', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'reject-tramite', token, project_number: p.project_number, motivo }),
         });
@@ -4519,7 +4519,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     const btn = document.getElementById('paToggleAvail');
     btn.disabled = true;
     try {
-      const res  = await fetch('/.netlify/functions/portal-architect', {
+      const res  = await fetch('/api/portal-architect', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'toggle-availability', token, activo: newActivo }),
       });
