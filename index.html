@@ -2518,7 +2518,7 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
     if (paymentId) saved.payment_id = paymentId;
 
     if (saved.svc) {
-      /* Restaurar estado global S */
+      /* Restaurar estado global S (incluye datos del cliente para usar en confirm-tramite) */
       Object.assign(S, {
         svc:        saved.svc,
         m2:         saved.m2,
@@ -2527,6 +2527,13 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
         commune:    saved.commune,
         firma_data: saved.firma_data || null,
         payment_id: paymentId || null,
+        /* Datos del cliente — evita race condition con campos del formulario */
+        nombre:    saved.nombre   || '',
+        apellido:  saved.apellido || '',
+        email:     saved.email    || '',
+        telefono:  saved.telefono || '',
+        rut:       saved.rut      || '',
+        direccion: saved.addr     || '',
       });
 
       /* Abrir wizard directo en step 4 (asignación arquitecto) */
@@ -3626,11 +3633,12 @@ async function loadArchitectForCommune(commune) {
     const data = await res.json();
 
     if (!data.architect) {
-      /* Sin arquitectos disponibles aún */
+      /* Sin arquitectos disponibles aún — guardar proyecto igual, sin arquitecto */
       document.getElementById('wizArqAvatar').textContent = '👷';
       document.getElementById('wizArqName').textContent   = 'Arquitecto APPARQ';
       document.getElementById('wizArqRole').textContent   = 'Te asignaremos uno en las próximas horas';
       document.getElementById('wizArqSub').textContent    = 'Te confirmaremos tu arquitecto asignado por email en las próximas 2 horas hábiles.';
+      _sendTramiteConfirmation(commune, null);
       return;
     }
 
@@ -3667,25 +3675,29 @@ async function loadArchitectForCommune(commune) {
     document.getElementById('wizArqName').textContent   = 'Arquitecto APPARQ';
     document.getElementById('wizArqRole').textContent   = 'Asignación confirmada por email';
     document.getElementById('wizArqSub').textContent    = 'Te confirmaremos tu arquitecto por email en las próximas 2 horas hábiles.';
+    /* Guardar el proyecto igualmente aunque falle la búsqueda del arquitecto */
+    _sendTramiteConfirmation(commune, null);
   }
 }
 
 function _sendTramiteConfirmation(commune, arq) {
     const { clp } = calcTotal();
     const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
+    /* Usar S (restaurado desde localStorage tras MP redirect) con fallback al DOM */
+    const nombre    = S.nombre    || document.getElementById('wizNombre')?.value   || '';
+    const apellido  = S.apellido  || document.getElementById('wizApellido')?.value || '';
+    const email     = S.email     || document.getElementById('wizEmail')?.value    || '';
+    const telefono  = S.telefono  || document.getElementById('wizTel')?.value      || '';
+    const rut       = S.rut       || document.getElementById('wizRut')?.value      || '';
+    const direccion = S.direccion || document.getElementById('wizAddr')?.value     || '';
     fetch('/.netlify/functions/confirm-tramite', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombre:    document.getElementById('wizNombre')?.value   || '',
-        apellido:  document.getElementById('wizApellido')?.value || '',
-        email:     document.getElementById('wizEmail')?.value    || '',
-        telefono:  document.getElementById('wizTel')?.value      || '',
-        rut:       document.getElementById('wizRut')?.value      || '',
-        direccion: document.getElementById('wizAddr')?.value     || '',
+        nombre, apellido, email, telefono, rut, direccion,
         svc: S.svc, m2: S.m2, commune, clp,
         e1: Math.round(clp * e1pct),
-        arquitecto: { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites, foto_url: arq.foto_url || null, calificacion: arq.calificacion || null },
+        arquitecto: arq ? { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites, foto_url: arq.foto_url || null, calificacion: arq.calificacion || null } : null,
         firma_data: S.firma_data || null,
         payment_id: S.payment_id || null,
       }),
