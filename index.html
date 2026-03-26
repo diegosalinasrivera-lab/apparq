@@ -1280,13 +1280,15 @@
 
         <!-- Destino -->
         <div class="calc-group hidden" id="grp-dest">
-          <label class="calc-label">🏡 Destino</label>
+          <label class="calc-label">🏡 Destino <span style="font-size:0.7rem;font-weight:400;color:var(--muted);margin-left:4px;">Puedes seleccionar varios</span></label>
           <div class="chip-row">
             <button class="chip" data-dest="dormitorio">Dormitorio</button>
             <button class="chip" data-dest="baño">Baño</button>
             <button class="chip" data-dest="cocina">Cocina</button>
             <button class="chip" data-dest="living">Living/Comedor</button>
             <button class="chip" data-dest="bodega">Bodega</button>
+            <button class="chip" data-dest="garage">Garaje</button>
+            <button class="chip" data-dest="oficina">Oficina</button>
             <button class="chip" data-dest="casa">Casa completa</button>
           </div>
         </div>
@@ -2542,7 +2544,7 @@ const COMMUNES = [
   'Santiago','Vitacura'
 ];
 
-let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf: 38000 };
+let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: [], uf: 38000 };
 
 /* ══════════════════════════════════════════════════
    RETORNO DESDE MERCADO PAGO
@@ -2568,7 +2570,7 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: null, uf:
         svc:        saved.svc,
         m2:         saved.m2,
         mat:        saved.mat,
-        dest:       saved.dest,
+        dest:       Array.isArray(saved.dest) ? saved.dest : (saved.dest ? [saved.dest] : []),
         commune:    saved.commune,
         firma_data: saved.firma_data || null,
         payment_id: paymentId || null,
@@ -3089,9 +3091,9 @@ document.querySelectorAll('.sbtn').forEach(b => {
     document.getElementById('grp-mat').classList.toggle('hidden', isInf);
     document.getElementById('grp-dest').classList.toggle('hidden', isInf);
     document.getElementById('grp-m2').classList.remove('hidden');
-    if (isInf) { S.mat = 'none'; S.dest = 'none'; }
+    if (isInf) { S.mat = 'none'; S.dest = []; }
     else {
-      S.mat = null; S.dest = null;
+      S.mat = null; S.dest = [];
       document.querySelectorAll('.chip[data-mat]').forEach(x => x.classList.remove('on'));
       document.querySelectorAll('.chip[data-dest]').forEach(x => x.classList.remove('on'));
     }
@@ -3114,8 +3116,15 @@ document.querySelectorAll('.chip[data-mat]').forEach(c => {
 });
 document.querySelectorAll('.chip[data-dest]').forEach(c => {
   c.onclick = () => {
-    document.querySelectorAll('.chip[data-dest]').forEach(x => x.classList.remove('on'));
-    c.classList.add('on'); S.dest = c.dataset.dest; recalc();
+    const val = c.dataset.dest;
+    if (c.classList.contains('on')) {
+      c.classList.remove('on');
+      S.dest = S.dest.filter(d => d !== val);
+    } else {
+      c.classList.add('on');
+      S.dest = [...(S.dest || []), val];
+    }
+    recalc();
   };
 });
 
@@ -3123,7 +3132,7 @@ document.querySelectorAll('.chip[data-dest]').forEach(c => {
 function isReady() {
   if (!S.svc || !S.m2) return false;
   if (S.svc === 'informe') return true;
-  return S.mat && S.dest;
+  return S.mat && S.dest && S.dest.length > 0;
 }
 
 function calcTotal() {
@@ -3235,7 +3244,8 @@ document.addEventListener('keydown', e => {
 function prefillWizard() {
   const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón' };
-  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living', bodega:'Bodega', baño:'Baño', cocina:'Cocina', casa:'Casa completa' };
+  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa' };
+  const destText = Array.isArray(S.dest) && S.dest.length ? S.dest.map(d => DEST_LABELS[d] || d).join(', ') : '—';
 
   const { uf: ufVal, clp } = calcTotal();
   const e1pct = S.svc === 'informe' ? 0.50 : 0.20;
@@ -3252,7 +3262,7 @@ function prefillWizard() {
       <span class="wiz-sum-val">${S.m2 || '—'} m²</span>
     </div>
     ${S.mat !== 'none' ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Construcción</span><span class="wiz-sum-val">${MAT_LABELS[S.mat]||'—'}</span></div>` : ''}
-    ${S.dest !== 'none' ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Destino</span><span class="wiz-sum-val">${DEST_LABELS[S.dest]||'—'}</span></div>` : ''}
+    ${S.dest && S.dest.length ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Destino</span><span class="wiz-sum-val">${destText}</span></div>` : ''}
     <div class="wiz-sum-price">${clpFmt(clp)}</div>`;
 
   /* address field */
@@ -3559,7 +3569,7 @@ function showPayUI() { /* ya no se usa — mantenemos por compatibilidad */ }
 async function submitTramiteToNetlify() {
   const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón', none:'' };
-  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living', bodega:'Bodega', baño:'Baño', cocina:'Cocina', casa:'Casa completa', none:'' };
+  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa', none:'' };
 
   const { clp } = calcTotal();
   const e1 = clp * 0.20;
@@ -3575,7 +3585,7 @@ async function submitTramiteToNetlify() {
     'tramite':      SVC_LABELS[S.svc]  || S.svc  || '',
     'metros':       S.m2  ? S.m2 + ' m²' : '',
     'material':     MAT_LABELS[S.mat]  || '',
-    'destino':      DEST_LABELS[S.dest] || '',
+    'destino':      Array.isArray(S.dest) ? S.dest.map(d => DEST_LABELS[d]||d).join(', ') : (DEST_LABELS[S.dest] || ''),
     'precio_total': clpFmt(clp),
     'precio_e1':    clpFmt(e1),
     'metodo_pago':  selectedPayMethod === 'webpay' ? 'WebPay' : 'Transferencia',
