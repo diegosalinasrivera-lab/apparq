@@ -54,15 +54,6 @@ async function verifyToken(token) {
   return user.email?.toLowerCase() || null;
 }
 
-/* Filtro de contenido: bloquea teléfonos y emails */
-function filterContent(text) {
-  return text
-    .replace(/(\+?56)?[\s\-]?9[\s\-]?\d{4}[\s\-]?\d{4}/g, '[número bloqueado]')
-    .replace(/\b\d{9,}\b/g, '[número bloqueado]')
-    .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, '[email bloqueado]')
-    .replace(/(https?:\/\/[^\s]+)/g, '[enlace bloqueado]')
-    .replace(/instagram|whatsapp|telegram|wa\.me/gi, '[plataforma bloqueada]');
-}
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -252,40 +243,6 @@ exports.handler = async (event) => {
       };
     }
 
-    /* ── SEND-MESSAGE ─────────────────────────── */
-    if (action === 'send-message') {
-      const { project_number, content } = rest;
-      if (!project_number || !content?.trim()) {
-        return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Faltan datos' }) };
-      }
-
-      const clean = filterContent(content.trim());
-
-      const msgRes = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-        method: 'POST',
-        headers: {
-          'apikey':        SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type':  'application/json',
-          'Prefer':        'return=representation',
-        },
-        body: JSON.stringify({
-          project_number,
-          sender_email:       email,
-          sender_role:        'architect',
-          content:            clean,
-          read_by_client:     false,
-          read_by_architect:  true,
-        }),
-      });
-
-      if (!msgRes.ok) {
-        return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al enviar mensaje' }) };
-      }
-
-      return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true, content: clean }) };
-    }
-
     /* ── DECLARE-INVIABLE ─────────────────────── */
     if (action === 'declare-inviable') {
       const { project_number, informe } = rest;
@@ -386,36 +343,6 @@ exports.handler = async (event) => {
       });
 
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
-    }
-
-    /* ── GET-MESSAGES ─────────────────────────── */
-    if (action === 'get-messages') {
-      const { project_number } = rest;
-      if (!project_number) {
-        return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Falta número de proyecto' }) };
-      }
-
-      const msgRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/messages?project_number=eq.${encodeURIComponent(project_number)}&order=created_at.asc`,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-      );
-      const messages = msgRes.ok ? await msgRes.json() : [];
-
-      /* Marcar mensajes del cliente como leídos por arquitecto */
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/messages?project_number=eq.${encodeURIComponent(project_number)}&sender_role=eq.client`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey':        SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type':  'application/json',
-          },
-          body: JSON.stringify({ read_by_architect: true }),
-        }
-      );
-
-      return { statusCode: 200, headers: CORS, body: JSON.stringify({ messages }) };
     }
 
     /* ── UPDATE-PHOTO ─────────────────────────── */

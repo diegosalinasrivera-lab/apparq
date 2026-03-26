@@ -73,32 +73,6 @@ exports.handler = async (event) => {
     const project = data[0];
     const stageInfo = STAGE_LABELS[project.stage] || { label: project.stage, pct: 0, desc: '' };
 
-    /* Obtener mensajes del proyecto */
-    const msgRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/messages?project_number=eq.${encodeURIComponent(numUpper)}&order=created_at.asc`,
-      {
-        headers: {
-          'apikey':        SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-        },
-      }
-    );
-    const messages = msgRes.ok ? await msgRes.json() : [];
-
-    /* Marcar mensajes del arquitecto como leídos por el cliente */
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/messages?project_number=eq.${encodeURIComponent(numUpper)}&sender_role=eq.architect`,
-      {
-        method: 'PATCH',
-        headers: {
-          'apikey':        SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type':  'application/json',
-        },
-        body: JSON.stringify({ read_by_client: true }),
-      }
-    );
-
     return {
       statusCode: 200,
       headers: CORS,
@@ -109,7 +83,6 @@ exports.handler = async (event) => {
           stage_pct:   stageInfo.pct,
           stage_desc:  stageInfo.desc,
         },
-        messages,
       }),
     };
 
