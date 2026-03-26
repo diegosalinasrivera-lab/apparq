@@ -4304,6 +4304,18 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       </div>
 
       <div style="margin-top:0.75rem;">
+
+        <!-- Historial y consultas del cliente -->
+        <div style="margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <div style="font-size:0.82rem;font-weight:700;color:var(--dark);">📋 Historial y consultas del cliente</div>
+            <button id="paRefreshUpdates" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.2rem 0.6rem;font-size:0.7rem;cursor:pointer;color:var(--muted);">↻ Actualizar</button>
+          </div>
+          <div id="paUpdatesBox" style="display:flex;flex-direction:column;gap:0.45rem;max-height:220px;overflow-y:auto;padding-right:2px;">
+            <em style="font-size:0.78rem;color:var(--muted);">Cargando…</em>
+          </div>
+        </div>
+
         <details style="margin-bottom:1rem;border:1.5px solid #FECACA;border-radius:var(--radius);overflow:hidden;">
           <summary style="background:#FEF2F2;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#991B1B;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">⚠️ Declarar trámite no viable <span style="font-weight:400;font-size:0.72rem;">▼</span></summary>
           <div style="padding:0.85rem 1rem;background:#fff;">
@@ -4333,6 +4345,46 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
       </div>`;
 
+    /* ── Cargar historial de avances y consultas ── */
+    async function paLoadUpdates() {
+      const box = document.getElementById('paUpdatesBox');
+      if (!box) return;
+      try {
+        const res  = await fetch('/.netlify/functions/portal-client', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get-updates', project_number: p.project_number }),
+        });
+        const data = await res.json();
+        const updates = data.updates || [];
+        if (!updates.length) {
+          box.innerHTML = '<em style="font-size:0.78rem;color:var(--muted);">Sin avances registrados aún.</em>';
+          return;
+        }
+        box.innerHTML = '';
+        updates.forEach(u => {
+          const isArq   = u.author === 'architect';
+          const dateStr = new Date(u.created_at).toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+          const div = document.createElement('div');
+          div.style.cssText = `background:${isArq ? '#f0fdf4' : '#EEF2FF'};border:1px solid ${isArq ? '#bbf7d0' : '#C7D2FE'};border-radius:var(--radius);padding:0.6rem 0.8rem;`;
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${u.nota ? '0.3rem' : '0'};">
+              <span style="font-size:0.68rem;font-weight:700;color:${isArq ? '#059669' : '#4338CA'};">
+                ${isArq ? '🏗 Tú' : '👤 Cliente'}${u.stage_label ? ` · <strong>${u.stage_label}</strong>` : ''}
+              </span>
+              <span style="font-size:0.63rem;color:var(--muted);">${dateStr}</span>
+            </div>
+            ${u.nota ? `<div style="font-size:0.78rem;color:var(--dark);line-height:1.5;">${u.nota}</div>` : ''}`;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      } catch(e) {
+        const box = document.getElementById('paUpdatesBox');
+        if (box) box.innerHTML = '<em style="font-size:0.78rem;color:#DC2626;">Error al cargar historial.</em>';
+      }
+    }
+    paLoadUpdates();
+    document.getElementById('paRefreshUpdates').onclick = paLoadUpdates;
+
     /* Update stage */
     document.getElementById('paUpdateStage').onclick = async () => {
       const newStage = document.getElementById('paStageSelect').value;
@@ -4351,6 +4403,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           msgEl.style.color = '#059669';
           msgEl.textContent = `✓ Avance notificado: ${data.stage_label}`;
           document.getElementById('paStageNota').value = '';
+          paLoadUpdates();   /* refrescar historial */
         } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al actualizar'; }
       } finally { btn.disabled = false; btn.textContent = 'Notificar avance al cliente'; }
     };
