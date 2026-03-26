@@ -2539,7 +2539,7 @@ document.addEventListener('DOMContentLoaded', () => {
    PRICING ENGINE
 ──────────────────────────────────────────────── */
 const ARCH     = { regularizacion: 0.50, ampliacion: 0.80, 'obra-nueva': 0.90 };
-const ARCH_MIN = {};
+const ARCH_MIN = { ampliacion: 20, 'obra-nueva': 40 };
 const SPEC = { dormitorio: 0.20, living: 0.20, bodega: 0.00, baño: 0.80, cocina: 0.80, casa: 0.80 };
 const STRU = { metalcon: 0, madera: 0, albanileria: 0.30, hormigon: 0.30 };
 const STAGES_NORMAL = [
@@ -3160,8 +3160,9 @@ function calcTotal() {
   if (S.m2 === 1 && ['regularizacion','ampliacion','obra-nueva'].includes(S.svc)) return { uf: 0.05, clp: 0.05 * S.uf };
   /* Informe: precio fijo 7 UF independiente de los m² */
   if (S.svc === 'informe') return { uf: 7, clp: 7 * S.uf };
-  /* Resto: tarifa por m² */
-  const uf = (ARCH[S.svc] || 0) * S.m2;
+  /* Resto: tarifa por m², con mínimo si aplica */
+  const ufRaw = (ARCH[S.svc] || 0) * S.m2;
+  const uf    = ARCH_MIN[S.svc] ? Math.max(ufRaw, ARCH_MIN[S.svc]) : ufRaw;
   return { uf, clp: uf * S.uf };
 }
 

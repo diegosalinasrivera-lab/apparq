@@ -71,7 +71,7 @@ exports.handler = async (event) => {
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?select=id,nombre,apellido,comunas,tramites,experiencia,foto_url,activo`,
+      `${SUPABASE_URL}/rest/v1/architects?select=id,nombre,apellido,email,comunas,tramites,experiencia,foto_url,calificacion,activo`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
 
@@ -117,14 +117,15 @@ exports.handler = async (event) => {
 
     /* Limitar a 5 */
     const architects = result.slice(0, 5).map(a => ({
-      id:          a.id,
-      nombre:      a.nombre,
-      apellido:    a.apellido,
-      foto_url:    a.foto_url    || null,
+      id:           a.id,
+      nombre:       a.nombre,
+      apellido:     a.apellido,
+      email:        a.email        || null,
+      foto_url:     a.foto_url     || null,
       calificacion: a.calificacion || null,
-      experiencia: a.experiencia || null,
-      comunas:     a.comunas    || [],
-      tramites:    a.tramites   || [],
+      experiencia:  a.experiencia  || null,
+      comunas:      a.comunas      || [],
+      tramites:     a.tramites     || [],
     }));
 
     return {
