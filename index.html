@@ -2095,6 +2095,14 @@
         </div>
         <button id="paCerrarSesion" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:var(--muted);flex-shrink:0;">Salir</button>
       </div>
+      <!-- Disponibilidad -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.85rem;">
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--dark);" id="paAvailLabel">🟢 Disponible para nuevos trámites</div>
+          <div style="font-size:0.67rem;color:var(--muted);margin-top:1px;">Puedes recibir nuevas asignaciones</div>
+        </div>
+        <button id="paToggleAvail" style="background:#DC2626;color:#fff;border:none;border-radius:var(--radius-pill);padding:0.35rem 0.85rem;font-size:0.72rem;font-weight:700;cursor:pointer;">Pausar</button>
+      </div>
       <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:420px;overflow-y:auto;"></div>
     </div>
 
@@ -4153,6 +4161,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         document.getElementById('paPhotoPlaceholder').style.display = 'none';
       }
 
+      /* Sync availability toggle */
+      updateAvailUI(data.architect?.activo !== false);
+
       renderArqProjects(projects, token);
     } catch(e) {
       document.getElementById('paProjects').innerHTML = '<div style="color:#DC2626;font-size:0.82rem;">Error de conexión.</div>';
@@ -4219,6 +4230,23 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           </div>
         </details>
 
+        <details style="margin-bottom:1rem;border:1.5px solid #FED7AA;border-radius:var(--radius);overflow:hidden;">
+          <summary style="background:#FFF7ED;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#92400E;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">🔄 Rechazar trámite y reasignar <span style="font-weight:400;font-size:0.72rem;">▼</span></summary>
+          <div style="padding:0.85rem 1rem;background:#fff;">
+            <p style="font-size:0.78rem;color:#78350F;margin:0 0 0.6rem;line-height:1.5;">Si no puedes asumir este trámite, APPARQ asignará automáticamente otro arquitecto disponible y notificará al cliente.</p>
+            <select id="paRejectMotivo" style="width:100%;border:1px solid #FED7AA;border-radius:var(--radius);padding:0.45rem 0.6rem;font-size:0.8rem;margin-bottom:0.5rem;background:#fff;">
+              <option value="">Selecciona el motivo…</option>
+              <option value="Sin disponibilidad en este momento">Sin disponibilidad en este momento</option>
+              <option value="La propiedad está fuera de mi zona habitual">La propiedad está fuera de mi zona habitual</option>
+              <option value="No es mi especialidad">No es mi especialidad</option>
+              <option value="Agenda completa">Agenda completa</option>
+              <option value="Otro motivo">Otro motivo</option>
+            </select>
+            <button id="paRejectBtn" style="width:100%;background:#D97706;color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Rechazar y reasignar automáticamente</button>
+            <div id="paRejectMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+          </div>
+        </details>
+
       </div>`;
 
     /* Update stage */
@@ -4266,7 +4294,75 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       } finally { btn.disabled = false; if (btn.style.display !== 'none') btn.textContent = 'Declarar no viable y notificar'; }
     };
 
+    /* Reject tramite */
+    document.getElementById('paRejectBtn').onclick = async () => {
+      const motivo = document.getElementById('paRejectMotivo').value;
+      const msgEl  = document.getElementById('paRejectMsg');
+      const btn    = document.getElementById('paRejectBtn');
+      if (!motivo) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Selecciona un motivo de rechazo.'; return; }
+      if (!confirm('¿Confirmas rechazar este trámite? APPARQ asignará automáticamente otro arquitecto y notificará al cliente.')) return;
+      btn.disabled = true; btn.textContent = 'Procesando…';
+      try {
+        const res  = await fetch('/.netlify/functions/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reject-tramite', token, project_number: p.project_number, motivo }),
+        });
+        const data = await res.json();
+        msgEl.style.display = '';
+        if (data.ok) {
+          msgEl.style.color = '#059669';
+          msgEl.textContent = data.reassigned
+            ? `✓ Trámite reasignado a ${data.new_arq}. El cliente fue notificado.`
+            : '✓ Trámite rechazado. APPARQ asignará un arquitecto manualmente y notificará al cliente.';
+          btn.style.display = 'none';
+          /* Volver a la lista tras 2s */
+          setTimeout(() => {
+            document.getElementById('portalArqDetail').style.display = 'none';
+            document.getElementById('portalArqDash').style.display = '';
+            loadArqDash();
+          }, 2000);
+        } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al rechazar'; }
+      } finally { btn.disabled = false; if (btn.style.display !== 'none') btn.textContent = 'Rechazar y reasignar automáticamente'; }
+    };
+
   }
+
+  /* ── AVAILABILITY TOGGLE ──────────────────────── */
+  let _paActivo = true;
+  function updateAvailUI(activo) {
+    _paActivo = activo;
+    const label = document.getElementById('paAvailLabel');
+    const btn   = document.getElementById('paToggleAvail');
+    if (!label || !btn) return;
+    if (activo) {
+      label.textContent = '🟢 Disponible para nuevos trámites';
+      label.nextElementSibling.textContent = 'Puedes recibir nuevas asignaciones';
+      btn.textContent = 'Pausar';
+      btn.style.background = '#DC2626';
+    } else {
+      label.textContent = '🔴 No disponible — sin nuevas asignaciones';
+      label.nextElementSibling.textContent = 'No recibirás nuevos trámites hasta reactivarte';
+      btn.textContent = 'Reactivar';
+      btn.style.background = '#059669';
+    }
+  }
+  document.getElementById('paToggleAvail').onclick = async () => {
+    const newActivo = !_paActivo;
+    const token = localStorage.getItem('arq_token');
+    if (!token) return;
+    const btn = document.getElementById('paToggleAvail');
+    btn.disabled = true;
+    try {
+      const res  = await fetch('/.netlify/functions/portal-architect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle-availability', token, activo: newActivo }),
+      });
+      const data = await res.json();
+      if (data.ok) updateAvailUI(newActivo);
+    } catch(e) { console.warn('toggle-availability error:', e); }
+    finally { btn.disabled = false; }
+  };
+
 })();
 </script>
 
