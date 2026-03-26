@@ -198,6 +198,22 @@ exports.handler = async (event) => {
         return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'Error al actualizar etapa' }) };
       }
 
+      /* Guardar avance en project_updates para el historial del cliente */
+      await fetch(`${SUPABASE_URL}/rest/v1/project_updates`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json', 'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          project_number: project_number,
+          author:         'architect',
+          stage:          new_stage,
+          stage_label:    STAGE_LABELS[new_stage] || new_stage,
+          nota:           nota || `Etapa actualizada: ${STAGE_LABELS[new_stage] || new_stage}`,
+        }),
+      });
+
       /* Enviar email a hola@apparq.cl con la actualización */
       try {
         const projRes2 = await fetch(
