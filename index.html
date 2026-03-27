@@ -2923,7 +2923,7 @@ document.getElementById('arqForm').onsubmit = async e => {
 
     let token = authData.token;
 
-    /* Si ya existe → intentar login */
+    /* Si ya existe → intentar login con la misma contraseña */
     if (!token && (authData.error?.includes('already') || authData.error?.includes('registered'))) {
       const loginRes  = await fetch('/api/auth', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2931,9 +2931,11 @@ document.getElementById('arqForm').onsubmit = async e => {
       });
       const loginData = await loginRes.json();
       token = loginData.token;
-      if (!token) throw new Error('Email ya registrado. Revisa tu contraseña.');
+      if (!token) throw new Error('Este email ya está registrado. Si ya tienes cuenta, accede desde "Ingresar al portal".');
+    } else if (!token && authData.error === 'email_not_confirmed') {
+      throw new Error('Revisa tu correo y confirma tu cuenta antes de continuar.');
     } else if (!token) {
-      throw new Error(authData.error || 'Error al crear cuenta');
+      throw new Error(authData.error || 'Error al crear cuenta. Intenta de nuevo.');
     }
 
     /* 2. Guardar datos del arquitecto */

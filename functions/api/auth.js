@@ -72,19 +72,36 @@ export async function onRequest(context) {
 
       const data = await res.json();
 
+      /* Supabase a veces devuelve error explícito para email duplicado */
       if (data.error || data.error_description || data.msg) {
-        const msg = data.error_description || data.msg || data.error || 'Error al crear cuenta';
-        return corsResponse({ error: msg }, 400);
+        const msg = data.error_description || data.msg || data.error || '';
+        const isAlready = msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered') || msg.toLowerCase().includes('exists');
+        if (isAlready) return corsResponse({ error: 'already registered' }, 400);
+        return corsResponse({ error: msg || 'Error al crear cuenta' }, 400);
       }
 
       const token = data.access_token;
       if (!token) {
-        /* Supabase devuelve user sin token cuando el email no está confirmado */
+        /* Email duplicado: Supabase devuelve user con identities vacías y sin sesión */
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          return corsResponse({ error: 'already registered' }, 400);
+        }
+        /* Email confirmación pendiente: usuario nuevo pero sin sesión aún */
         if (data.user && !data.session) {
+          /* Intentar login directo para evitar fricción de confirmación */
+          const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailLower, password }),
+          });
+          const loginData = await loginRes.json();
+          if (loginData.access_token) {
+            const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
+            return corsResponse({ token: loginData.access_token, role, email: emailLower, architect });
+          }
           return corsResponse({ error: 'email_not_confirmed' }, 400);
         }
-        /* Email ya registrado: Supabase devuelve user vacío o identities: [] */
-        return corsResponse({ error: 'already registered' }, 400);
+        return corsResponse({ error: 'Error al crear cuenta. Intenta de nuevo.' }, 400);
       }
 
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
