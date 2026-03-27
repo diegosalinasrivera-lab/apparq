@@ -132,18 +132,45 @@ export async function onRequest(context) {
           <tr><td style="padding:6px 10px;color:#718096;">Trámites</td><td style="padding:6px 10px;">${tramites.join(', ') || '—'}</td></tr>
         </table>
 
-        <p><strong>CLÁUSULAS:</strong></p>
-        <ol style="padding-left:18px;margin:8px 0;">
-          <li>El Profesional prestará servicios de arquitectura a clientes asignados por APPARQ.</li>
-          <li>El Profesional acepta que TODOS los contactos y pagos se realizan exclusivamente a través de apparq.cl.</li>
-          <li>APPARQ recibirá el <strong>${pctApp}</strong> del valor neto de cada servicio como comisión de plataforma.</li>
-          <li>El Profesional recibirá el <strong>${pctArq}</strong> del valor neto una vez completada cada etapa.</li>
-          <li>El Profesional se compromete a responder al cliente en un plazo máximo de 24 horas hábiles.</li>
-          <li>El Profesional no podrá captar directamente a los clientes asignados por APPARQ.</li>
-          <li>TODOS los pagos del servicio (E1, E2, E3 y E4) deben procesarse mediante la plataforma.</li>
-          <li>El Profesional acepta los Términos de Uso y Política de Privacidad de apparq.cl.</li>
-          <li>APPARQ podrá desactivar al Profesional si incumple estas cláusulas.</li>
-        </ol>
+        <p>Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el profesional que suscribe este documento (en adelante "el Arquitecto"), se acuerda lo siguiente:</p>
+
+        <p><strong>1. Objeto.</strong> El Arquitecto se incorpora a la red APPARQ como colaborador independiente para ejecutar trámites de arquitectura asignados por la plataforma en las comunas que declare trabajar. Esta relación no constituye vínculo laboral ni de subordinación entre las partes.</p>
+
+        <p><strong>2. Asignación de proyectos.</strong> APPARQ asignará proyectos al Arquitecto según la disponibilidad geográfica declarada. El Arquitecto podrá aceptar o rechazar proyectos dentro de las 24 horas siguientes a la notificación. El rechazo reiterado e injustificado podrá ser causal de suspensión de la red.</p>
+
+        <p><strong>3. Honorarios, tarifas y aceptación del cotizador.</strong> Por cada etapa de pago que el cliente realice a APPARQ, el Arquitecto recibirá el <strong>${pctArq} del monto neto</strong> correspondiente a dicha etapa. APPARQ retendrá el <strong>${pctApp}</strong> en concepto de comisión por el uso de la plataforma, gestión administrativa y captación de clientes.<br>El Arquitecto declara conocer y aceptar expresamente los precios publicados en el cotizador online de APPARQ (disponible en apparq.cl). APPARQ podrá actualizar dichas tarifas con un aviso previo de 30 días corridos; si el Arquitecto no manifiesta su desacuerdo en dicho plazo, se entenderá que acepta la modificación.</p>
+
+        <p><strong>4. Forma y plazo de pago. Boleta electrónica.</strong> APPARQ transferirá los honorarios al Arquitecto dentro de los 10 días hábiles siguientes a la confirmación del pago de cada etapa por parte del cliente. El pago se realizará mediante transferencia bancaria a la cuenta indicada por el Arquitecto al momento de la inscripción.<br>Como condición previa e indispensable para recibir el pago de cada etapa, el Arquitecto deberá emitir y enviar a APPARQ una boleta de honorarios electrónica por el monto neto que le corresponda. El incumplimiento de esta obligación suspenderá el pago hasta que sea subsanada.</p>
+
+        <p><strong>5. Obligatoriedad de uso de la plataforma.</strong> El Arquitecto se obliga a: (a) Realizar todas las entregas de planos, documentos e informes exclusivamente a través de apparq.cl. (b) No recibir pagos directos de los clientes asignados por APPARQ bajo ninguna circunstancia. (c) No contactar a los clientes por medios externos para gestionar pagos o entregar documentación fuera de la plataforma.</p>
+
+        <p><strong>6. No captación directa.</strong> Durante la vigencia de este contrato y por un período de 12 meses desde su término, el Arquitecto se compromete a no gestionar directamente ni a través de terceros los proyectos de clientes que hayan sido captados originalmente por APPARQ.</p>
+
+        <p><strong>7. Obligaciones del Arquitecto.</strong> (a) Mantener vigente su patente profesional y habilitación en el Colegio de Arquitectos de Chile. (b) Ejecutar los proyectos con la diligencia, estándares técnicos y plazos acordados con el cliente. (c) Responder las comunicaciones de la plataforma en un plazo máximo de 24 horas hábiles. (d) Informar a APPARQ cualquier impedimento para ejecutar un proyecto asignado con al menos 48 horas de anticipación.</p>
+
+        <p><strong>8. Obligaciones de APPARQ.</strong> (a) Poner a disposición del Arquitecto la plataforma y las herramientas necesarias para la gestión de proyectos. (b) Transferir los honorarios correspondientes en los plazos establecidos. (c) Asignar proyectos de manera justa considerando la carga de trabajo y disponibilidad del Arquitecto.</p>
+
+        <p><strong>9. Responsabilidad profesional.</strong> El Arquitecto es el único responsable de la calidad técnica, legalidad y exactitud de los proyectos que elabore. APPARQ no asume responsabilidad por errores técnicos, rechazos municipales derivados de deficiencias en los documentos, ni por daños causados por incumplimiento del Arquitecto.</p>
+
+        <p><strong>10. Confidencialidad.</strong> El Arquitecto se obliga a mantener confidencialidad sobre los datos personales de los clientes, información comercial de APPARQ y las condiciones de este contrato. Esta obligación se extiende por 2 años desde la terminación del contrato.</p>
+
+        <p><strong>11. Protección de datos.</strong> El Arquitecto acepta que sus datos personales sean tratados por APPARQ conforme a la Ley N° 19.628 para los fines propios de la plataforma.</p>
+
+        <p><strong>12. Vigencia y término.</strong> Este contrato tiene vigencia indefinida desde la aceptación digital. Cualquiera de las partes podrá ponerle término con un aviso escrito de 30 días corridos a la otra parte. APPARQ podrá terminarlo de inmediato en caso de incumplimiento grave, incluyendo el cobro directo a clientes o el uso de datos de la plataforma para fines distintos a los acordados.</p>
+
+        <p><strong>13. Ley aplicable y resolución de conflictos.</strong> Este contrato se rige por la legislación chilena vigente. Cualquier controversia se someterá al arbitraje del Centro de Arbitraje y Mediación de Santiago, o a los Tribunales Ordinarios de Justicia de Santiago, a elección de APPARQ.</p>
+
+        <p><strong>14. Abandono de proyecto.</strong> Se entenderá por abandono la ausencia de actividad, avance o comunicación injustificados por más de 5 días hábiles consecutivos. En caso de abandono: (a) APPARQ reasignará el proyecto a otro arquitecto sin previo aviso. (b) El arquitecto que abandone perderá el derecho a los honorarios de la etapa en curso y de todas las etapas futuras del proyecto abandonado. (c) APPARQ podrá retener hasta el 100% de los honorarios pendientes para cubrir costos de reasignación y perjuicios causados al cliente. (d) El abandono de 2 o más proyectos dentro de un período de 12 meses será causal de eliminación definitiva e irrevocable de la red APPARQ, sin derecho a indemnización.</p>
+
+        <p><strong>15. Calidad técnica y rechazos municipales.</strong> Si un proyecto es rechazado por la municipalidad u organismo competente por causas imputables a errores técnicos, omisiones o negligencia del Arquitecto, el Arquitecto deberá corregir y reingresar los documentos sin costo adicional para el cliente ni para APPARQ, en un plazo máximo de 10 días hábiles desde la notificación del rechazo. El incumplimiento de esta obligación se considerará abandono en los términos de la cláusula 14.</p>
+
+        <p><strong>16. Propiedad no regularizable o trámite inviable.</strong> Si durante el desarrollo del proyecto el Arquitecto determina que la propiedad no es técnicamente regularizable o que el trámite no es viable, deberá: (a) Comunicarlo a APPARQ de inmediato y por escrito a través de la plataforma. (b) Adjuntar un informe técnico fundado que acredite la inviabilidad. (c) No podrá abandonar el proyecto ni cesar sus actividades sin completar este informe. APPARQ informará al cliente y aplicará la política de reembolsos correspondiente. El Arquitecto recibirá los honorarios por el trabajo efectivamente ejecutado hasta esa etapa.</p>
+
+        <p><strong>17. Indisponibilidad temporal.</strong> El Arquitecto deberá informar a APPARQ con al menos 72 horas de anticipación cualquier período de indisponibilidad (vacaciones, enfermedad, otros compromisos). Durante períodos de indisponibilidad no se asignarán nuevos proyectos. Si existe un proyecto en curso, el Arquitecto deberá coordinar con APPARQ la suspensión temporal o reasignación.</p>
+
+        <p><strong>18. Independencia y ausencia de relación laboral.</strong> El Arquitecto declara y acepta que su inscripción y participación en la plataforma APPARQ se realiza en calidad de profesional independiente, sin que exista relación laboral, de dependencia, subordinación o exclusividad alguna con APPARQ. APPARQ actúa únicamente como una plataforma tecnológica de intermediación. Los servicios que el Arquitecto realice a través de APPARQ tendrán carácter puntual y por proyecto, siendo el Arquitecto responsable de: (a) La organización de su tiempo y forma de trabajo. (b) El cumplimiento técnico del encargo asignado. (c) Sus obligaciones tributarias y previsionales. (d) Sus seguros profesionales si correspondiera. (e) Sus herramientas y medios de trabajo. El Arquitecto podrá prestar servicios a terceros libremente, incluyendo plataformas similares, sin restricción alguna. No existe relación laboral, subordinación, obligación de continuidad, beneficios laborales ni exclusividad. Cada encargo constituirá una contratación independiente y autónoma.</p>
+
+        <p>Al enviar su inscripción, el Arquitecto declara haber leído, comprendido y aceptado íntegramente las condiciones de este contrato, incluyendo las obligaciones de no abandono, calidad técnica y uso exclusivo de la plataforma para todas las gestiones y entregas.</p>
 
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;">
           <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del profesional — ${fecha}</p>

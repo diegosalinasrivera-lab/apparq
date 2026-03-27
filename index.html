@@ -1873,6 +1873,7 @@
       <div class="mform-group">
         <label class="mform-label">Comunas en que trabajas <span style="color:var(--orange)">*</span></label>
         <div class="commune-pills" id="arqComunasPills"></div>
+        <button type="button" id="arqSelectAllComunas" style="margin-top:0.5rem;padding:0.3rem 0.9rem;font-size:0.75rem;font-weight:700;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;">Seleccionar todas</button>
         <div class="commune-pills-hint">Selecciona todas las comunas donde prestarás servicios. Solo recibirás proyectos de esas comunas.<br><span style="color:var(--orange);font-weight:700;">Elige varias comunas para aumentar tus posibilidades de recibir un trámite.</span></div>
         <input type="hidden" name="comunas" id="arqComunasHidden" />
       </div>
@@ -3902,6 +3903,15 @@ async function loadArchitectPicker() {
       hiddenInp.value = Array.from(selected).join(', ');
     });
     container.appendChild(pill);
+  });
+
+  /* Seleccionar todas las comunas */
+  document.getElementById('arqSelectAllComunas').addEventListener('click', () => {
+    container.querySelectorAll('.commune-pill').forEach(pill => {
+      const c = pill.textContent;
+      if (!selected.has(c)) { selected.add(c); pill.classList.add('sel'); }
+    });
+    hiddenInp.value = Array.from(selected).join(', ');
   });
 })();
 
