@@ -3,3 +3,9 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "."
+
+[vars]
+SUPABASE_URL = "https://ibdafnzlsufsshczqvoa.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDY2NDcsImV4cCI6MjA2MDIyNjY0N30.GyDKA0A9PhfHqKD8bm8rR_EVS45JtOBEMArXFBfXvQg"
+RESEND_API_KEY = "re_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6"
+MP_ACCESS_TOKEN = "APP_USR-8464091449756756-032117-1cb0461b0053151dd99159498a8ebb3c-3280513372"
