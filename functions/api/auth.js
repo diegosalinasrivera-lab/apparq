@@ -70,14 +70,23 @@ export async function onRequest(context) {
         body: JSON.stringify({ email: emailLower, password }),
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      console.log('SUPABASE SIGNUP RAW:', res.status, rawText);
+      let data = {};
+      try { data = JSON.parse(rawText); } catch(_) {}
 
-      /* Supabase a veces devuelve error explícito para email duplicado */
-      if (data.error || data.error_description || data.msg) {
-        const msg = data.error_description || data.msg || data.error || '';
-        const isAlready = msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered') || msg.toLowerCase().includes('exists');
+      /* Cualquier mensaje de error de Supabase/GoTrue */
+      const errMsg = data.error_description || data.msg || data.message || data.error || '';
+      if (errMsg) {
+        console.log('SUPABASE ERROR MSG:', errMsg);
+        const isAlready = errMsg.toLowerCase().includes('already') || errMsg.toLowerCase().includes('registered') || errMsg.toLowerCase().includes('exists');
         if (isAlready) return corsResponse({ error: 'already registered' }, 400);
-        return corsResponse({ error: msg || 'Error al crear cuenta' }, 400);
+        return corsResponse({ error: errMsg }, 400);
+      }
+
+      /* HTTP error sin mensaje claro */
+      if (!res.ok && !data.access_token) {
+        return corsResponse({ error: `Error Supabase ${res.status}` }, 400);
       }
 
       const token = data.access_token;
@@ -86,9 +95,9 @@ export async function onRequest(context) {
         if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
           return corsResponse({ error: 'already registered' }, 400);
         }
-        /* Email confirmación pendiente: usuario nuevo pero sin sesión aún */
-        if (data.user && !data.session) {
-          /* Intentar login directo para evitar fricción de confirmación */
+        /* Usuario creado pero sin sesión (confirmación pendiente o GoTrue delay) */
+        if (data.user || data.id) {
+          /* Intentar login inmediato */
           const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
             method: 'POST',
             headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
@@ -101,7 +110,7 @@ export async function onRequest(context) {
           }
           return corsResponse({ error: 'email_not_confirmed' }, 400);
         }
-        return corsResponse({ error: 'Error al crear cuenta. Intenta de nuevo.' }, 400);
+        return corsResponse({ error: `Sin token (status ${res.status})` }, 400);
       }
 
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
