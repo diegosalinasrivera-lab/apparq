@@ -30,9 +30,9 @@ async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
 
 export async function onRequest(context) {
   const { request, env } = context;
-  const SUPABASE_URL   = env.SUPABASE_URL;
-  const SUPABASE_KEY   = env.SUPABASE_ANON_KEY;
-  const RESEND_API_KEY = env.RESEND_API_KEY;
+  const SUPABASE_URL   = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
+  const SUPABASE_KEY   = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDY2NDcsImV4cCI6MjA2MDIyNjY0N30.GyDKA0A9PhfHqKD8bm8rR_EVS45JtOBEMArXFBfXvQg';
+  const RESEND_API_KEY = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });

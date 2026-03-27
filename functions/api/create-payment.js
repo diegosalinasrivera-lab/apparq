@@ -18,7 +18,7 @@ function corsResponse(body, status = 200) {
 
 export async function onRequest(context) {
   const { request, env } = context;
-  const MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN;
+  const MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN || 'APP_USR-8464091449756756-032117-1cb0461b0053151dd99159498a8ebb3c-3280513372';
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
