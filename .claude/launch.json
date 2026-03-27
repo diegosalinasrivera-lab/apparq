@@ -4,10 +4,8 @@
     {
       "name": "apparq",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server"],
-      "port": 4200,
-      "autoPort": false,
-      "env": {}
+      "runtimeArgs": ["-m", "http.server", "4200", "--directory", "/Users/dsr/Library/Mobile Documents/com~apple~CloudDocs/APPARQ"],
+      "port": 4200
     }
   ]
 }

@@ -4,7 +4,8 @@
       "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\")",
       "Bash(node --version)",
       "Bash(git --version)",
-      "Bash(gh --version)"
+      "Bash(gh --version)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" \"https://sunny-bavarois-c8a64c.netlify.app/.netlify/functions/create-payment\" -X POST -H \"Content-Type: application/json\" -d '{\"\"amount\"\":100000,\"\"description\"\":\"\"APPARQ test\"\",\"\"email\"\":\"\"test@test.com\"\",\"\"reference\"\":\"\"test-123\"\"}')"
     ]
   }
 }
