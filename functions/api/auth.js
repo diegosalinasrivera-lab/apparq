@@ -89,28 +89,29 @@ export async function onRequest(context) {
         return corsResponse({ error: `Error Supabase ${res.status}` }, 400);
       }
 
-      const token = data.access_token;
+      /* Supabase puede devolver token en raíz o dentro de session */
+      const token = data.access_token || data.session?.access_token;
       if (!token) {
         /* Email duplicado: Supabase devuelve user con identities vacías y sin sesión */
         if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
           return corsResponse({ error: 'already registered' }, 400);
         }
-        /* Usuario creado pero sin sesión (confirmación pendiente o GoTrue delay) */
+        /* Usuario creado pero sin sesión todavía → intentar login inmediato */
         if (data.user || data.id) {
-          /* Intentar login inmediato */
           const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
             method: 'POST',
             headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: emailLower, password }),
           });
           const loginData = await loginRes.json();
-          if (loginData.access_token) {
+          const loginToken = loginData.access_token || loginData.session?.access_token;
+          if (loginToken) {
             const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
-            return corsResponse({ token: loginData.access_token, role, email: emailLower, architect });
+            return corsResponse({ token: loginToken, role, email: emailLower, architect });
           }
           return corsResponse({ error: 'email_not_confirmed' }, 400);
         }
-        return corsResponse({ error: `Sin token (status ${res.status})` }, 400);
+        return corsResponse({ error: `Sin token (status ${res.status}) raw=${rawText.substring(0,200)}` }, 400);
       }
 
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
@@ -130,11 +131,11 @@ export async function onRequest(context) {
 
       const data = await res.json();
 
-      if (data.error || data.error_description) {
+      if (data.error || data.error_description || data.message) {
         return corsResponse({ error: 'Email o contraseña incorrectos' }, 401);
       }
 
-      const token = data.access_token;
+      const token = data.access_token || data.session?.access_token;
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
 
       return corsResponse({ token, role, email: emailLower, architect });
