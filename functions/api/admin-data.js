@@ -109,7 +109,7 @@ export async function onRequest(context) {
       const [archRes, projRes, payRes] = await Promise.all([
         sb('/architects?select=id,activo'),
         sb('/projects?select=id,project_number,client_nombre,client_apellido,client_email,service_type,commune,architect_nombre,architect_apellido,stage,total_clp,created_at&order=created_at.desc&limit=500'),
-        sb('/payments?select=id,amount,status,created_at&order=created_at.desc&limit=500'),
+        sb('/payments?select=id,amount,status,payer_email,payment_method,created_at&order=created_at.desc&limit=500'),
       ]);
 
       const architects = archRes.ok && Array.isArray(archRes.data) ? archRes.data : [];
