@@ -7,7 +7,7 @@
 
 const SUPABASE_URL     = 'https://ibdafnzlsufsshczqvoa.supabase.co';
 const SUPABASE_ANON    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
-const SERVICE_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzk2ODQ2NiwiZXhwIjoyMDg5NTQ0NDY2fQ.GyDKA0A9PhfHqKD8bm8rR_EVS45JtOBEMArXFBfXvQg';
+/* SERVICE_KEY se carga exclusivamente desde variables de entorno de Cloudflare — nunca hardcodeada */
 const ADMIN_EMAIL      = 'diegosalinasrivera@gmail.com';
 
 const CORS = {
@@ -41,29 +41,34 @@ async function verifyAdmin(authHeader) {
 }
 
 /* ── Supabase REST helper (service role) ──────── */
-async function sb(path, opts = {}) {
-  const url = `${SUPABASE_URL}/rest/v1${path}`;
-  const res = await fetch(url, {
-    ...opts,
-    headers: {
-      'apikey':        SERVICE_KEY,
-      'Authorization': `Bearer ${SERVICE_KEY}`,
-      'Content-Type':  'application/json',
-      'Prefer':        opts.prefer || 'return=representation',
-      ...(opts.headers || {}),
-    },
-  });
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch(_) { data = text; }
-  return { ok: res.ok, status: res.status, data };
+function makeSb(serviceKey) {
+  return async function sb(path, opts = {}) {
+    const url = `${SUPABASE_URL}/rest/v1${path}`;
+    const res = await fetch(url, {
+      ...opts,
+      headers: {
+        'apikey':        serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type':  'application/json',
+        'Prefer':        opts.prefer || 'return=representation',
+        ...(opts.headers || {}),
+      },
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(_) { data = text; }
+    return { ok: res.ok, status: res.status, data };
+  };
 }
 
 /* ══════════════════════════════════════════════════
    MAIN HANDLER
 ══════════════════════════════════════════════════ */
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
+  const SERVICE_KEY = env.SUPABASE_SERVICE_KEY;
+  if (!SERVICE_KEY) return json({ error: 'Configuración de servidor incompleta' }, 500);
+  const sb = makeSb(SERVICE_KEY);
 
   /* CORS preflight */
   if (request.method === 'OPTIONS') {
