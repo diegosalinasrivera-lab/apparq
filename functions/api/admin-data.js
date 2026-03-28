@@ -66,8 +66,7 @@ function makeSb(serviceKey) {
 ══════════════════════════════════════════════════ */
 export async function onRequest(context) {
   const { request, env } = context;
-  const SERVICE_KEY = env.SUPABASE_SERVICE_KEY;
-  if (!SERVICE_KEY) return json({ error: 'Configuración de servidor incompleta' }, 500);
+  const SERVICE_KEY = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
   const sb = makeSb(SERVICE_KEY);
 
   /* CORS preflight */
