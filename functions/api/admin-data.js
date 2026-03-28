@@ -84,6 +84,19 @@ export async function onRequest(context) {
   if (request.method === 'GET') {
     const section = new URL(request.url).searchParams.get('section');
 
+    /* Diagnóstico — solo visible para admin autenticado */
+    if (section === 'ping') {
+      const testRes = await sb('/architects?select=id&limit=1');
+      return json({
+        ok: true,
+        service_key_present: !!SERVICE_KEY,
+        service_key_prefix: SERVICE_KEY ? SERVICE_KEY.slice(0, 12) + '...' : 'MISSING',
+        supabase_ok: testRes.ok,
+        supabase_status: testRes.status,
+        supabase_data: testRes.data,
+      });
+    }
+
     if (section === 'architects') {
       const { ok, data } = await sb(
         '/architects?select=id,nombre,apellido,email,telefono,rut,patente,tramites,comunas,activo,created_at,foto_url&order=created_at.desc'
