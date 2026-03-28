@@ -98,7 +98,27 @@ export async function onRequest(context) {
     /* Guardar en Supabase y enviar emails si el pago fue aprobado */
     if (payment.status === 'approved') {
 
-      /* 1 — Guardar en Supabase */
+      /* 1 — Idempotencia: verificar si el pago ya fue procesado */
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        const checkRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/payments?mp_payment_id=eq.${String(payment.id)}&select=id`,
+          {
+            headers: {
+              'apikey':        SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+            },
+          }
+        );
+        if (checkRes.ok) {
+          const existing = await checkRes.json();
+          if (existing.length > 0) {
+            console.log('Pago ya procesado, ignorando duplicado:', payment.id);
+            return new Response('OK', { status: 200 });
+          }
+        }
+      }
+
+      /* 2 — Guardar en Supabase */
       if (SUPABASE_URL && SUPABASE_KEY) {
         const record = {
           mp_payment_id:  String(payment.id),
