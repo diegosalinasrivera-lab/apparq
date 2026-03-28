@@ -108,7 +108,7 @@ export async function onRequest(context) {
       /* Fetch all in parallel */
       const [archRes, projRes, payRes] = await Promise.all([
         sb('/architects?select=id,activo'),
-        sb('/projects?select=id,stage,created_at&order=created_at.desc&limit=500'),
+        sb('/projects?select=id,project_number,client_nombre,client_apellido,client_email,service_type,commune,architect_nombre,architect_apellido,stage,total_clp,created_at&order=created_at.desc&limit=500'),
         sb('/payments?select=id,amount,status,created_at&order=created_at.desc&limit=500'),
       ]);
 
