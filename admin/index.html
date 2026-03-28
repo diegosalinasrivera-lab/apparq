@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APPARQ — Panel de administración</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='white'/><polygon points='16,2 30,28 2,28' fill='none' stroke='%23E8503A' stroke-width='2.5' stroke-linejoin='round'/><line x1='10' y1='22' x2='22' y2='22' stroke='%23E8503A' stroke-width='2.5' stroke-linecap='round'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange:       #E8503A;
+      --orange-dark:  #C93E2A;
+      --orange-light: rgba(232,80,58,0.12);
+      --dark:         #111827;
+      --mid:          #374151;
+      --muted:        #6B7280;
+      --light:        #9CA3AF;
+      --border:       #E5E7EB;
+      --bg-soft:      #FAFAFA;
+      --bg:           #FFFFFF;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,0.08);
+      --shadow:       0 4px 16px rgba(0,0,0,0.08);
+      --radius-sm:    8px;
+      --radius:       12px;
+      --sidebar-w:    240px;
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--dark);
+      background: var(--bg-soft);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── VIEWS ──────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: flex; }
+
+    /* ── LOGIN ──────────────────────────────── */
+    #login-view {
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+    .login-card {
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.32);
+    }
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .login-logo span {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--dark);
+      letter-spacing: -0.5px;
+    }
+    .login-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mid);
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--bg);
+      color: var(--dark);
+    }
+    .field input:focus { border-color: var(--orange); }
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary:hover { background: var(--orange-dark); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #B91C1C;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-top: 14px;
+      display: none;
+    }
+    .login-error.show { display: block; }
+
+    /* ── APP SHELL ──────────────────────────── */
+    #app-view {
+      height: 100vh;
+      flex-direction: column;
+    }
+    .app-shell {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--dark);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      overflow-y: auto;
+      transition: transform 0.25s ease;
+      z-index: 100;
+    }
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-header .brand {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #fff;
+    }
+    .sidebar-nav {
+      padding: 12px 10px;
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      transition: background 0.15s, color 0.15s;
+      margin-bottom: 2px;
+      user-select: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+    .nav-item.active {
+      background: var(--orange);
+      color: #fff;
+    }
+    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn-logout {
+      width: 100%;
+      padding: 9px 12px;
+      background: rgba(255,255,255,0.07);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    .user-info-sidebar {
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      padding: 0 4px 12px;
+      word-break: break-all;
+    }
+
+    /* ── MAIN ───────────────────────────────── */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .topbar {
+      height: 56px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+      flex: 1;
+    }
+    .topbar-user {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--mid);
+      font-size: 20px;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 28px;
+    }
+
+    /* ── SECTION ────────────────────────────── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── STATS CARDS ────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--dark);
+      line-height: 1;
+    }
+    .stat-sub {
+      font-size: 12px;
+      color: var(--light);
+      margin-top: 4px;
+    }
+    .stat-icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    /* ── CARDS ──────────────────────────────── */
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .card-body { padding: 0; }
+
+    /* ── TABLES ─────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    thead th {
+      background: var(--bg-soft);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-soft); }
+    tbody td { padding: 12px 16px; vertical-align: middle; }
+    .td-mono { font-family: monospace; font-size: 12px; color: var(--muted); }
+
+    /* ── BADGES ─────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-blue   { background: #EFF6FF; color: #1D4ED8; }
+    .badge-yellow { background: #FFFBEB; color: #92400E; }
+    .badge-orange { background: #FFF7ED; color: #C2410C; }
+    .badge-green  { background: #F0FDF4; color: #15803D; }
+    .badge-gray   { background: #F3F4F6; color: #4B5563; }
+    .badge-red    { background: #FEF2F2; color: #B91C1C; }
+
+    /* ── TAGS (communes) ────────────────────── */
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag {
+      background: #F3F4F6;
+      color: var(--mid);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .tag-more {
+      background: var(--orange-light);
+      color: var(--orange);
+    }
+
+    /* ── AVATAR ─────────────────────────────── */
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: inline-block;
+    }
+    .avatar-placeholder {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--orange-light);
+      color: var(--orange);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    /* ── TOGGLE ─────────────────────────────── */
+    .toggle-wrap { display: flex; align-items: center; }
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      display: inline-block;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #D1D5DB;
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+    .slider:before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .slider { background: var(--orange); }
+    .toggle input:checked + .slider:before { transform: translateX(16px); }
+
+    /* ── ACTION BUTTONS ─────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-outline {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      color: var(--mid);
+    }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-danger { background: #FEF2F2; color: #B91C1C; }
+    .btn-danger:hover { background: #FEE2E2; }
+    .btn-accent { background: var(--orange); color: #fff; }
+    .btn-accent:hover { background: var(--orange-dark); }
+    .btn-ghost { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { background: var(--bg-soft); color: var(--dark); }
+
+    /* ── FILTERS ────────────────────────────── */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--orange); color: var(--orange); }
+    .filter-btn.active {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    /* ── SECTION TOPBAR ─────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .section-header h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+
+    /* ── MODAL ──────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 16px;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--bg);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 20px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .modal-close:hover { background: var(--bg-soft); color: var(--dark); }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ── FORM ───────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--mid);
+    }
+    .form-control {
+      padding: 9px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--bg);
+      color: var(--dark);
+    }
+    .form-control:focus { border-color: var(--orange); }
+    select.form-control { cursor: pointer; }
+
+    /* commune multi-select pills */
+    .commune-select-wrap {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      cursor: text;
+      transition: border-color 0.2s;
+    }
+    .commune-select-wrap:focus-within { border-color: var(--orange); }
+    .commune-pill {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--orange-light);
+      color: var(--orange);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .commune-pill:hover { background: #fdd; }
+    .commune-pill-add {
+      background: var(--bg-soft);
+      color: var(--muted);
+      border: 1.5px dashed var(--border);
+    }
+    .commune-pill-add:hover { background: var(--orange-light); color: var(--orange); border-color: var(--orange); }
+
+    /* tramite checkboxes */
+    .tramite-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tramite-check-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--mid);
+      font-weight: 500;
+    }
+    .tramite-check-label input { cursor: pointer; accent-color: var(--orange); }
+
+    /* ── TOAST ──────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--dark);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toast-in 0.25s ease;
+      pointer-events: auto;
+    }
+    .toast.success { background: #166534; }
+    .toast.error   { background: #991B1B; }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── SPINNER ────────────────────────────── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    .spinner-dark {
+      border-color: rgba(17,24,39,0.15);
+      border-top-color: var(--dark);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 0;
+      color: var(--muted);
+      gap: 10px;
+      font-size: 14px;
+    }
+    .loading-state .spinner { border-color: rgba(107,114,128,0.3); border-top-color: var(--muted); }
+
+    /* ── EMPTY STATE ────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 8px; }
+
+    /* ── SUMMARY ROW ────────────────────────── */
+    .summary-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .summary-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 22px;
+      box-shadow: var(--shadow-sm);
+      flex: 1;
+      min-width: 180px;
+    }
+    .summary-item .sum-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .summary-item .sum-value { font-size: 22px; font-weight: 800; color: var(--dark); }
+
+    /* ── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .hamburger { display: flex; }
+      .content { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 90;
+    }
+    .sidebar-backdrop.show { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN VIEW ──────────────────────────────── -->
+<div id="login-view" class="view active">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="16,2 30,28 2,28" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linejoin="round"/>
+        <line x1="10" y1="22" x2="22" y2="22" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span>APPARQ</span>
+    </div>
+    <p class="login-subtitle">Panel de administración</p>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="login-email">Correo electrónico</label>
+        <input id="login-email" type="email" placeholder="admin@apparq.cl" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="login-password">Contraseña</label>
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button id="login-btn" type="submit" class="btn-primary">
+        Iniciar sesión
+      </button>
+      <div id="login-error" class="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ── APP VIEW ────────────────────────────────── -->
+<div id="app-view" class="view">
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="16,2 30,28 2,28" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linejoin="round"/>
+          <line x1="10" y1="22" x2="22" y2="22" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <span class="brand">APPARQ</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-item active" data-section="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </div>
+        <div class="nav-item" data-section="arquitectos">
+          <span class="nav-icon">👷</span> Arquitectos
+        </div>
+        <div class="nav-item" data-section="tramites">
+          <span class="nav-icon">📋</span> Trámites
+        </div>
+        <div class="nav-item" data-section="pagos">
+          <span class="nav-icon">💰</span> Pagos
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info-sidebar" id="sidebar-user-email"></div>
+        <button class="btn-logout" id="logout-btn">
+          <span>⬅️</span> Cerrar sesión
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN AREA -->
+    <div class="main-area">
+      <div class="topbar">
+        <button class="hamburger" id="hamburger-btn">&#9776;</button>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-user" id="topbar-user"></div>
+      </div>
+
+      <div class="content">
+
+        <!-- DASHBOARD -->
+        <div id="section-dashboard" class="section active">
+          <div id="dashboard-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando datos…
+          </div>
+          <div id="dashboard-content" style="display:none">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon">👷</div>
+                <div class="stat-label">Total Arquitectos</div>
+                <div class="stat-value" id="stat-arquitectos">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-label">Trámites Activos</div>
+                <div class="stat-value" id="stat-activos">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">Recaudado Total</div>
+                <div class="stat-value" id="stat-recaudado">—</div>
+                <div class="stat-sub">Pagos aprobados</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-label">Trámites este Mes</div>
+                <div class="stat-value" id="stat-mes">—</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Últimos trámites</span>
+              </div>
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>N° Trámite</th>
+                      <th>Cliente</th>
+                      <th>Servicio</th>
+                      <th>Arquitecto</th>
+                      <th>Etapa</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-projects-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Últimos pagos</span>
+              </div>
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Correo</th>
+                      <th>Monto</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-payments-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ARQUITECTOS -->
+        <div id="section-arquitectos" class="section">
+          <div class="section-header">
+            <h2>Arquitectos</h2>
+            <button class="btn btn-accent" id="btn-add-architect">
+              <span>+</span> Agregar Arquitecto
+            </button>
+          </div>
+          <div id="arch-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+          <div id="arch-content" style="display:none">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Foto</th>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      <th>Comunas</th>
+                      <th>Trámites</th>
+                      <th>Activo</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="arch-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAMITES -->
+        <div id="section-tramites" class="section">
+          <div class="section-header">
+            <h2>Trámites</h2>
+          </div>
+          <div class="filter-row">
+            <button class="filter-btn active" data-filter="todos">Todos</button>
+            <button class="filter-btn" data-filter="activos">Activos</button>
+            <button class="filter-btn" data-filter="completados">Completados</button>
+          </div>
+          <div id="tram-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+          <div id="tram-content" style="display:none">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>N° Trámite</th>
+                      <th>Cliente</th>
+                      <th>Servicio</th>
+                      <th>Dirección / Comuna</th>
+                      <th>Arquitecto</th>
+                      <th>Etapa</th>
+                      <th>Fecha</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tram-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGOS -->
+        <div id="section-pagos" class="section">
+          <div class="section-header">
+            <h2>Pagos</h2>
+          </div>
+          <div id="pago-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+          <div id="pago-content" style="display:none">
+            <div class="summary-row">
+              <div class="summary-item">
+                <div class="sum-label">Total recaudado</div>
+                <div class="sum-value" id="pago-total">—</div>
+              </div>
+              <div class="summary-item">
+                <div class="sum-label">Pagos este mes</div>
+                <div class="sum-value" id="pago-mes">—</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Cliente</th>
+                      <th>Monto</th>
+                      <th>Método</th>
+                      <th>Estado</th>
+                      <th>Referencia MP</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pago-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main-area -->
+  </div><!-- /app-shell -->
+</div><!-- /app-view -->
+
+<!-- ── MODAL: Agregar Arquitecto ─────────────── -->
+<div id="modal-add-arch" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-arch-title">Agregar Arquitecto</span>
+      <button class="modal-close" data-close="modal-add-arch">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-add-arch">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input class="form-control" id="arch-nombre" placeholder="Juan" required />
+          </div>
+          <div class="form-group">
+            <label>Apellido *</label>
+            <input class="form-control" id="arch-apellido" placeholder="Pérez" required />
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input class="form-control" id="arch-email" type="email" placeholder="arq@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input class="form-control" id="arch-telefono" placeholder="+56 9 1234 5678" />
+          </div>
+          <div class="form-group">
+            <label>RUT</label>
+            <input class="form-control" id="arch-rut" placeholder="12.345.678-9" />
+          </div>
+          <div class="form-group">
+            <label>Patente</label>
+            <input class="form-control" id="arch-patente" placeholder="Número de patente" />
+          </div>
+          <div class="form-group full">
+            <label>Trámites que realiza</label>
+            <div class="tramite-checks">
+              <label class="tramite-check-label"><input type="checkbox" value="Regularización" /> Regularización</label>
+              <label class="tramite-check-label"><input type="checkbox" value="Ampliación" /> Ampliación</label>
+              <label class="tramite-check-label"><input type="checkbox" value="Obra Nueva" /> Obra Nueva</label>
+              <label class="tramite-check-label"><input type="checkbox" value="Informe" /> Informe</label>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Comunas donde opera</label>
+            <div id="commune-selected-pills" class="commune-select-wrap">
+              <span style="color:var(--muted);font-size:12px;padding:2px 4px;">Click para seleccionar comunas…</span>
+            </div>
+            <select id="commune-select" class="form-control" style="margin-top:6px">
+              <option value="">— agregar comuna —</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-add-arch">Cancelar</button>
+      <button class="btn btn-accent" id="btn-save-arch">
+        Guardar Arquitecto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Asignar Trámite ─────────────────── -->
+<div id="modal-assign" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Asignar / Reasignar Arquitecto</span>
+      <button class="modal-close" data-close="modal-assign">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        Trámite: <strong id="assign-project-ref">—</strong>
+      </p>
+      <div class="form-group">
+        <label>Seleccionar Arquitecto</label>
+        <select id="assign-arch-select" class="form-control">
+          <option value="">— seleccionar —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-assign">Cancelar</button>
+      <button class="btn btn-accent" id="btn-confirm-assign">Confirmar asignación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Confirmar eliminación ──────────── -->
+<div id="modal-confirm-delete" class="modal-overlay hidden">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Eliminar Arquitecto</span>
+      <button class="modal-close" data-close="modal-confirm-delete">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--mid)">
+        ¿Estás seguro de que deseas eliminar a <strong id="delete-arch-name">este arquitecto</strong>?
+        Esta acción no se puede deshacer.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-confirm-delete">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-delete">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST CONTAINER ────────────────────────── -->
+<div id="toast-container"></div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://ibdafnzlsufsshczqvoa.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
+const ADMIN_EMAIL   = 'diegosalinasrivera@gmail.com';
+const API_BASE      = '/api/admin-data';
+
+const COMMUNES = ['Alhué','Buin','Calera de Tango','Cerrillos','Cerro Navia','Colina','Conchalí','El Bosque','El Monte','Estación Central','Huechuraba','Independencia','Isla de Maipo','La Cisterna','La Florida','La Granja','La Pintana','La Reina','Lampa','Las Condes','Lo Barnechea','Lo Espejo','Lo Prado','Macul','Maipú','María Pinto','Melipilla','Ñuñoa','Padre Hurtado','Paine','Pedro Aguirre Cerda','Peñaflor','Peñalolén','Pirque','Providencia','Pudahuel','Puente Alto','Quilicura','Quinta Normal','Recoleta','Renca','San Bernardo','San Joaquín','San José de Maipo','San Miguel','San Pedro','San Ramón','Santiago','Talagante','Tiltil','Vitacura'];
+
+const STAGE_LABELS = {
+  levantamiento: { label: 'Levantamiento', cls: 'badge-blue' },
+  planos:        { label: 'Planos',        cls: 'badge-yellow' },
+  ingreso_dom:   { label: 'Ingreso DOM',   cls: 'badge-orange' },
+  recepcion:     { label: 'Recepción',     cls: 'badge-green' },
+  completado:    { label: 'Completado',    cls: 'badge-gray' },
+};
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let token = sessionStorage.getItem('admin_token') || null;
+let architects = [];
+let projects   = [];
+let payments   = [];
+let tramiteFilter = 'todos';
+let pendingDeleteId = null;
+let pendingAssignProjectId = null;
+let selectedCommunes = [];
+
+/* ══════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════ */
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  t.innerHTML = `<span>${icons[type]||''}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+function fmtCLP(n) {
+  if (!n && n !== 0) return '—';
+  return '$ ' + Number(n).toLocaleString('es-CL');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function stageBadge(stage) {
+  const s = STAGE_LABELS[stage] || { label: stage || '—', cls: 'badge-gray' };
+  return `<span class="badge ${s.cls}">${s.label}</span>`;
+}
+
+function statusBadge(status) {
+  const map = {
+    approved: { label: 'Aprobado', cls: 'badge-green' },
+    pending:  { label: 'Pendiente', cls: 'badge-yellow' },
+    rejected: { label: 'Rechazado', cls: 'badge-red' },
+  };
+  const s = map[status] || { label: status || '—', cls: 'badge-gray' };
+  return `<span class="badge ${s.cls}">${s.label}</span>`;
+}
+
+function avatarHTML(arq) {
+  if (arq.foto_url) {
+    return `<img src="${arq.foto_url}" class="avatar" alt="${arq.nombre}" />`;
+  }
+  const initials = ((arq.nombre||'').charAt(0) + (arq.apellido||'').charAt(0)).toUpperCase();
+  return `<span class="avatar-placeholder">${initials}</span>`;
+}
+
+/* ══════════════════════════════════════════════════
+   API
+══════════════════════════════════════════════════ */
+async function apiGet(section) {
+  const res = await fetch(`${API_BASE}?section=${section}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (res.status === 403) { doLogout(); throw new Error('No autorizado'); }
+  return res.json();
+}
+
+async function apiPost(body) {
+  const res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 403) { doLogout(); throw new Error('No autorizado'); }
+  return res.json();
+}
+
+/* ══════════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════════ */
+async function doLogin(email, password) {
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  errEl.classList.remove('show');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email.toLowerCase(), password }),
+    });
+    const data = await res.json();
+
+    if (data.error || data.error_description) {
+      throw new Error('Email o contraseña incorrectos');
+    }
+
+    const t = data.access_token || data.session?.access_token;
+    if (!t) throw new Error('No se pudo obtener token');
+
+    // Check email matches admin
+    const userEmail = data.user?.email || '';
+    if (userEmail.toLowerCase() !== ADMIN_EMAIL) {
+      throw new Error('Acceso denegado: no eres administrador');
+    }
+
+    token = t;
+    sessionStorage.setItem('admin_token', token);
+    sessionStorage.setItem('admin_email', userEmail);
+    showApp(userEmail);
+
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Iniciar sesión';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_email');
+  token = null;
+  document.getElementById('app-view').classList.remove('active');
+  document.getElementById('login-view').classList.add('active');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+function showApp(email) {
+  document.getElementById('login-view').classList.remove('active');
+  document.getElementById('app-view').classList.add('active');
+  document.getElementById('topbar-user').textContent = email;
+  document.getElementById('sidebar-user-email').textContent = email;
+  navigateTo('dashboard');
+}
+
+/* ══════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════ */
+const SECTION_TITLES = {
+  dashboard: 'Dashboard',
+  arquitectos: 'Arquitectos',
+  tramites: 'Trámites',
+  pagos: 'Pagos',
+};
+
+function navigateTo(section) {
+  // update nav items
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.section === section);
+  });
+  // update sections
+  document.querySelectorAll('.section').forEach(el => {
+    el.classList.toggle('active', el.id === `section-${section}`);
+  });
+  document.getElementById('topbar-title').textContent = SECTION_TITLES[section] || section;
+
+  // close sidebar on mobile
+  closeSidebar();
+
+  // load data
+  if (section === 'dashboard')    loadDashboard();
+  if (section === 'arquitectos')  loadArchitects();
+  if (section === 'tramites')     loadTramites();
+  if (section === 'pagos')        loadPagos();
+}
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════ */
+async function loadDashboard() {
+  document.getElementById('dashboard-loading').style.display = 'flex';
+  document.getElementById('dashboard-content').style.display = 'none';
+  try {
+    const d = await apiGet('dashboard');
+    document.getElementById('stat-arquitectos').textContent = d.totalArchitectos ?? '—';
+    document.getElementById('stat-activos').textContent     = d.tramitesActivos ?? '—';
+    document.getElementById('stat-recaudado').textContent   = fmtCLP(d.recaudadoTotal);
+    document.getElementById('stat-mes').textContent         = d.tramitesMes ?? '—';
+
+    renderRecentProjects(d.recentProjects || []);
+    renderRecentPayments(d.recentPayments || []);
+    document.getElementById('dashboard-loading').style.display = 'none';
+    document.getElementById('dashboard-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar dashboard', 'error');
+    document.getElementById('dashboard-loading').style.display = 'none';
+  }
+}
+
+function renderRecentProjects(list) {
+  const tbody = document.getElementById('recent-projects-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites aún</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td class="td-mono">${p.project_number || '—'}</td>
+      <td>${p.client_nombre || ''} ${p.client_apellido || ''}</td>
+      <td>${p.service_type || '—'}</td>
+      <td>${p.architect_nombre ? p.architect_nombre + ' ' + (p.architect_apellido||'') : '<span style="color:var(--light)">Sin asignar</span>'}</td>
+      <td>${stageBadge(p.stage)}</td>
+      <td>${fmtDate(p.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderRecentPayments(list) {
+  const tbody = document.getElementById('recent-payments-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">💰</div>Sin pagos aún</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${fmtDate(p.created_at)}</td>
+      <td>${p.payer_email || '—'}</td>
+      <td><strong>${fmtCLP(p.amount)}</strong></td>
+      <td>${statusBadge(p.status)}</td>
+    </tr>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   ARQUITECTOS
+══════════════════════════════════════════════════ */
+async function loadArchitects() {
+  document.getElementById('arch-loading').style.display = 'flex';
+  document.getElementById('arch-content').style.display = 'none';
+  try {
+    const d = await apiGet('architects');
+    architects = d.architects || [];
+    renderArchitectsTable();
+    document.getElementById('arch-loading').style.display = 'none';
+    document.getElementById('arch-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar arquitectos', 'error');
+    document.getElementById('arch-loading').style.display = 'none';
+  }
+}
+
+function renderArchitectsTable() {
+  const tbody = document.getElementById('arch-table-body');
+  if (!architects.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👷</div>No hay arquitectos registrados</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = architects.map(a => {
+    const comunas = Array.isArray(a.comunas) ? a.comunas : (a.comunas ? [a.comunas] : []);
+    const tramites = Array.isArray(a.tramites) ? a.tramites : (a.tramites ? [a.tramites] : []);
+    const shown = comunas.slice(0, 3);
+    const extra = comunas.length - shown.length;
+    const tags = shown.map(c => `<span class="tag">${c}</span>`).join('')
+      + (extra > 0 ? `<span class="tag tag-more">+${extra}</span>` : '');
+    return `
+    <tr>
+      <td>${avatarHTML(a)}</td>
+      <td><strong>${a.nombre || ''} ${a.apellido || ''}</strong></td>
+      <td style="font-size:12.5px;color:var(--muted)">${a.email || '—'}</td>
+      <td><div class="tags">${tags || '<span style="color:var(--light);font-size:12px">—</span>'}</div></td>
+      <td><div class="tags">${tramites.map(t => `<span class="tag">${t}</span>`).join('') || '—'}</div></td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${a.activo !== false ? 'checked' : ''}
+            onchange="toggleArchitect('${a.id}', this.checked)" />
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline" onclick="openAssignModal(null, '${a.id}')">
+            Asignar Trámite
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="confirmDelete('${a.id}', '${(a.nombre||'').replace(/'/g,"\\'")} ${(a.apellido||'').replace(/'/g,"\\'")}')">
+            🗑
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function toggleArchitect(id, activo) {
+  try {
+    const d = await apiPost({ action: 'toggle_architect', id, activo });
+    if (d.error) throw new Error(d.error);
+    showToast(`Arquitecto ${activo ? 'activado' : 'desactivado'}`, 'success');
+    const idx = architects.findIndex(a => a.id == id);
+    if (idx >= 0) architects[idx].activo = activo;
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    loadArchitects(); // re-sync
+  }
+}
+
+function confirmDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('delete-arch-name').textContent = name;
+  showModal('modal-confirm-delete');
+}
+
+async function doDelete() {
+  if (!pendingDeleteId) return;
+  const btn = document.getElementById('btn-confirm-delete');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await apiPost({ action: 'delete_architect', id: pendingDeleteId });
+    if (d.error) throw new Error(d.error);
+    showToast('Arquitecto eliminado', 'success');
+    closeModal('modal-confirm-delete');
+    architects = architects.filter(a => a.id != pendingDeleteId);
+    renderArchitectsTable();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sí, eliminar';
+    pendingDeleteId = null;
+  }
+}
+
+/* ── ADD ARCHITECT MODAL ──────────────────────── */
+function openAddArchitectModal() {
+  // reset form
+  document.getElementById('form-add-arch').reset();
+  selectedCommunes = [];
+  renderCommunePills();
+  document.getElementById('modal-arch-title').textContent = 'Agregar Arquitecto';
+  showModal('modal-add-arch');
+}
+
+function renderCommunePills() {
+  const wrap = document.getElementById('commune-selected-pills');
+  if (!selectedCommunes.length) {
+    wrap.innerHTML = '<span style="color:var(--muted);font-size:12px;padding:2px 4px;">Click para seleccionar comunas…</span>';
+    return;
+  }
+  wrap.innerHTML = selectedCommunes.map(c =>
+    `<span class="commune-pill" onclick="removeCommune('${c}')">${c} ✕</span>`
+  ).join('');
+}
+
+function removeCommune(c) {
+  selectedCommunes = selectedCommunes.filter(x => x !== c);
+  renderCommunePills();
+}
+
+function populateCommuneSelect() {
+  const sel = document.getElementById('commune-select');
+  sel.innerHTML = '<option value="">— agregar comuna —</option>';
+  COMMUNES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+async function saveArchitect() {
+  const nombre   = document.getElementById('arch-nombre').value.trim();
+  const apellido = document.getElementById('arch-apellido').value.trim();
+  const email    = document.getElementById('arch-email').value.trim();
+  const telefono = document.getElementById('arch-telefono').value.trim();
+  const rut      = document.getElementById('arch-rut').value.trim();
+  const patente  = document.getElementById('arch-patente').value.trim();
+
+  if (!nombre || !apellido || !email) {
+    showToast('Nombre, apellido y email son obligatorios', 'error');
+    return;
+  }
+
+  const tramites = [...document.querySelectorAll('.tramite-checks input:checked')].map(i => i.value);
+
+  const btn = document.getElementById('btn-save-arch');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const d = await apiPost({
+      action: 'add_architect',
+      nombre, apellido, email, telefono, rut, patente,
+      comunas: selectedCommunes,
+      tramites,
+    });
+    if (d.error) throw new Error(d.error);
+    showToast('Arquitecto guardado correctamente', 'success');
+    closeModal('modal-add-arch');
+    loadArchitects();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar Arquitecto';
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   TRAMITES
+══════════════════════════════════════════════════ */
+async function loadTramites() {
+  document.getElementById('tram-loading').style.display = 'flex';
+  document.getElementById('tram-content').style.display = 'none';
+  try {
+    const d = await apiGet('projects');
+    projects = d.projects || [];
+    renderTramitesTable();
+    document.getElementById('tram-loading').style.display = 'none';
+    document.getElementById('tram-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar trámites', 'error');
+    document.getElementById('tram-loading').style.display = 'none';
+  }
+}
+
+function renderTramitesTable() {
+  const tbody = document.getElementById('tram-table-body');
+  let list = projects;
+  if (tramiteFilter === 'activos')     list = projects.filter(p => p.stage && p.stage !== 'completado');
+  if (tramiteFilter === 'completados') list = projects.filter(p => p.stage === 'completado');
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td class="td-mono">${p.project_number || '—'}</td>
+      <td>
+        <div><strong>${p.client_nombre || ''} ${p.client_apellido || ''}</strong></div>
+        <div style="font-size:11.5px;color:var(--muted)">${p.client_email || ''}</div>
+      </td>
+      <td>${p.service_type || '—'}</td>
+      <td>
+        <div style="font-size:12.5px">${p.address || '—'}</div>
+        <div style="font-size:11.5px;color:var(--muted)">${p.commune || ''}</div>
+      </td>
+      <td>${p.architect_nombre
+        ? `<div>${p.architect_nombre} ${p.architect_apellido||''}</div><div style="font-size:11px;color:var(--muted)">${p.architect_email||''}</div>`
+        : '<span style="color:var(--light);font-size:12px">Sin asignar</span>'
+      }</td>
+      <td>${stageBadge(p.stage)}</td>
+      <td>${fmtDate(p.created_at)}</td>
+      <td>
+        <button class="btn btn-sm btn-outline" onclick="openAssignModal('${p.id}', null)">
+          Asignar / Reasignar
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+/* ── ASSIGN MODAL ─────────────────────────────── */
+function openAssignModal(projectId, defaultArchId) {
+  // If called from architect row, let user pick the project
+  if (!projectId && defaultArchId) {
+    // Show assign modal but for architect — let admin choose project
+    // In this context we pick the first unassigned or just allow reassignment
+    pendingAssignProjectId = null;
+    document.getElementById('assign-project-ref').textContent = 'Selecciona un trámite de la lista de Trámites';
+    showToast('Usa la sección Trámites para asignar desde el trámite específico.', 'info');
+    return;
+  }
+  pendingAssignProjectId = projectId;
+  const proj = projects.find(p => p.id == projectId);
+  document.getElementById('assign-project-ref').textContent = proj?.project_number || projectId;
+
+  // Populate architect dropdown
+  const sel = document.getElementById('assign-arch-select');
+  sel.innerHTML = '<option value="">— seleccionar —</option>';
+  architects.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.dataset.email    = a.email || '';
+    opt.dataset.nombre   = a.nombre || '';
+    opt.dataset.apellido = a.apellido || '';
+    opt.textContent = `${a.nombre} ${a.apellido} (${a.email || 'sin email'})`;
+    if (proj && proj.architect_email === a.email) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  showModal('modal-assign');
+}
+
+async function doAssign() {
+  if (!pendingAssignProjectId) return;
+  const sel = document.getElementById('assign-arch-select');
+  const opt = sel.selectedOptions[0];
+  if (!opt || !opt.value) {
+    showToast('Selecciona un arquitecto', 'error');
+    return;
+  }
+  const btn = document.getElementById('btn-confirm-assign');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await apiPost({
+      action: 'assign_tramite',
+      project_id:        pendingAssignProjectId,
+      architect_email:   opt.dataset.email,
+      architect_nombre:  opt.dataset.nombre,
+      architect_apellido: opt.dataset.apellido,
+    });
+    if (d.error) throw new Error(d.error);
+    showToast('Arquitecto asignado correctamente', 'success');
+    closeModal('modal-assign');
+    // update local state
+    const idx = projects.findIndex(p => p.id == pendingAssignProjectId);
+    if (idx >= 0) {
+      projects[idx].architect_email    = opt.dataset.email;
+      projects[idx].architect_nombre   = opt.dataset.nombre;
+      projects[idx].architect_apellido = opt.dataset.apellido;
+    }
+    renderTramitesTable();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar asignación';
+    pendingAssignProjectId = null;
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   PAGOS
+══════════════════════════════════════════════════ */
+async function loadPagos() {
+  document.getElementById('pago-loading').style.display = 'flex';
+  document.getElementById('pago-content').style.display = 'none';
+  try {
+    const d = await apiGet('payments');
+    payments = d.payments || [];
+    renderPagosTable();
+    document.getElementById('pago-loading').style.display = 'none';
+    document.getElementById('pago-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar pagos', 'error');
+    document.getElementById('pago-loading').style.display = 'none';
+  }
+}
+
+function renderPagosTable() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const approved = payments.filter(p => p.status === 'approved');
+  const total = approved.reduce((s, p) => s + (p.amount || 0), 0);
+  const mes   = approved.filter(p => p.created_at >= monthStart).length;
+
+  document.getElementById('pago-total').textContent = fmtCLP(total);
+  document.getElementById('pago-mes').textContent   = mes;
+
+  const tbody = document.getElementById('pago-table-body');
+  if (!payments.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">💰</div>Sin pagos registrados</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = payments.map(p => `
+    <tr>
+      <td>${fmtDate(p.created_at)}</td>
+      <td style="font-size:13px">${p.payer_email || '—'}</td>
+      <td><strong>${fmtCLP(p.amount)}</strong></td>
+      <td>${p.payment_method || '—'}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td class="td-mono">${p.mp_payment_id || p.external_ref || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════════ */
+function showModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+/* ══════════════════════════════════════════════════
+   MOBILE SIDEBAR
+══════════════════════════════════════════════════ */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-backdrop').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('show');
+}
+
+/* ══════════════════════════════════════════════════
+   INIT / EVENT WIRING
+══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  populateCommuneSelect();
+
+  // Restore session
+  if (token) {
+    const email = sessionStorage.getItem('admin_email') || '';
+    showApp(email);
+  }
+
+  // Login form
+  document.getElementById('login-form').addEventListener('submit', e => {
+    e.preventDefault();
+    doLogin(
+      document.getElementById('login-email').value,
+      document.getElementById('login-password').value
+    );
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', doLogout);
+
+  // Sidebar nav
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => navigateTo(el.dataset.section));
+  });
+
+  // Hamburger
+  document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
+  document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
+
+  // Modal close buttons
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  // Close on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeModal(overlay.id);
+    });
+  });
+
+  // Add architect
+  document.getElementById('btn-add-architect').addEventListener('click', openAddArchitectModal);
+  document.getElementById('btn-save-arch').addEventListener('click', saveArchitect);
+
+  // Commune select
+  document.getElementById('commune-select').addEventListener('change', function() {
+    const val = this.value;
+    if (!val) return;
+    if (!selectedCommunes.includes(val)) {
+      selectedCommunes.push(val);
+      renderCommunePills();
+    }
+    this.value = '';
+  });
+
+  // Delete confirm
+  document.getElementById('btn-confirm-delete').addEventListener('click', doDelete);
+
+  // Assign confirm
+  document.getElementById('btn-confirm-assign').addEventListener('click', doAssign);
+
+  // Tramite filters
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      tramiteFilter = btn.dataset.filter;
+      renderTramitesTable();
+    });
+  });
+});
+</script>
+</body>
+</html>
