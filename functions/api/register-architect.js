@@ -271,7 +271,7 @@ export async function onRequest(context) {
 </body>
 </html>`;
 
-    const contratoBase64 = Buffer.from(contratoDoc, 'utf-8').toString('base64');
+    const contratoBase64 = btoa(unescape(encodeURIComponent(contratoDoc)));
     const contratoFilename = `contrato-colaboracion-apparq-${nombreCompleto.replace(/\s+/g, '-').toLowerCase()}.html`;
     const contratoAttachment = [{ filename: contratoFilename, content: contratoBase64 }];
 
