@@ -53,8 +53,8 @@ export async function onRequest(context) {
       return corsResponse({ error: 'Faltan campos obligatorios: nombre, apellido, email' }, 400);
     }
 
-    const comunas  = data.comunas  ? data.comunas.split(',').map(c => c.trim()).filter(Boolean)  : [];
-    const tramites = data.tramites ? data.tramites.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const comunas  = Array.isArray(data.comunas)  ? data.comunas  : (data.comunas  ? data.comunas.split(',').map(c => c.trim()).filter(Boolean)  : []);
+    const tramites = Array.isArray(data.tramites) ? data.tramites : (data.tramites ? data.tramites.split(',').map(t => t.trim()).filter(Boolean) : []);
     const sinPatente = !!data.sin_patente;
     const pctApp = sinPatente ? '30%' : '20%';
     const pctArq = sinPatente ? '70%' : '80%';
@@ -357,6 +357,6 @@ export async function onRequest(context) {
 
   } catch (err) {
     console.error('Error inesperado:', err);
-    return corsResponse({ error: 'Error interno del servidor' }, 500);
+    return corsResponse({ error: 'Error interno del servidor', detail: String(err?.message || err) }, 500);
   }
 }
