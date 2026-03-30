@@ -5,13 +5,23 @@
 ══════════════════════════════════════════════════ */
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://apparq.cl',
   'Access-Control-Allow-Headers': 'Content-Type',
   'Content-Type': 'application/json',
 };
 
 function corsResponse(body, status = 200) {
   return new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers: CORS });
+}
+
+const rateLimitMap = new Map();
+function checkRateLimit(ip, maxReqs = 5, windowMs = 60000) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip) || { count: 0, start: now };
+  if (now - entry.start > windowMs) { entry.count = 0; entry.start = now; }
+  entry.count++;
+  rateLimitMap.set(ip, entry);
+  return entry.count <= maxReqs;
 }
 
 async function sendEmail({ to, subject, html, attachments }, RESEND_API_KEY) {
@@ -41,6 +51,11 @@ export async function onRequest(context) {
   }
   if (request.method !== 'POST') {
     return corsResponse({ error: 'Método no permitido' }, 405);
+  }
+  /* Rate limiting: máx 5 inscripciones/minuto por IP */
+  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(ip, 5, 60000)) {
+    return corsResponse({ error: 'Demasiadas solicitudes. Intenta en un momento.' }, 429);
   }
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return corsResponse({ error: 'Error de configuración del servidor' }, 500);

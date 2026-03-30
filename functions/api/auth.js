@@ -7,7 +7,7 @@
 ══════════════════════════════════════════════════ */
 
 const CORS = {
-  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Origin': 'https://apparq.cl',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Content-Type': 'application/json',
 };

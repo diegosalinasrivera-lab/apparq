@@ -7,13 +7,24 @@
 ══════════════════════════════════════════════════ */
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://apparq.cl',
   'Access-Control-Allow-Headers': 'Content-Type',
   'Content-Type': 'application/json',
 };
 
 function corsResponse(body, status = 200) {
   return new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers: CORS });
+}
+
+/* Mapa en memoria para rate limiting simple (reinicia con cada cold start) */
+const rateLimitMap = new Map();
+function checkRateLimit(ip, maxReqs = 10, windowMs = 60000) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip) || { count: 0, start: now };
+  if (now - entry.start > windowMs) { entry.count = 0; entry.start = now; }
+  entry.count++;
+  rateLimitMap.set(ip, entry);
+  return entry.count <= maxReqs;
 }
 
 export async function onRequest(context) {
@@ -25,6 +36,11 @@ export async function onRequest(context) {
   }
   if (request.method !== 'POST') {
     return corsResponse({ error: 'Método no permitido' }, 405);
+  }
+  /* Rate limiting: máx 10 pagos/minuto por IP */
+  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(ip, 10, 60000)) {
+    return corsResponse({ error: 'Demasiadas solicitudes. Intenta en un momento.' }, 429);
   }
   if (!MP_ACCESS_TOKEN) {
     return corsResponse({ error: 'Token MP no configurado' }, 500);
