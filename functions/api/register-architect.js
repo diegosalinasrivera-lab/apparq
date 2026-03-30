@@ -357,6 +357,6 @@ export async function onRequest(context) {
 
   } catch (err) {
     console.error('Error inesperado:', err);
-    return corsResponse({ error: 'Error interno del servidor', detail: String(err?.message || err) }, 500);
+    return corsResponse({ error: 'Error interno del servidor' }, 500);
   }
 }
