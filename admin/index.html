@@ -1745,24 +1745,25 @@ function downloadCSV(rows, filename) {
 function exportTramitesCSV() {
   if (!projects.length) { showToast('No hay trámites para exportar', 'info'); return; }
   const STAGE_MAP = { levantamiento:'Levantamiento', planos:'Planos', ingreso_dom:'Ingreso DOM', recepcion:'Recepción', completado:'Completado' };
+  const SVC_MAP = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe' };
   const rows = [
-    ['N° Trámite','Cliente','Email Cliente','RUT Cliente','Teléfono','Servicio','Dirección','Comuna','m²','Arquitecto','Email Arquitecto','Etapa','Total CLP','E1 CLP','Fecha'],
+    ['Fecha','N° Trámite','Nombre Cliente','Email Cliente','RUT Cliente','Teléfono','Servicio','Dirección','Comuna','m²','Total CLP','E1 CLP','Arquitecto','Email Arquitecto','Etapa'],
     ...projects.map(p => [
+      p.created_at ? new Date(p.created_at).toLocaleDateString('es-CL') : '',
       p.project_number || '',
       ((p.client_nombre || '') + ' ' + (p.client_apellido || '')).trim(),
       p.client_email || '',
       p.client_rut || '',
       p.client_telefono || '',
-      p.service_type || '',
+      SVC_MAP[p.service_type] || p.service_type || '',
       p.address || '',
       p.commune || '',
       p.m2 || '',
+      p.total_clp || '',
+      p.e1_clp || '',
       ((p.architect_nombre || '') + ' ' + (p.architect_apellido || '')).trim(),
       p.architect_email || '',
       STAGE_MAP[p.stage] || p.stage || '',
-      p.total_clp || '',
-      p.e1_clp || '',
-      p.created_at ? new Date(p.created_at).toLocaleDateString('es-CL') : '',
     ])
   ];
   const today = new Date().toISOString().slice(0,10);
