@@ -929,6 +929,7 @@
         <div id="section-tramites" class="section">
           <div class="section-header">
             <h2>Trámites</h2>
+            <button class="btn btn-outline" onclick="exportTramitesCSV()">⬇ Exportar CSV</button>
           </div>
           <div class="filter-row">
             <button class="filter-btn active" data-filter="todos">Todos</button>
@@ -965,6 +966,7 @@
         <div id="section-pagos" class="section">
           <div class="section-header">
             <h2>Pagos</h2>
+            <button class="btn btn-outline" onclick="exportPagosCSV()">⬇ Exportar CSV</button>
           </div>
           <div id="pago-loading" class="loading-state">
             <div class="spinner spinner-dark"></div> Cargando…
@@ -1715,6 +1717,76 @@ function renderPagosTable() {
       <td class="td-mono">${p.mp_payment_id || p.external_ref || '—'}</td>
     </tr>
   `).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   EXPORT CSV
+══════════════════════════════════════════════════ */
+function csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? '"' + s.replace(/"/g, '""') + '"'
+    : s;
+}
+
+function downloadCSV(rows, filename) {
+  const content = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportTramitesCSV() {
+  if (!projects.length) { showToast('No hay trámites para exportar', 'info'); return; }
+  const STAGE_MAP = { levantamiento:'Levantamiento', planos:'Planos', ingreso_dom:'Ingreso DOM', recepcion:'Recepción', completado:'Completado' };
+  const rows = [
+    ['N° Trámite','Cliente','Email Cliente','RUT Cliente','Teléfono','Servicio','Dirección','Comuna','m²','Arquitecto','Email Arquitecto','Etapa','Total CLP','E1 CLP','Fecha'],
+    ...projects.map(p => [
+      p.project_number || '',
+      ((p.client_nombre || '') + ' ' + (p.client_apellido || '')).trim(),
+      p.client_email || '',
+      p.client_rut || '',
+      p.client_telefono || '',
+      p.service_type || '',
+      p.address || '',
+      p.commune || '',
+      p.m2 || '',
+      ((p.architect_nombre || '') + ' ' + (p.architect_apellido || '')).trim(),
+      p.architect_email || '',
+      STAGE_MAP[p.stage] || p.stage || '',
+      p.total_clp || '',
+      p.e1_clp || '',
+      p.created_at ? new Date(p.created_at).toLocaleDateString('es-CL') : '',
+    ])
+  ];
+  const today = new Date().toISOString().slice(0,10);
+  downloadCSV(rows, `tramites_apparq_${today}.csv`);
+  showToast('CSV descargado', 'success');
+}
+
+function exportPagosCSV() {
+  if (!payments.length) { showToast('No hay pagos para exportar', 'info'); return; }
+  const STATUS_MAP = { approved:'Aprobado', pending:'Pendiente', rejected:'Rechazado' };
+  const rows = [
+    ['Fecha','Email Pagador','Monto CLP','Método de Pago','Estado','Referencia MP'],
+    ...payments.map(p => [
+      p.created_at ? new Date(p.created_at).toLocaleDateString('es-CL') : '',
+      p.payer_email || '',
+      p.amount || '',
+      p.payment_method || '',
+      STATUS_MAP[p.status] || p.status || '',
+      p.mp_payment_id || p.external_ref || '',
+    ])
+  ];
+  const today = new Date().toISOString().slice(0,10);
+  downloadCSV(rows, `pagos_apparq_${today}.csv`);
+  showToast('CSV descargado', 'success');
 }
 
 /* ══════════════════════════════════════════════════
