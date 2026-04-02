@@ -213,6 +213,19 @@ export async function onRequest(context) {
       return json({ success: true, project: Array.isArray(data) ? data[0] : data });
     }
 
+    /* update_architect (comunas + tramites) */
+    if (action === 'update_architect') {
+      const { id, comunas, tramites } = body;
+      if (!id) return json({ error: 'id requerido' }, 400);
+      const { ok, data } = await sb(`/architects?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ comunas: comunas || [], tramites: tramites || [] }),
+        prefer: 'return=representation',
+      });
+      if (!ok) return json({ error: 'Error al actualizar arquitecto', detail: data }, 500);
+      return json({ success: true, architect: Array.isArray(data) ? data[0] : data });
+    }
+
     /* update_stage */
     if (action === 'update_stage') {
       const { project_id, stage } = body;

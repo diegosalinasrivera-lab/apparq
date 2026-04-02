@@ -1116,6 +1116,41 @@
   </div>
 </div>
 
+<!-- ── MODAL: Editar Comunas y Trámites ───────── -->
+<div id="modal-edit-arch" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="edit-arch-title">Editar Arquitecto</span>
+      <button class="modal-close" data-close="modal-edit-arch">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="edit-arch-subtitle"></p>
+      <div class="form-group full">
+        <label>Trámites que realiza</label>
+        <div class="tramite-checks" id="edit-tramite-checks">
+          <label class="tramite-check-label"><input type="checkbox" value="Regularización" /> Regularización</label>
+          <label class="tramite-check-label"><input type="checkbox" value="Ampliación" /> Ampliación</label>
+          <label class="tramite-check-label"><input type="checkbox" value="Obra Nueva" /> Obra Nueva</label>
+          <label class="tramite-check-label"><input type="checkbox" value="Informe" /> Informe</label>
+        </div>
+      </div>
+      <div class="form-group full" style="margin-top:12px">
+        <label>Comunas donde opera</label>
+        <div id="edit-commune-pills" class="commune-select-wrap">
+          <span style="color:var(--muted);font-size:12px;padding:2px 4px;">Click para seleccionar comunas…</span>
+        </div>
+        <select id="edit-commune-select" class="form-control" style="margin-top:6px">
+          <option value="">— agregar comuna —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-edit-arch">Cancelar</button>
+      <button class="btn btn-accent" id="btn-save-edit-arch">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TOAST CONTAINER ────────────────────────── -->
 <div id="toast-container"></div>
 
@@ -1424,6 +1459,9 @@ function renderArchitectsTable() {
           <button class="btn btn-sm btn-outline" onclick="openAssignModal(null, '${a.id}')">
             Asignar Trámite
           </button>
+          <button class="btn btn-sm btn-outline" onclick="openEditArchModal('${a.id}')">
+            ✏️ Editar
+          </button>
           <button class="btn btn-sm btn-danger" onclick="confirmDelete('${a.id}', '${(a.nombre||'').replace(/'/g,"\\'")} ${(a.apellido||'').replace(/'/g,"\\'")}')">
             🗑
           </button>
@@ -1547,6 +1585,93 @@ async function saveArchitect() {
     btn.textContent = 'Guardar Arquitecto';
   }
 }
+
+/* ── EDIT ARCH MODAL (comunas + trámites) ─────── */
+let editingArchId = null;
+let editSelectedCommunes = [];
+
+function openEditArchModal(id) {
+  const a = architects.find(x => x.id == id);
+  if (!a) return;
+  editingArchId = id;
+  editSelectedCommunes = Array.isArray(a.comunas) ? [...a.comunas] : (a.comunas ? [a.comunas] : []);
+
+  document.getElementById('edit-arch-title').textContent = 'Editar: ' + (a.nombre || '') + ' ' + (a.apellido || '');
+  document.getElementById('edit-arch-subtitle').textContent = a.email || '';
+
+  // Trámites checkboxes
+  const currentTramites = Array.isArray(a.tramites) ? a.tramites : (a.tramites ? [a.tramites] : []);
+  document.querySelectorAll('#edit-tramite-checks input').forEach(cb => {
+    cb.checked = currentTramites.includes(cb.value);
+  });
+
+  // Comunas select
+  const sel = document.getElementById('edit-commune-select');
+  sel.innerHTML = '<option value="">— agregar comuna —</option>';
+  COMMUNES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+
+  renderEditCommunePills();
+  showModal('modal-edit-arch');
+}
+
+function renderEditCommunePills() {
+  const wrap = document.getElementById('edit-commune-pills');
+  if (!editSelectedCommunes.length) {
+    wrap.innerHTML = '<span style="color:var(--muted);font-size:12px;padding:2px 4px;">Click para seleccionar comunas…</span>';
+    return;
+  }
+  wrap.innerHTML = editSelectedCommunes.map(c =>
+    `<span class="commune-pill" onclick="removeEditCommune('${c}')">${c} ✕</span>`
+  ).join('');
+}
+
+function removeEditCommune(c) {
+  editSelectedCommunes = editSelectedCommunes.filter(x => x !== c);
+  renderEditCommunePills();
+}
+
+document.getElementById('edit-commune-select').addEventListener('change', function() {
+  const v = this.value;
+  if (v && !editSelectedCommunes.includes(v)) {
+    editSelectedCommunes.push(v);
+    renderEditCommunePills();
+  }
+  this.value = '';
+});
+
+async function saveEditArch() {
+  if (!editingArchId) return;
+  const tramites = [...document.querySelectorAll('#edit-tramite-checks input:checked')].map(i => i.value);
+  const btn = document.getElementById('btn-save-edit-arch');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await apiPost({
+      action: 'update_architect',
+      id: editingArchId,
+      comunas: editSelectedCommunes,
+      tramites,
+    });
+    if (d.error) throw new Error(d.error);
+    showToast('Arquitecto actualizado', 'success');
+    closeModal('modal-edit-arch');
+    const idx = architects.findIndex(a => a.id == editingArchId);
+    if (idx >= 0) { architects[idx].comunas = editSelectedCommunes; architects[idx].tramites = tramites; }
+    renderArchitectsTable();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar cambios';
+    editingArchId = null;
+  }
+}
+
+document.getElementById('btn-save-edit-arch').addEventListener('click', saveEditArch);
 
 /* ══════════════════════════════════════════════════
    TRAMITES
