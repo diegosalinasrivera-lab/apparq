@@ -2641,7 +2641,7 @@ const COMMUNES = [
   'Santiago','Vitacura'
 ];
 
-let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: [], uf: 38000 };
+let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: [], uf: 39841 }; // actualizado vía /api/get-uf al cargar
 
 /* ══════════════════════════════════════════════════
    RETORNO DESDE MERCADO PAGO
@@ -2738,17 +2738,28 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: [], uf: 3
   }
 })();
 
-/* ── Fetch UF ─────────────────────────────── */
+/* ── Fetch UF (siempre actualizada vía endpoint propio) ── */
 (async () => {
+  const fmtClp = v => '$' + Math.round(v).toLocaleString('es-CL');
+  const setUF  = v => {
+    S.uf = v;
+    const fmt = fmtClp(v);
+    document.getElementById('ufVal').textContent  = fmt;
+    document.getElementById('ufPill').textContent = 'UF ' + fmt;
+  };
   try {
+    // Fuente primaria: nuestro propio endpoint (server-side, sin CORS, cacheado en CF 1h)
+    const d = await (await fetch('/api/get-uf')).json();
+    if (d?.uf) { setUF(d.uf); return; }
+  } catch (_) {}
+  try {
+    // Fallback directo a mindicador.cl
     const d = await (await fetch('https://mindicador.cl/api/uf')).json();
-    if (d?.serie?.[0]?.valor) {
-      S.uf = d.serie[0].valor;
-      const fmt = '$' + Math.round(S.uf).toLocaleString('es-CL');
-      document.getElementById('ufVal').textContent = fmt;
-      document.getElementById('ufPill').textContent = 'UF ' + fmt;
-    }
-  } catch { document.getElementById('ufVal').textContent = '$38.000 (ref.)'; }
+    if (d?.serie?.[0]?.valor) { setUF(d.serie[0].valor); return; }
+  } catch (_) {}
+  // Sin conexión: mostrar nota de referencia
+  document.getElementById('ufVal').textContent  = '(cargando…)';
+  document.getElementById('ufPill').textContent = 'UF —';
 })();
 
 /* ── Commune dropdown ─────────────────────── */
