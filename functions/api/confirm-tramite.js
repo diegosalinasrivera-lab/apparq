@@ -33,11 +33,68 @@ function clpFmt(n) {
   return '$' + Math.round(n).toLocaleString('es-CL');
 }
 
+/* ══════════════════════════════════════════════════
+   AUTO-ASIGNACIÓN DE ARQUITECTO
+   Busca el arquitecto activo que opere en la comuna
+   y realice el tipo de trámite, con menor carga actual.
+══════════════════════════════════════════════════ */
+async function autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, commune, svc) {
+  const SVC_LABEL_MAP = {
+    regularizacion: 'Regularización',
+    ampliacion:     'Ampliación',
+    'obra-nueva':   'Obra Nueva',
+    informe:        'Informe',
+  };
+  const svcLabel = SVC_LABEL_MAP[svc] || svc;
+
+  try {
+    /* 1 — Obtener todos los arquitectos activos */
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&select=id,nombre,apellido,email,tramites,comunas,foto_url,calificacion`,
+      { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+    );
+    if (!res.ok) { console.error('Error obteniendo arquitectos:', await res.text()); return null; }
+    const all = await res.json();
+
+    /* 2 — Filtrar por comuna y tipo de trámite */
+    const matching = all.filter(a => {
+      const comunas  = Array.isArray(a.comunas)  ? a.comunas  : [];
+      const tramites = Array.isArray(a.tramites) ? a.tramites : [];
+      return comunas.includes(commune) && tramites.includes(svcLabel);
+    });
+    if (!matching.length) {
+      console.warn(`Sin arquitecto disponible para ${commune} / ${svcLabel}`);
+      return null;
+    }
+
+    /* 3 — Contar proyectos activos por cada arquitecto candidato */
+    const withLoad = await Promise.all(matching.map(async a => {
+      const pr = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?architect_email=eq.${encodeURIComponent(a.email)}&stage=neq.completado&select=id`,
+        { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}`, 'Prefer': 'count=exact' } }
+      );
+      const count = parseInt(pr.headers.get('content-range')?.split('/')[1] || '0', 10);
+      return { ...a, activeProjects: count };
+    }));
+
+    /* 4 — Asignar al de menor carga */
+    withLoad.sort((a, b) => a.activeProjects - b.activeProjects);
+    const assigned = withLoad[0];
+    console.log(`Auto-asignado: ${assigned.nombre} ${assigned.apellido} (${assigned.activeProjects} proyectos activos)`);
+    return assigned;
+
+  } catch (e) {
+    console.error('Error en autoAssignArchitect:', e);
+    return null;
+  }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const RESEND_API_KEY = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
   const SUPABASE_URL   = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
   const SUPABASE_KEY   = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
+  const SERVICE_KEY    = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
@@ -51,10 +108,16 @@ export async function onRequest(context) {
     const {
       nombre, apellido, email, telefono, rut, direccion,
       svc, m2, commune, clp, e1,
-      arquitecto,   /* { nombre, apellido, comunas, tramites, foto_url, calificacion } o null */
       firma_data,   /* base64 PNG de la firma del cliente */
       payment_id,   /* ID de pago de Mercado Pago */
     } = body;
+
+    /* ── Auto-asignación de arquitecto ──────────── */
+    let arquitecto = body.arquitecto || null;
+    if (!arquitecto && SERVICE_KEY && commune && svc) {
+      arquitecto = await autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, commune, svc);
+    }
+    console.log('Arquitecto asignado:', arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Sin asignar');
 
     /* ── Crear proyecto en Supabase ─────────────── */
     let projectNumber = null;
