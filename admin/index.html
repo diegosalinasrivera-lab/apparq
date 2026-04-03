@@ -456,6 +456,8 @@
     .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
     .btn-danger { background: #FEF2F2; color: #B91C1C; }
     .btn-danger:hover { background: #FEE2E2; }
+    .btn-success { background: #F0FDF4; color: #15803D; border-color: #86EFAC; }
+    .btn-success:hover { background: #DCFCE7; }
     .btn-accent { background: var(--orange); color: #fff; }
     .btn-accent:hover { background: var(--orange-dark); }
     .btn-ghost { background: transparent; color: var(--muted); }
@@ -1151,6 +1153,26 @@
   </div>
 </div>
 
+<!-- ── MODAL: Confirmar Finalizar Trámite ──────── -->
+<div id="modal-finalizar-tramite" class="modal-overlay hidden">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">Finalizar Trámite</span>
+      <button class="modal-close" data-close="modal-finalizar-tramite">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--mid)">
+        ¿Confirmas que el trámite <strong id="finalizar-project-number"></strong> está completado?<br/>
+        <span style="font-size:12px;color:var(--muted);margin-top:6px;display:block">Quedará registrado en el historial como <strong>Completado</strong>.</span>
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-finalizar-tramite">Cancelar</button>
+      <button class="btn btn-success" id="btn-confirm-finalizar" style="border:1px solid #86EFAC;">✓ Sí, finalizar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TOAST CONTAINER ────────────────────────── -->
 <div id="toast-container"></div>
 
@@ -1511,6 +1533,37 @@ async function doDelete() {
   }
 }
 
+/* ── FINALIZAR TRÁMITE ────────────────────────── */
+let pendingFinalizeId = null;
+
+function confirmFinalizarTramite(id, projectNumber) {
+  pendingFinalizeId = id;
+  document.getElementById('finalizar-project-number').textContent = projectNumber || id;
+  showModal('modal-finalizar-tramite');
+}
+
+async function doFinalizarTramite() {
+  if (!pendingFinalizeId) return;
+  const btn = document.getElementById('btn-confirm-finalizar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await apiPost({ action: 'update_stage', project_id: pendingFinalizeId, stage: 'completado' });
+    if (d.error) throw new Error(d.error);
+    showToast('Trámite marcado como completado', 'success');
+    closeModal('modal-finalizar-tramite');
+    const idx = projects.findIndex(p => p.id == pendingFinalizeId);
+    if (idx !== -1) projects[idx].stage = 'completado';
+    renderTramitesTable();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✓ Sí, finalizar';
+    pendingFinalizeId = null;
+  }
+}
+
 /* ── ADD ARCHITECT MODAL ──────────────────────── */
 function openAddArchitectModal() {
   // reset form
@@ -1720,9 +1773,15 @@ function renderTramitesTable() {
       <td>${stageBadge(p.stage)}</td>
       <td>${fmtDate(p.created_at)}</td>
       <td>
-        <button class="btn btn-sm btn-outline" onclick="openAssignModal('${p.id}', null)">
-          Asignar / Reasignar
-        </button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline" onclick="openAssignModal('${p.id}', null)">
+            Asignar / Reasignar
+          </button>
+          ${p.stage !== 'completado' ? `
+          <button class="btn btn-sm btn-success" onclick="confirmFinalizarTramite('${p.id}', '${(p.project_number||'').replace(/'/g,"\\'")}')">
+            ✓ Finalizar
+          </button>` : `<span style="font-size:11px;color:#059669;font-weight:700;padding:4px 6px;">✓ Completado</span>`}
+        </div>
       </td>
     </tr>
   `).join('');
@@ -1998,6 +2057,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Delete confirm
   document.getElementById('btn-confirm-delete').addEventListener('click', doDelete);
+
+  // Finalizar confirm
+  document.getElementById('btn-confirm-finalizar').addEventListener('click', doFinalizarTramite);
 
   // Assign confirm
   document.getElementById('btn-confirm-assign').addEventListener('click', doAssign);
