@@ -148,6 +148,9 @@ export async function onRequest(context) {
   if (request.method !== 'POST')    return json({ error: 'Método no permitido' }, 405);
   if (!SERVICE_KEY)                 return json({ error: 'Servicio de archivos no configurado' }, 503);
 
+  // Crear bucket si no existe (idempotente, antes de auth para garantizar que ocurra en el primer request)
+  await ensureBucket(SUPABASE_URL, SERVICE_KEY);
+
   let body;
   try { body = await request.json(); }
   catch (_) { return json({ error: 'JSON inválido' }, 400); }
@@ -174,7 +177,6 @@ export async function onRequest(context) {
   if (!role) return json({ error: 'No autorizado' }, 403);
 
   try {
-    await ensureBucket(SUPABASE_URL, SERVICE_KEY);
 
     /* ── get-upload-url ──────────────────────────── */
     if (action === 'get-upload-url') {
