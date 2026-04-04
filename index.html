@@ -2156,6 +2156,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
       </div>
 
+      <!-- Documentos del trámite -->
+      <div id="pcFilesSection" style="margin-top:0.85rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <div style="background:var(--bg-soft);padding:0.55rem 0.9rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
+          <span style="font-size:0.82rem;font-weight:700;color:var(--dark);">📎 Documentos del trámite</span>
+          <button id="pcUploadBtn" style="background:var(--orange);color:#fff;border:none;border-radius:var(--radius-pill);padding:0.28rem 0.75rem;font-size:0.73rem;font-weight:700;cursor:pointer;">+ Subir archivo</button>
+        </div>
+        <div id="pcFilesList" style="padding:0.65rem 0.9rem;font-size:0.78rem;color:var(--muted);">
+          <em>Cargando documentos…</em>
+        </div>
+        <div id="pcUploadMsg" style="display:none;padding:0 0.9rem 0.5rem;font-size:0.73rem;"></div>
+        <input type="file" id="pcFileInput" style="display:none;" accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.zip,.docx" />
+      </div>
+
       <!-- Consulta al arquitecto -->
       <div style="margin-top:0.85rem;background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.85rem 1rem;">
         <label style="font-size:0.78rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.4rem;">✉️ Enviar consulta al arquitecto</label>
@@ -4152,6 +4165,21 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
 
     loadUpdates(p.project_number);
+    pcLoadFiles(p.project_number, clientEmail);
+
+    /* Archivos */
+    document.getElementById('pcUploadBtn').onclick = () =>
+      document.getElementById('pcFileInput').click();
+    document.getElementById('pcFileInput').onchange = async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      if (file.size > 52428800) {
+        pcSetUploadMsg('El archivo supera el límite de 50 MB.', '#DC2626');
+        return;
+      }
+      await pcUploadFile(file, p.project_number, clientEmail);
+    };
 
     /* Enviar consulta */
     document.getElementById('pcNoteSend').onclick = async () => {
@@ -4217,6 +4245,108 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     });
     box.scrollTop = box.scrollHeight;
   }
+
+  /* ── Archivos del trámite (cliente) ────────────── */
+  function pcSetUploadMsg(text, color) {
+    const el = document.getElementById('pcUploadMsg');
+    el.textContent = text;
+    el.style.color = color || 'var(--muted)';
+    el.style.display = '';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+
+  async function pcLoadFiles(projectNumber, email) {
+    const box = document.getElementById('pcFilesList');
+    box.innerHTML = '<em style="color:var(--muted);">Cargando documentos…</em>';
+    try {
+      const res  = await fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list', project_number: projectNumber, email }),
+      });
+      const data = await res.json();
+      pcRenderFiles(data.files || [], projectNumber, email);
+    } catch(e) {
+      box.innerHTML = '<em style="color:#DC2626;">Error al cargar archivos.</em>';
+    }
+  }
+
+  function pcRenderFiles(files, projectNumber, email) {
+    const box = document.getElementById('pcFilesList');
+    if (!files.length) {
+      box.innerHTML = '<em style="color:var(--muted);">Sin documentos aún. Sube los archivos de tu propiedad para que el arquitecto pueda comenzar.</em>';
+      return;
+    }
+    const clientFiles = files.filter(f => f.uploader === 'cliente');
+    const archFiles   = files.filter(f => f.uploader === 'arquitecto');
+    const fmtSize = b => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.round(b/1024)+' KB';
+    const fileIcon = n => /\.pdf$/i.test(n) ? '📄' : /\.(jpg|jpeg|png)$/i.test(n) ? '🖼' : /\.(dwg|dxf)$/i.test(n) ? '📐' : '📎';
+
+    const renderGroup = (list, label, canDelete) => {
+      if (!list.length) return '';
+      const items = list.map(f => `
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);">
+          <span style="flex:1;font-size:0.77rem;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                title="${f.name}">${fileIcon(f.name)} ${f.name}</span>
+          <span style="font-size:0.65rem;color:var(--muted);white-space:nowrap;">${fmtSize(f.size)}</span>
+          ${f.downloadUrl ? `<a href="${f.downloadUrl}" target="_blank" download="${f.name}"
+              style="font-size:0.7rem;color:var(--orange);font-weight:700;text-decoration:none;white-space:nowrap;">↓ Bajar</a>` : ''}
+          ${canDelete ? `<button onclick="pcDeleteFile(${JSON.stringify(f.path)}, ${JSON.stringify(projectNumber)}, ${JSON.stringify(email)})"
+              style="background:none;border:none;cursor:pointer;font-size:0.8rem;color:#DC2626;padding:0 0.2rem;" title="Eliminar">🗑</button>` : ''}
+        </div>`).join('');
+      return `<div style="margin-bottom:0.5rem;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:0.3rem 0;">${label}</div>
+        ${items}
+      </div>`;
+    };
+
+    box.innerHTML =
+      renderGroup(archFiles,   '🏗 Planos del arquitecto', false) +
+      renderGroup(clientFiles, '📁 Mis documentos',        true);
+  }
+
+  window.pcDeleteFile = async (filePath, projectNumber, email) => {
+    if (!confirm('¿Eliminar este archivo?')) return;
+    try {
+      const res  = await fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', project_number: projectNumber, email, path: filePath }),
+      });
+      const data = await res.json();
+      if (data.ok) { pcSetUploadMsg('Archivo eliminado.', '#059669'); pcLoadFiles(projectNumber, email); }
+      else pcSetUploadMsg(data.error || 'Error al eliminar.', '#DC2626');
+    } catch(_) { pcSetUploadMsg('Error de conexión.', '#DC2626'); }
+  };
+
+  async function pcUploadFile(file, projectNumber, email) {
+    const btn = document.getElementById('pcUploadBtn');
+    btn.disabled = true; btn.textContent = 'Subiendo…';
+    pcSetUploadMsg(`Subiendo ${file.name}…`, 'var(--muted)');
+    try {
+      // 1. Obtener URL firmada
+      const signRes = await fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-upload-url', project_number: projectNumber, email, filename: file.name }),
+      });
+      const { uploadUrl, error } = await signRes.json();
+      if (error || !uploadUrl) throw new Error(error || 'No se obtuvo URL de carga');
+
+      // 2. Subir directo a Supabase Storage
+      const upRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!upRes.ok) throw new Error('Error al subir el archivo');
+
+      pcSetUploadMsg(`✓ ${file.name} subido correctamente.`, '#059669');
+      pcLoadFiles(projectNumber, email);
+    } catch(e) {
+      pcSetUploadMsg('Error: ' + e.message, '#DC2626');
+    } finally {
+      btn.disabled = false; btn.textContent = '+ Subir archivo';
+    }
+  }
+
 })();
 
 /* ══════════════════════════════════════════════════
@@ -4472,6 +4602,19 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           </div>
         </details>
 
+        <!-- Archivos del trámite -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;">
+          <div style="background:var(--bg-soft);padding:0.55rem 0.9rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem;font-weight:700;color:var(--dark);">📎 Archivos del trámite</span>
+            <button id="paUploadBtn" style="background:var(--orange);color:#fff;border:none;border-radius:var(--radius-pill);padding:0.28rem 0.75rem;font-size:0.73rem;font-weight:700;cursor:pointer;">+ Subir plano / doc</button>
+          </div>
+          <div id="paFilesList" style="padding:0.65rem 0.9rem;font-size:0.78rem;color:var(--muted);">
+            <em>Cargando archivos…</em>
+          </div>
+          <div id="paUploadMsg" style="display:none;padding:0 0.9rem 0.5rem;font-size:0.73rem;"></div>
+          <input type="file" id="paFileInput" style="display:none;" accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf,.zip,.docx" />
+        </div>
+
       </div>`;
 
     /* ── Cargar historial de avances y consultas ── */
@@ -4591,6 +4734,123 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       } finally { btn.disabled = false; if (btn.style.display !== 'none') btn.textContent = 'Rechazar y reasignar automáticamente'; }
     };
 
+    /* ── Archivos del trámite (arquitecto) ────────── */
+    paLoadFiles(p.project_number, token);
+
+    document.getElementById('paUploadBtn').onclick = () =>
+      document.getElementById('paFileInput').click();
+    document.getElementById('paFileInput').onchange = async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      if (file.size > 52428800) {
+        paSetUploadMsg('El archivo supera el límite de 50 MB.', '#DC2626');
+        return;
+      }
+      await paUploadFile(file, p.project_number, token);
+    };
+  }
+
+  /* ── File helpers (arquitecto) ─────────────────── */
+  function paSetUploadMsg(text, color) {
+    const el = document.getElementById('paUploadMsg');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = color || 'var(--muted)';
+    el.style.display = '';
+    setTimeout(() => { if (el) el.style.display = 'none'; }, 5000);
+  }
+
+  async function paLoadFiles(projectNumber, token) {
+    const box = document.getElementById('paFilesList');
+    if (!box) return;
+    box.innerHTML = '<em>Cargando archivos…</em>';
+    try {
+      const res  = await fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list', project_number: projectNumber, token }),
+      });
+      const data = await res.json();
+      paRenderFiles(data.files || [], projectNumber, token);
+    } catch(_) {
+      if (box) box.innerHTML = '<em style="color:#DC2626;">Error al cargar archivos.</em>';
+    }
+  }
+
+  function paRenderFiles(files, projectNumber, token) {
+    const box = document.getElementById('paFilesList');
+    if (!box) return;
+    if (!files.length) {
+      box.innerHTML = '<em style="color:var(--muted);">Sin archivos aún. Sube planos o documentos del trámite para que el cliente los vea.</em>';
+      return;
+    }
+    const archFiles   = files.filter(f => f.uploader === 'arquitecto');
+    const clientFiles = files.filter(f => f.uploader === 'cliente');
+    const fmtSize = b => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.round(b/1024)+' KB';
+    const fileIcon = n => /\.pdf$/i.test(n) ? '📄' : /\.(jpg|jpeg|png)$/i.test(n) ? '🖼' : /\.(dwg|dxf)$/i.test(n) ? '📐' : '📎';
+
+    const renderGroup = (list, label, canDelete) => {
+      if (!list.length) return '';
+      const items = list.map(f => `
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);">
+          <span style="flex:1;font-size:0.77rem;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                title="${f.name}">${fileIcon(f.name)} ${f.name}</span>
+          <span style="font-size:0.65rem;color:var(--muted);white-space:nowrap;">${fmtSize(f.size)}</span>
+          ${f.downloadUrl ? `<a href="${f.downloadUrl}" target="_blank" download="${f.name}"
+              style="font-size:0.7rem;color:var(--orange);font-weight:700;text-decoration:none;white-space:nowrap;">↓ Bajar</a>` : ''}
+          ${canDelete ? `<button onclick="paDeleteFile(${JSON.stringify(f.path)}, ${JSON.stringify(projectNumber)}, ${JSON.stringify(token)})"
+              style="background:none;border:none;cursor:pointer;font-size:0.8rem;color:#DC2626;padding:0 0.2rem;" title="Eliminar">🗑</button>` : ''}
+        </div>`).join('');
+      return `<div style="margin-bottom:0.5rem;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:0.3rem 0;">${label}</div>
+        ${items}
+      </div>`;
+    };
+
+    box.innerHTML =
+      renderGroup(archFiles,   '📐 Mis planos y documentos', true) +
+      renderGroup(clientFiles, '📁 Documentos del cliente',  false);
+  }
+
+  window.paDeleteFile = async (filePath, projectNumber, token) => {
+    if (!confirm('¿Eliminar este archivo?')) return;
+    try {
+      const res  = await fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', project_number: projectNumber, token, path: filePath }),
+      });
+      const data = await res.json();
+      if (data.ok) { paSetUploadMsg('Archivo eliminado.', '#059669'); paLoadFiles(projectNumber, token); }
+      else paSetUploadMsg(data.error || 'Error al eliminar.', '#DC2626');
+    } catch(_) { paSetUploadMsg('Error de conexión.', '#DC2626'); }
+  };
+
+  async function paUploadFile(file, projectNumber, token) {
+    const btn = document.getElementById('paUploadBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
+    paSetUploadMsg(`Subiendo ${file.name}…`, 'var(--muted)');
+    try {
+      const signRes = await fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-upload-url', project_number: projectNumber, token, filename: file.name }),
+      });
+      const { uploadUrl, error } = await signRes.json();
+      if (error || !uploadUrl) throw new Error(error || 'No se obtuvo URL de carga');
+
+      const upRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!upRes.ok) throw new Error('Error al subir el archivo');
+
+      paSetUploadMsg(`✓ ${file.name} subido correctamente.`, '#059669');
+      paLoadFiles(projectNumber, token);
+    } catch(e) {
+      paSetUploadMsg('Error: ' + e.message, '#DC2626');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '+ Subir plano / doc'; }
+    }
   }
 
   /* ── AVAILABILITY TOGGLE ──────────────────────── */
