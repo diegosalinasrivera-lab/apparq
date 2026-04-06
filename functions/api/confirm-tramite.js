@@ -172,11 +172,64 @@ export async function onRequest(context) {
     const nombreCliente = `${nombre || ''} ${apellido || ''}`.trim();
     const arqNombre = arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Por asignar';
 
-    /* ── Bloque de firma del cliente ── */
-    const firmaClienteBlock = firma_data
+    /* ── Subir firma a Supabase Storage y obtener URL real ── */
+    let firmaUrl = null;
+    if (firma_data && SERVICE_KEY && projectNumber) {
+      try {
+        // Convertir data URI base64 a binario
+        const base64 = firma_data.replace(/^data:image\/png;base64,/, '');
+        const binaryStr = atob(base64);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+        const path = `${projectNumber}/firma/firma-cliente.png`;
+
+        // Subir al bucket tramite-files
+        const upRes = await fetch(
+          `${SUPABASE_URL}/storage/v1/object/tramite-files/${path}`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey':        SERVICE_KEY,
+              'Authorization': `Bearer ${SERVICE_KEY}`,
+              'Content-Type':  'image/png',
+              'x-upsert':      'true',
+            },
+            body: bytes,
+          }
+        );
+
+        if (upRes.ok) {
+          // Crear URL firmada válida por 10 años
+          const signRes = await fetch(
+            `${SUPABASE_URL}/storage/v1/object/sign/tramite-files/${path}`,
+            {
+              method: 'POST',
+              headers: {
+                'apikey':        SERVICE_KEY,
+                'Authorization': `Bearer ${SERVICE_KEY}`,
+                'Content-Type':  'application/json',
+              },
+              body: JSON.stringify({ expiresIn: 315360000 }), // 10 años
+            }
+          );
+          if (signRes.ok) {
+            const signData = await signRes.json();
+            if (signData.signedURL) firmaUrl = `${SUPABASE_URL}/storage/v1${signData.signedURL}`;
+          }
+        }
+        if (firmaUrl) console.log('Firma subida a Storage:', firmaUrl);
+        else console.warn('No se pudo subir la firma a Storage');
+      } catch (firmaErr) {
+        console.warn('Error subiendo firma:', firmaErr);
+      }
+    }
+
+    /* ── Bloque de firma del cliente (usa URL https://, no base64) ── */
+    const firmaClienteBlock = firmaUrl
       ? `<div style="margin-top:12px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
            <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente</p>
-           <img src="${firma_data}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
+           <img src="${firmaUrl}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
          </div>`
       : '';
 
@@ -341,11 +394,11 @@ export async function onRequest(context) {
            <tr><td style="padding:8px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.20*ARQ_PCT))}</td></tr>
            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E4 · Recepción final</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>`;
 
-      /* Firma del cliente (contrato de servicio) */
-      const firmaArqBlock = firma_data
+      /* Firma del cliente (contrato de servicio) — usa URL https://, no base64 */
+      const firmaArqBlock = firmaUrl
         ? `<div style="margin-top:8px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
              <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente — ${nombreCliente}</p>
-             <img src="${firma_data}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
+             <img src="${firmaUrl}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
              <p style="margin:8px 0 0;font-size:11px;color:#a0aec0;">Firmado el ${fecha} en apparq.cl · Contrato de prestación de servicios con DSR ARQ SPA</p>
            </div>`
         : `<p style="font-size:12px;color:#718096;font-style:italic;margin:4px 0;">Contrato firmado digitalmente por el cliente el ${fecha} en apparq.cl</p>`;
