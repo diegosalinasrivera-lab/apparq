@@ -1327,6 +1327,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="calc-group">
           <label class="calc-label">🏗 Tipo de trámite</label>
           <div class="service-grid">
+            <button class="sbtn" data-svc="ley-del-mono"><span class="sbtn-ico">⚖️</span>Ley del Mono</button>
             <button class="sbtn" data-svc="regularizacion"><span class="sbtn-ico">📋</span>Regularización</button>
             <button class="sbtn" data-svc="ampliacion"><span class="sbtn-ico">🔨</span>Ampliación</button>
             <button class="sbtn" data-svc="obra-nueva"><span class="sbtn-ico">🏠</span>Obra Nueva</button>
@@ -1346,6 +1347,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </span>
             <input id="m2Input" type="number" class="field" min="1" max="5000" placeholder="0" />
             <span class="field-unit">m²</span>
+          </div>
+        </div>
+
+        <!-- Sub-tipo Regularización -->
+        <div class="calc-group hidden" id="grp-sub-reg">
+          <label class="calc-label">📌 Tipo de regularización</label>
+          <div class="chip-row">
+            <button class="chip" data-sub="obra-menor">Obra Menor</button>
+            <button class="chip" data-sub="obra-nueva-reg">Obra Nueva</button>
+          </div>
+        </div>
+
+        <!-- Sub-tipo Informe -->
+        <div class="calc-group hidden" id="grp-sub-inf">
+          <label class="calc-label">📌 Tipo de informe</label>
+          <div class="chip-row">
+            <button class="chip" data-sub="evaluacion">Evaluación normativa</button>
+            <button class="chip" data-sub="factibilidad">Factibilidad</button>
+            <button class="chip" data-sub="compraventa">Compraventa</button>
           </div>
         </div>
 
@@ -1489,6 +1509,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h2 class="section-h2">¿Qué puedes tramitar?</h2>
       <p class="section-sub">Cubrimos todas las comunas de la Provincia de Santiago con precios claros desde el primer día.</p>
       <div class="services-grid">
+
+        <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
+          <div class="svc-ico">⚖️</div>
+          <h3>Ley del Mono</h3>
+          <p>Regulariza tu vivienda por el procedimiento simplificado de la Ley 20.898. Proceso más rápido y económico para casas hasta 140 m².</p>
+          <div class="inc-list">
+            <div class="inc-section-label">Incluye</div>
+            <div class="inc">Evaluación de aplicabilidad Ley 20.898</div>
+            <div class="inc">Levantamiento arquitectónico</div>
+            <div class="inc">Planos de regularización</div>
+            <div class="inc">Expediente simplificado DOM</div>
+            <div class="inc">Ingreso y seguimiento municipal</div>
+            <div class="inc-section-label">No incluye</div>
+            <div class="exc">Certificaciones SEC (TE1/TC6)</div>
+            <div class="exc">Especialidades (sanitaria, gas)</div>
+          </div>
+          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('ley-del-mono')">Saber más →</button>
+        </div>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
           <div class="svc-ico">📋</div>
@@ -1945,6 +1983,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="mform-group">
         <label class="mform-label">Tipo de trámites que realizas</label>
         <div class="mform-check-group">
+          <label class="mform-check"><input type="checkbox" name="tramite_ley_del_mono" value="Ley del Mono"> Ley del Mono</label>
           <label class="mform-check"><input type="checkbox" name="tramite_regularizacion" value="Regularización" checked> Regularización</label>
           <label class="mform-check"><input type="checkbox" name="tramite_ampliacion" value="Ampliación"> Ampliación</label>
           <label class="mform-check"><input type="checkbox" name="tramite_obra_nueva" value="Obra Nueva"> Obra Nueva</label>
@@ -2627,10 +2666,17 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ────────────────────────────────────────────────
    PRICING ENGINE
 ──────────────────────────────────────────────── */
-const ARCH     = { regularizacion: 0.50, ampliacion: 0.70, 'obra-nueva': 0.90 };
-const ARCH_MIN = { ampliacion: 20, 'obra-nueva': 40 };
-const SPEC = { dormitorio: 0.20, living: 0.20, bodega: 0.00, baño: 0.80, cocina: 0.80, casa: 0.80 };
-const STRU = { metalcon: 0, madera: 0, albanileria: 0.30, hormigon: 0.30 };
+/* Precios base en UF — todos los cálculos en UF, display en CLP */
+/* A. Ley del Mono: tramos fijos */
+const PRECIO_LEY_MONO = { hasta90: 12, hasta140: 18 };
+/* B. Regularización: fijos por sub-tipo */
+const PRECIO_REG = { 'obra-menor': 22, 'obra-nueva-reg-hasta140': 25, 'obra-nueva-reg-por-m2': 0.41 };
+/* C. Ampliación: tramos fijos */
+const PRECIO_AMP = { hasta50: 20, hasta100: 28 };
+/* D. Obra Nueva: por m², mínimo */
+const PRECIO_ON = { tarifa: 0.80, minimo: 35 };
+/* E. Informe: fijos por sub-tipo */
+const PRECIO_INF = { evaluacion: 3, factibilidad: 6, compraventa: 8 };
 const STAGES_NORMAL = [
   { name: 'Inicio (E1)',    pct: 0.20 },
   { name: 'Planos (E2)',    pct: 0.30 },
@@ -2652,7 +2698,7 @@ const COMMUNES = [
   'Santiago','Vitacura'
 ];
 
-let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: [], uf: 39841 }; // actualizado vía /api/get-uf al cargar
+let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, dest: [], uf: 39841 }; // actualizado vía /api/get-uf al cargar
 
 /* ══════════════════════════════════════════════════
    RETORNO DESDE MERCADO PAGO
@@ -2676,6 +2722,7 @@ let S = { addr: '', commune: '', svc: null, m2: null, mat: null, dest: [], uf: 3
       /* Restaurar estado global S (incluye datos del cliente para usar en confirm-tramite) */
       Object.assign(S, {
         svc:        saved.svc,
+        svcSub:     saved.svcSub || null,
         m2:         saved.m2,
         mat:        saved.mat,
         dest:       Array.isArray(saved.dest) ? saved.dest : (saved.dest ? [saved.dest] : []),
@@ -2990,6 +3037,7 @@ document.getElementById('arqForm').onsubmit = async e => {
     const fd   = new FormData(form);
 
     const tramites = [];
+    if (fd.get('tramite_ley_del_mono'))   tramites.push('Ley del Mono');
     if (fd.get('tramite_regularizacion')) tramites.push('Regularización');
     if (fd.get('tramite_ampliacion'))     tramites.push('Ampliación');
     if (fd.get('tramite_obra_nueva'))     tramites.push('Obra Nueva');
@@ -3208,16 +3256,41 @@ document.querySelectorAll('.sbtn').forEach(b => {
     document.querySelectorAll('.sbtn').forEach(x => x.classList.remove('on'));
     b.classList.add('on');
     S.svc = b.dataset.svc;
-    const isInf = S.svc === 'informe';
-    document.getElementById('grp-mat').classList.toggle('hidden', isInf);
-    document.getElementById('grp-dest').classList.toggle('hidden', isInf);
-    document.getElementById('grp-m2').classList.remove('hidden');
-    if (isInf) { S.mat = 'none'; S.dest = []; }
+    S.svcSub = null;
+    document.querySelectorAll('.chip[data-sub]').forEach(x => x.classList.remove('on'));
+
+    const isInf     = S.svc === 'informe';
+    const isLeyMono = S.svc === 'ley-del-mono';
+    const isReg     = S.svc === 'regularizacion';
+
+    /* m²: ocultar solo para informe (precio fijo por sub-tipo, no por m²) */
+    document.getElementById('grp-m2').classList.toggle('hidden', isInf);
+
+    /* sub-tipo: mostrar según servicio */
+    document.getElementById('grp-sub-reg').classList.toggle('hidden', !isReg);
+    document.getElementById('grp-sub-inf').classList.toggle('hidden', !isInf);
+
+    /* material/destino: ocultar para informe y ley del mono */
+    const hideMat = isInf || isLeyMono;
+    document.getElementById('grp-mat').classList.toggle('hidden', hideMat);
+    document.getElementById('grp-dest').classList.toggle('hidden', hideMat);
+
+    if (hideMat) { S.mat = 'none'; S.dest = []; }
     else {
       S.mat = null; S.dest = [];
       document.querySelectorAll('.chip[data-mat]').forEach(x => x.classList.remove('on'));
       document.querySelectorAll('.chip[data-dest]').forEach(x => x.classList.remove('on'));
     }
+    recalc();
+  };
+});
+
+/* ── Sub-tipo chips ───────────────────────── */
+document.querySelectorAll('.chip[data-sub]').forEach(c => {
+  c.onclick = () => {
+    c.closest('.calc-group').querySelectorAll('.chip[data-sub]').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    S.svcSub = c.dataset.sub;
     recalc();
   };
 });
@@ -3251,20 +3324,56 @@ document.querySelectorAll('.chip[data-dest]').forEach(c => {
 
 /* ── Recalculate ──────────────────────────── */
 function isReady() {
-  if (!S.svc || !S.m2) return false;
-  if (S.svc === 'informe') return true;
-  return S.mat && S.dest && S.dest.length > 0;
+  if (!S.svc) return false;
+  if (S.svc === 'informe')       return !!S.svcSub;
+  if (!S.m2) return false;
+  if (S.svc === 'ley-del-mono')  return true;
+  if (S.svc === 'regularizacion') return !!S.svcSub;
+  if (S.svc === 'ampliacion')    return true;
+  if (S.svc === 'obra-nueva')    return S.mat && S.dest && S.dest.length > 0;
+  return false;
 }
 
 function calcTotal() {
-  /* Valor especial para 1 m² (solo trámites por superficie, no informe) */
-  if (S.m2 === 1 && ['regularizacion','ampliacion','obra-nueva'].includes(S.svc)) return { uf: 0.05, clp: 0.05 * S.uf };
-  /* Informe: precio fijo 7 UF independiente de los m² */
-  if (S.svc === 'informe') return { uf: 7, clp: 7 * S.uf };
-  /* Resto: tarifa por m², con mínimo si aplica */
-  const ufRaw = (ARCH[S.svc] || 0) * S.m2;
-  const uf    = ARCH_MIN[S.svc] ? Math.max(ufRaw, ARCH_MIN[S.svc]) : ufRaw;
-  return { uf, clp: uf * S.uf };
+  const m2 = S.m2 || 0;
+
+  /* A. Ley del Mono: tramos fijos hasta 90 / hasta 140 m² */
+  if (S.svc === 'ley-del-mono') {
+    const uf = m2 <= 90 ? PRECIO_LEY_MONO.hasta90 : PRECIO_LEY_MONO.hasta140;
+    return { uf, clp: uf * S.uf };
+  }
+
+  /* B. Regularización: precio fijo por sub-tipo */
+  if (S.svc === 'regularizacion') {
+    let uf;
+    if (S.svcSub === 'obra-menor') {
+      uf = PRECIO_REG['obra-menor'];
+    } else {
+      /* Obra Nueva: fijo hasta 140 m², variable por m² sobre 140 */
+      uf = m2 <= 140 ? PRECIO_REG['obra-nueva-reg-hasta140'] : PRECIO_REG['obra-nueva-reg-por-m2'] * m2;
+    }
+    return { uf, clp: uf * S.uf };
+  }
+
+  /* C. Ampliación: tramos fijos */
+  if (S.svc === 'ampliacion') {
+    const uf = m2 <= 50 ? PRECIO_AMP.hasta50 : PRECIO_AMP.hasta100;
+    return { uf, clp: uf * S.uf };
+  }
+
+  /* D. Obra Nueva: 0.80 UF/m², mínimo 35 UF */
+  if (S.svc === 'obra-nueva') {
+    const uf = Math.max(PRECIO_ON.tarifa * m2, PRECIO_ON.minimo);
+    return { uf, clp: uf * S.uf };
+  }
+
+  /* E. Informe: precio fijo por sub-tipo */
+  if (S.svc === 'informe') {
+    const uf = PRECIO_INF[S.svcSub] || PRECIO_INF.evaluacion;
+    return { uf, clp: uf * S.uf };
+  }
+
+  return { uf: 0, clp: 0 };
 }
 
 const clpFmt = n => '$' + Math.round(n).toLocaleString('es-CL');
@@ -3283,7 +3392,8 @@ function recalc() {
 
   const { uf, clp } = calcTotal();
   document.getElementById('priceTotal').textContent = clpFmt(clp);
-  document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF — ' + S.m2 + ' m²';
+  const m2Suffix = S.m2 && S.svc !== 'informe' ? ' — ' + S.m2 + ' m²' : '';
+  document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
 
   const stages = S.svc === 'informe' ? STAGES_INFORME : STAGES_NORMAL;
@@ -3363,7 +3473,7 @@ document.addEventListener('keydown', e => {
 
 /* ── prefill from cotizador state ─────────────── */
 function prefillWizard() {
-  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón' };
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa' };
   const destText = Array.isArray(S.dest) && S.dest.length ? S.dest.map(d => DEST_LABELS[d] || d).join(', ') : '—';
@@ -3633,7 +3743,7 @@ function setupPaymentStep() {
       const { clp } = calcTotal();
       const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
       const e1      = Math.round(clp * e1pct);
-      const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+      const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
       const svcName = SVC_LABELS[S.svc] || 'Trámite';
       const commune = S.commune || 'Santiago';
       const email   = document.getElementById('wizEmail')?.value || 'cliente@apparq.cl';
@@ -3650,7 +3760,7 @@ function setupPaymentStep() {
         telefono: document.getElementById('wizTel')?.value,
         rut:      document.getElementById('wizRut')?.value,
         addr:     document.getElementById('wizAddr')?.value,
-        svc: S.svc, m2: S.m2, mat: S.mat, dest: S.dest,
+        svc: S.svc, svcSub: S.svcSub, m2: S.m2, mat: S.mat, dest: S.dest,
         commune, clp, e1,
         firma_data: firmaData,
         selectedArqId:   S.selectedArqId   || null,
@@ -3662,7 +3772,7 @@ function setupPaymentStep() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount:      e1,
-          description: `APPARQ · ${svcName} ${S.m2}m² · ${commune}`,
+          description: `APPARQ · ${svcName}${S.m2 ? ' ' + S.m2 + 'm²' : ''} · ${commune}`,
           email,
           reference:   `apparq-${Date.now()}`,
         }),
@@ -3688,7 +3798,7 @@ function showPayUI() { /* ya no se usa — mantenemos por compatibilidad */ }
 
 /* ── submit tramite to Netlify Forms (AJAX) ──── */
 async function submitTramiteToNetlify() {
-  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón', none:'' };
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa', none:'' };
 
@@ -4158,7 +4268,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('pcProjBar').style.width = (p.stage_pct || 0) + '%';
     document.getElementById('pcProjDesc').textContent = p.stage_desc || '';
 
-    const SVC = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    const SVC = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
     document.getElementById('pcProjInfo').innerHTML =
       `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
 
@@ -4518,7 +4628,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     ingreso_dom:'Ingreso a la DOM', tramitacion:'Tramitación municipal', completado:'Trámite completado',
     visita:'Visita a terreno', elaboracion_inf:'Elaboración del informe', entrega_informe:'Informe entregado',
   };
-  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
   function renderArqProjects(projects, token) {
     const box = document.getElementById('paProjects');
@@ -4992,6 +5102,18 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 <script>
 (function() {
   const CONTENT = {
+    'ley-del-mono': {
+      title: '⚖️ Ley del Mono — Proceso paso a paso',
+      steps: [
+        { n:1, title:'¿Qué es la Ley del Mono?', body:'La Ley 20.898 (popularmente "Ley del Mono") establece un procedimiento simplificado para regularizar viviendas de hasta 90 m² (tramo 1) o hasta 140 m² (tramo 2). Es más rápida y económica que la regularización general porque exige menos documentación técnica.' },
+        { n:2, title:'Requisitos de aplicabilidad', body:'La vivienda debe ser de uso habitacional, estar construida antes del 4 de febrero de 2016 y tener un avalúo fiscal que no supere determinados montos. El propietario debe acreditar dominio mediante inscripción vigente en el Conservador de Bienes Raíces.' },
+        { n:3, title:'Documentos base', body:'Certificado de Avalúo Fiscal, inscripción de dominio vigente (CBR), cédula de identidad del propietario, certificado de número municipal, boleta de agua o servicio básico que acredite habitabilidad.' },
+        { n:4, title:'Levantamiento y proyecto simplificado', body:'El arquitecto realiza el levantamiento de lo existente y elabora los planos de arquitectura simplificados exigidos por la Ley: plantas, cortes y elevaciones. No se exige cálculo estructural en la mayoría de los casos.' },
+        { n:5, title:'Ingreso a DOM', body:'Se presenta la Solicitud de Permiso de Edificación bajo el procedimiento de la Ley 20.898, junto al expediente simplificado. El derecho municipal es significativamente menor al de una regularización general.' },
+        { n:6, title:'Revisión y aprobación', body:'La DOM revisa en plazo máximo de 30 días. El procedimiento simplificado reduce las observaciones habituales. Una vez aprobado, se emite el Certificado de Regularización.' },
+        { n:7, title:'Resultado', body:'Con el certificado emitido, la vivienda queda regularizada ante la municipalidad y su situación legal queda saneada, lo que permite vender, hipotecar o subdividir sin problemas.' },
+      ]
+    },
     regularizacion: {
       title: '📋 Regularización — Proceso paso a paso',
       steps: [
@@ -5093,7 +5215,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 <script>
 (function() {
   const overlay = document.getElementById('tramiteSuccessOverlay');
-  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
   window.showTramiteSuccess = function({ projectNumber, arq, svc, commune }) {
     document.getElementById('tsProjectNum').textContent = projectNumber || '—';
