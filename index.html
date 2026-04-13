@@ -439,20 +439,27 @@
     }
     .cdd-search:focus { border-color: var(--orange); }
     .cdd-list {
-      max-height: 200px; overflow-y: auto;
+      max-height: 280px; overflow-y: auto;
       overscroll-behavior: contain;
     }
     .cdd-list::-webkit-scrollbar { width: 4px; }
     .cdd-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     .cdd-opt {
-      padding: 0.55rem 0.9rem;
-      font-size: 0.85rem; font-weight: 500; color: var(--mid);
+      padding: 0.52rem 0.9rem;
+      font-size: 0.83rem; font-weight: 500; color: var(--mid);
       cursor: pointer; transition: background 0.1s;
       border-bottom: 1px solid var(--border-light);
     }
     .cdd-opt:last-child { border-bottom: none; }
     .cdd-opt:hover { background: var(--orange-xlight); color: var(--orange); }
     .cdd-opt.selected { background: var(--orange-light); color: var(--orange); font-weight: 700; }
+    .cdd-region-hdr {
+      padding: 0.28rem 0.9rem;
+      font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--orange); background: var(--orange-xlight);
+      position: sticky; top: 0; z-index: 1;
+      border-bottom: 1px solid var(--border-light);
+    }
 
     /* ── ARCHITECT MODAL ──────────────────── */
     .modal-overlay {
@@ -536,13 +543,37 @@
     }
     /* ── Commune pills selector (architect form) ── */
     .commune-pills {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      max-height: 170px; overflow-y: auto;
-      padding: 10px; border: 1.5px solid var(--border);
+      max-height: 260px; overflow-y: auto;
+      border: 1.5px solid var(--border);
       border-radius: var(--radius-sm); background: var(--bg-soft);
     }
     .commune-pills::-webkit-scrollbar { width: 4px; }
     .commune-pills::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .arq-reg-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.42rem 0.75rem;
+      font-size: 0.78rem; font-weight: 700; color: var(--dark);
+      cursor: pointer; background: var(--bg-soft);
+      border-bottom: 1px solid var(--border-light);
+      user-select: none;
+    }
+    .arq-reg-hdr:hover { background: var(--orange-xlight); }
+    .arq-reg.open > .arq-reg-hdr { color: var(--orange); background: var(--orange-xlight); }
+    .arq-reg-hdr-right { display: flex; align-items: center; gap: 0.4rem; }
+    .arq-reg-todas {
+      font-size: 0.6rem; font-weight: 700; color: var(--orange);
+      padding: 0.1rem 0.45rem; border: 1px solid var(--orange);
+      border-radius: 10px; background: none; cursor: pointer;
+    }
+    .arq-reg-todas:hover { background: var(--orange); color: #fff; }
+    .arq-reg-chevron { flex-shrink: 0; transition: transform 0.2s; color: var(--light); }
+    .arq-reg.open .arq-reg-chevron { transform: rotate(180deg); }
+    .arq-reg-body {
+      display: none; flex-wrap: wrap; gap: 5px;
+      padding: 0.5rem 0.75rem;
+      background: #fff; border-bottom: 1px solid var(--border-light);
+    }
+    .arq-reg.open .arq-reg-body { display: flex; }
     .commune-pill {
       padding: 4px 11px; border-radius: var(--radius-pill);
       font-size: 0.74rem; font-weight: 600;
@@ -2688,15 +2719,26 @@ const STAGES_INFORME = [
   { name: 'Entrega informe (E2)', pct: 0.50 },
 ];
 
-const COMMUNES = [
-  'Cerrillos','Cerro Navia','Conchalí','El Bosque','Estación Central',
-  'Huechuraba','Independencia','La Cisterna','La Florida','La Granja',
-  'La Pintana','La Reina','Las Condes','Lo Barnechea','Lo Espejo',
-  'Lo Prado','Macul','Maipú','Ñuñoa','Pedro Aguirre Cerda',
-  'Peñalolén','Providencia','Pudahuel','Quilicura','Quinta Normal',
-  'Recoleta','Renca','San Joaquín','San Miguel','San Ramón',
-  'Santiago','Vitacura'
-];
+const REGIONES_COMUNAS = {
+  'Arica y Parinacota':  ['Arica','Camarones','General Lagos','Putre'],
+  'Tarapacá':            ['Alto Hospicio','Camiña','Colchane','Huara','Iquique','Pica','Pozo Almonte'],
+  'Antofagasta':         ['Antofagasta','Calama','María Elena','Mejillones','Ollagüe','San Pedro de Atacama','Sierra Gorda','Taltal','Tocopilla'],
+  'Atacama':             ['Alto del Carmen','Caldera','Chañaral','Copiapó','Diego de Almagro','Freirina','Huasco','Tierra Amarilla','Vallenar'],
+  'Coquimbo':            ['Andacollo','Canela','Combarbalá','Coquimbo','Illapel','La Higuera','La Serena','Los Vilos','Monte Patria','Ovalle','Paiguano','Punitaqui','Río Hurtado','Salamanca','Vicuña'],
+  'Valparaíso':          ['Algarrobo','Cabildo','Calle Larga','Cartagena','Casablanca','Catemu','Concón','El Quisco','El Tabo','Hijuelas','Isla de Pascua','Juan Fernández','La Cruz','La Ligua','Limache','Llaillay','Los Andes','Nogales','Olmué','Panquehue','Papudo','Petorca','Puchuncaví','Putaendo','Quillota','Quintero','Rinconada','San Antonio','San Esteban','San Felipe','Santa María','Santo Domingo','Valparaíso','Viña del Mar','Zapallar'],
+  'Metropolitana':       ['Alhué','Buin','Calera de Tango','Cerrillos','Cerro Navia','Colina','Conchalí','Curacaví','El Bosque','El Monte','Estación Central','Huechuraba','Independencia','Isla de Maipo','La Cisterna','La Florida','La Granja','La Pintana','La Reina','Lampa','Las Condes','Lo Barnechea','Lo Espejo','Lo Prado','Macul','Maipú','María Pinto','Melipilla','Ñuñoa','Padre Hurtado','Paine','Pedro Aguirre Cerda','Peñaflor','Peñalolén','Pirque','Providencia','Pudahuel','Puente Alto','Quilicura','Quinta Normal','Recoleta','Renca','San Bernardo','San Joaquín','San José de Maipo','San Miguel','San Pedro','San Ramón','Santiago','Talagante','Tiltil','Vitacura'],
+  "O'Higgins":           ['Chépica','Chimbarongo','Codegua','Coinco','Coltauco','Doñihue','Graneros','La Estrella','Las Cabras','Litueche','Lolol','Machalí','Malloa','Marchihue','Mostazal','Nancagua','Navidad','Olivar','Palmilla','Paredones','Peralillo','Peumo','Pichidegua','Pichilemu','Placilla','Pumanque','Quinta de Tilcoco','Rancagua','Rengo','Requínoa','San Fernando','San Vicente','Santa Cruz'],
+  'Maule':               ['Cauquenes','Chanco','Colbún','Constitución','Curicó','Curepto','Empedrado','Hualañé','Licantén','Linares','Longaví','Maule','Molina','Parral','Pelarco','Pelluhue','Pencahue','Rauco','Retiro','Río Claro','Romeral','Sagrada Familia','San Clemente','San Javier','San Rafael','Talca','Teno','Vichuquén','Villa Alegre','Yerbas Buenas'],
+  'Ñuble':               ['Bulnes','Chillán','Chillán Viejo','Cobquecura','Coelemu','Coihueco','El Carmen','Ninhue','Ñiquén','Pemuco','Pinto','Portezuelo','Quillón','Quirihue','Ránquil','San Carlos','San Fabián','San Ignacio','San Nicolás','Treguaco','Yungay'],
+  'Biobío':              ['Alto Biobío','Antuco','Arauco','Cabrero','Cañete','Concepción','Contulmo','Coronel','Curanilahue','Chiguayante','Florida','Hualpén','Hualqui','Laja','Lebu','Los Álamos','Los Ángeles','Lota','Mulchén','Nacimiento','Negrete','Penco','Quilaco','Quilleco','San Pedro de la Paz','San Rosendo','Santa Bárbara','Santa Juana','Talcahuano','Tirúa','Tomé','Tucapel','Yumbel'],
+  'Araucanía':           ['Angol','Carahue','Cholchol','Collipulli','Cunco','Curacautín','Curarrehue','Ercilla','Freire','Galvarino','Gorbea','Lautaro','Loncoche','Lonquimay','Los Sauces','Lumaco','Melipeuco','Nueva Imperial','Padre las Casas','Perquenco','Pitrufquén','Pucón','Purén','Renaico','Saavedra','Temuco','Teodoro Schmidt','Toltén','Traiguén','Victoria','Vilcún','Villarrica'],
+  'Los Ríos':            ['Corral','Futrono','La Unión','Lago Ranco','Lanco','Los Lagos','Máfil','Mariquina','Paillaco','Panguipulli','Río Bueno','Valdivia'],
+  'Los Lagos':           ['Ancud','Calbuco','Castro','Chaitén','Chonchi','Cochamó','Curaco de Vélez','Dalcahue','Fresia','Frutillar','Futaleufú','Hualaihué','Llanquihue','Los Muermos','Maullín','Osorno','Palena','Puerto Montt','Puerto Octay','Puerto Varas','Puqueldón','Purranque','Puyehue','Queilén','Quellón','Quemchi','Quinchao','Río Negro','San Juan de la Costa','San Pablo'],
+  'Aysén':               ['Aysén','Chile Chico','Cisnes','Cochrane','Coihaique','Guaitecas','Lago Verde','O\'Higgins','Río Ibáñez','Tortel'],
+  'Magallanes':          ['Antártica','Cabo de Hornos','Laguna Blanca','Natales','Porvenir','Primavera','Punta Arenas','Río Verde','San Gregorio','Timaukel','Torres del Paine'],
+};
+/* Lista plana derivada — usada para búsquedas y compatibilidad */
+const COMMUNES = Object.values(REGIONES_COMUNAS).flat();
 
 let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, dest: [], uf: 39841 }; // actualizado vía /api/get-uf al cargar
 
@@ -2829,19 +2871,51 @@ const cSearch  = document.getElementById('communeSearch');
 
 function buildDDList(filter = '') {
   cDDList.innerHTML = '';
-  const q = filter.toLowerCase();
-  COMMUNES.filter(c => c.toLowerCase().includes(q)).forEach(c => {
+  const q = filter.toLowerCase().trim();
+
+  function makeOpt(c, hint) {
     const opt = document.createElement('div');
     opt.className = 'cdd-opt' + (S.commune === c ? ' selected' : '');
-    opt.textContent = c;
+    if (hint) {
+      opt.innerHTML = `${c} <span style="font-size:0.65rem;color:var(--muted);font-weight:400">${hint}</span>`;
+    } else {
+      opt.textContent = c;
+    }
     opt.onclick = () => {
-      S.commune = c; S.addr = c + ', Santiago';
-      document.getElementById('addrInput').value = c + ', Santiago';
+      S.commune = c; S.addr = c;
+      document.getElementById('addrInput').value = c;
       cDDText.textContent = c;
       cDDBtn.classList.add('selected');
       closeDDPanel(); closeSugg(); recalc();
     };
-    cDDList.appendChild(opt);
+    return opt;
+  }
+
+  if (q) {
+    /* Búsqueda plana con hint de región */
+    let found = 0;
+    Object.entries(REGIONES_COMUNAS).forEach(([region, comunas]) => {
+      comunas.filter(c => c.toLowerCase().includes(q)).forEach(c => {
+        cDDList.appendChild(makeOpt(c, region));
+        found++;
+      });
+    });
+    if (!found) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding:0.8rem;text-align:center;color:var(--muted);font-size:0.8rem;';
+      empty.textContent = 'Sin resultados';
+      cDDList.appendChild(empty);
+    }
+    return;
+  }
+
+  /* Sin filtro: agrupado por región con header sticky */
+  Object.entries(REGIONES_COMUNAS).forEach(([region, comunas]) => {
+    const hdr = document.createElement('div');
+    hdr.className = 'cdd-region-hdr';
+    hdr.textContent = region;
+    cDDList.appendChild(hdr);
+    comunas.forEach(c => cDDList.appendChild(makeOpt(c, null)));
   });
 }
 buildDDList();
@@ -4098,30 +4172,71 @@ async function loadArchitectPicker() {
    ARCHITECT COMMUNE PILLS — init
 ══════════════════════════════════════════════════ */
 (function initArqComunasPills() {
-  const container  = document.getElementById('arqComunasPills');
-  const hiddenInp  = document.getElementById('arqComunasHidden');
+  const container = document.getElementById('arqComunasPills');
+  const hiddenInp = document.getElementById('arqComunasHidden');
   if (!container || !hiddenInp) return;
   const selected = new Set();
-  COMMUNES.forEach(c => {
-    const pill = document.createElement('button');
-    pill.type = 'button';
-    pill.className = 'commune-pill';
-    pill.textContent = c;
-    pill.addEventListener('click', () => {
-      if (selected.has(c)) { selected.delete(c); pill.classList.remove('sel'); }
-      else                 { selected.add(c);    pill.classList.add('sel');    }
-      hiddenInp.value = Array.from(selected).join(', ');
+
+  function sync() { hiddenInp.value = Array.from(selected).join(', '); }
+
+  const chevronSVG = `<svg class="arq-reg-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  Object.entries(REGIONES_COMUNAS).forEach(([region, comunas]) => {
+    const regDiv = document.createElement('div');
+    regDiv.className = 'arq-reg';
+
+    /* Header */
+    const hdr = document.createElement('div');
+    hdr.className = 'arq-reg-hdr';
+    hdr.innerHTML = `<span>${region}</span><div class="arq-reg-hdr-right"><button type="button" class="arq-reg-todas">Todas</button>${chevronSVG}</div>`;
+    hdr.addEventListener('click', e => {
+      if (e.target.closest('.arq-reg-todas')) return; // handled below
+      regDiv.classList.toggle('open');
     });
-    container.appendChild(pill);
+
+    /* "Todas" button */
+    hdr.querySelector('.arq-reg-todas').addEventListener('click', e => {
+      e.stopPropagation();
+      regDiv.classList.add('open');
+      regDiv.querySelectorAll('.commune-pill').forEach(pill => {
+        const c = pill.dataset.comuna;
+        if (!selected.has(c)) { selected.add(c); pill.classList.add('sel'); }
+      });
+      sync();
+    });
+
+    /* Pills */
+    const body = document.createElement('div');
+    body.className = 'arq-reg-body';
+    comunas.forEach(c => {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'commune-pill';
+      pill.dataset.comuna = c;
+      pill.textContent = c;
+      pill.addEventListener('click', () => {
+        if (selected.has(c)) { selected.delete(c); pill.classList.remove('sel'); }
+        else                 { selected.add(c);    pill.classList.add('sel');    }
+        sync();
+      });
+      body.appendChild(pill);
+    });
+
+    regDiv.appendChild(hdr);
+    regDiv.appendChild(body);
+    container.appendChild(regDiv);
+
+    /* Metropolitana abierta por defecto */
+    if (region === 'Metropolitana') regDiv.classList.add('open');
   });
 
-  /* Seleccionar todas las comunas */
+  /* Seleccionar todas (botón global) */
   document.getElementById('arqSelectAllComunas').addEventListener('click', () => {
     container.querySelectorAll('.commune-pill').forEach(pill => {
-      const c = pill.textContent;
+      const c = pill.dataset.comuna;
       if (!selected.has(c)) { selected.add(c); pill.classList.add('sel'); }
     });
-    hiddenInp.value = Array.from(selected).join(', ');
+    sync();
   });
 })();
 
