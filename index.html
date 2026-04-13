@@ -3171,9 +3171,11 @@ document.getElementById('arqForm').onsubmit = async e => {
     });
 
     /* 3. Guardar sesión */
-    localStorage.setItem('arq_token',  token);
-    localStorage.setItem('arq_email',  arqEmail);
-    localStorage.setItem('arq_nombre', `${payload.nombre} ${payload.apellido}`.trim());
+    const signupRefresh = authData.refresh_token || '';
+    localStorage.setItem('arq_token',         token);
+    localStorage.setItem('arq_refresh_token', signupRefresh);
+    localStorage.setItem('arq_email',         arqEmail);
+    localStorage.setItem('arq_nombre',        `${payload.nombre} ${payload.apellido}`.trim());
 
     /* 4. Mostrar pantalla de éxito dentro del mismo modal */
     form.style.display = 'none';
@@ -4629,9 +4631,10 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         errEl.style.display = 'block'; return;
       }
 
-      localStorage.setItem('arq_token', data.token);
-      localStorage.setItem('arq_email', data.email);
-      localStorage.setItem('arq_nombre', data.architect ? `${data.architect.nombre} ${data.architect.apellido}` : data.email);
+      localStorage.setItem('arq_token',         data.token);
+      localStorage.setItem('arq_refresh_token', data.refresh_token || '');
+      localStorage.setItem('arq_email',         data.email);
+      localStorage.setItem('arq_nombre',        data.architect ? `${data.architect.nombre} ${data.architect.apellido}` : data.email);
 
       loadArqDash();
     } catch(e) {
@@ -4651,6 +4654,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
   document.getElementById('paCerrarSesion').onclick = () => {
     localStorage.removeItem('arq_token');
+    localStorage.removeItem('arq_refresh_token');
     localStorage.removeItem('arq_email');
     localStorage.removeItem('arq_nombre');
     document.getElementById('portalArqDash').style.display = 'none';
@@ -4664,6 +4668,24 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('portalArqDetail').style.display = 'none';
     document.getElementById('portalArqDash').style.display = '';
   };
+
+  /* Renueva el access_token usando el refresh_token guardado.
+     Retorna true si tuvo éxito y ya actualizó localStorage. */
+  async function refreshArqToken() {
+    const rt = localStorage.getItem('arq_refresh_token');
+    if (!rt) return false;
+    try {
+      const res  = await fetch('/api/auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'refresh', refresh_token: rt }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) return false;
+      localStorage.setItem('arq_token', data.token);
+      if (data.refresh_token) localStorage.setItem('arq_refresh_token', data.refresh_token);
+      return true;
+    } catch { return false; }
+  }
 
   async function loadArqDash() {
     const token = localStorage.getItem('arq_token');
@@ -4716,7 +4738,17 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        if (res.status === 401) { localStorage.removeItem('arq_token'); document.getElementById('portalArqDash').style.display = 'none'; document.getElementById('portalArqLogin').style.display = ''; return; }
+        if (res.status === 401) {
+          /* Intentar renovar el token antes de expulsar */
+          const renewed = await refreshArqToken();
+          if (renewed) { loadArqDash(); return; }
+          /* Sin éxito → volver al login */
+          localStorage.removeItem('arq_token');
+          localStorage.removeItem('arq_refresh_token');
+          document.getElementById('portalArqDash').style.display = 'none';
+          document.getElementById('portalArqLogin').style.display = '';
+          return;
+        }
         document.getElementById('paProjects').innerHTML = `<div style="color:#DC2626;font-size:0.82rem;">${data.error}</div>`;
         return;
       }

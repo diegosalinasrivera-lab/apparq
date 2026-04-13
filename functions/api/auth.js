@@ -51,9 +51,29 @@ export async function onRequest(context) {
   }
 
   try {
-    const { action, email, password } = await request.json();
+    const body = await request.json();
+    const { action, email, password } = body;
 
-    if (!action || !email || !password) {
+    if (!action) return corsResponse({ error: 'Falta action' }, 400);
+
+    /* ── REFRESH TOKEN ───────────────────────── */
+    if (action === 'refresh') {
+      const { refresh_token } = body;
+      if (!refresh_token) return corsResponse({ error: 'refresh_token requerido' }, 400);
+
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token }),
+      });
+      const data = await res.json();
+      if (data.error || data.error_description || !data.access_token) {
+        return corsResponse({ error: 'Sesión expirada' }, 401);
+      }
+      return corsResponse({ token: data.access_token, refresh_token: data.refresh_token });
+    }
+
+    if (!email || !password) {
       return corsResponse({ error: 'Faltan campos obligatorios' }, 400);
     }
 
@@ -135,10 +155,11 @@ export async function onRequest(context) {
         return corsResponse({ error: 'Email o contraseña incorrectos' }, 401);
       }
 
-      const token = data.access_token || data.session?.access_token;
+      const token        = data.access_token        || data.session?.access_token;
+      const refreshToken = data.refresh_token       || data.session?.refresh_token;
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
 
-      return corsResponse({ token, role, email: emailLower, architect });
+      return corsResponse({ token, refresh_token: refreshToken, role, email: emailLower, architect });
     }
 
     return corsResponse({ error: 'Acción no reconocida' }, 400);
