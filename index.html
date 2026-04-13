@@ -2881,8 +2881,13 @@ function buildDDList(filter = '') {
       opt.textContent = c;
     }
     opt.onclick = () => {
-      S.commune = c; S.addr = c;
-      document.getElementById('addrInput').value = c;
+      S.commune = c;
+      /* Solo rellenar el campo de dirección si está vacío */
+      const addrEl = document.getElementById('addrInput');
+      if (!addrEl.value.trim()) {
+        addrEl.value = c;
+        S.addr = c;
+      }
       cDDText.textContent = c;
       cDDBtn.classList.add('selected');
       closeDDPanel(); closeSugg(); recalc();
