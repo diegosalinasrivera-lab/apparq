@@ -2275,6 +2275,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <button id="paAuthBtn" class="btn-modal-submit" style="width:100%;margin-top:0.25rem;">Ingresar →</button>
       <div id="paError" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius);color:#DC2626;font-size:0.8rem;margin-top:0.6rem;padding:0.6rem 0.85rem;text-align:center;"></div>
+      <div id="paRecoverWrap" style="display:none;text-align:center;margin-top:0.5rem;">
+        <a href="#" id="paForgotLink" style="font-size:0.75rem;color:var(--orange);font-weight:700;text-decoration:none;">¿Olvidaste tu contraseña? Enviar email de recuperación →</a>
+        <div id="paRecoverMsg" style="display:none;font-size:0.75rem;color:#059669;margin-top:0.35rem;font-weight:600;"></div>
+      </div>
       <p style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:0.75rem;">¿No tienes cuenta? <a href="#" id="paOpenInscripcion" style="color:var(--orange);font-weight:700;text-decoration:none;">Únete a la red →</a></p>
     </div>
 
@@ -4606,6 +4610,10 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     const pass   = document.getElementById('paPass').value;
     const errEl  = document.getElementById('paError');
     errEl.style.display = 'none';
+    document.getElementById('paRecoverWrap').style.display = 'none';
+    document.getElementById('paRecoverMsg').style.display = 'none';
+    document.getElementById('paForgotLink').style.display = 'inline';
+    document.getElementById('paForgotLink').textContent = '¿Olvidaste tu contraseña? Enviar email de recuperación →';
 
     if (!email || !pass) {
       errEl.textContent = 'Completa email y contraseña.'; errEl.style.display = 'block'; return;
@@ -4625,7 +4633,10 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        errEl.textContent = 'Email o contraseña incorrectos.'; errEl.style.display = 'block'; return;
+        errEl.textContent = 'Email o contraseña incorrectos.';
+        errEl.style.display = 'block';
+        document.getElementById('paRecoverWrap').style.display = 'block';
+        return;
       }
       if (data.role !== 'architect') {
         errEl.textContent = 'Este email no está registrado como arquitecto en APPARQ.';
@@ -4642,6 +4653,39 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       errEl.textContent = 'Error de conexión. Intenta nuevamente.'; errEl.style.display = 'block';
     } finally {
       btn.disabled = false; btn.textContent = 'Ingresar →';
+    }
+  };
+
+  document.getElementById('paForgotLink').onclick = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('paEmail').value.trim();
+    const recoverMsg = document.getElementById('paRecoverMsg');
+    const link = document.getElementById('paForgotLink');
+    if (!email) {
+      recoverMsg.style.color = '#DC2626';
+      recoverMsg.textContent = 'Primero escribe tu email arriba.';
+      recoverMsg.style.display = 'block';
+      return;
+    }
+    link.textContent = 'Enviando…';
+    try {
+      await fetch('https://ibdafnzlsufsshczqvoa.supabase.co/auth/v1/recover', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      recoverMsg.style.color = '#059669';
+      recoverMsg.textContent = `✓ Email de recuperación enviado a ${email}. Revisa tu bandeja (y spam).`;
+      recoverMsg.style.display = 'block';
+      link.style.display = 'none';
+    } catch(_) {
+      recoverMsg.style.color = '#DC2626';
+      recoverMsg.textContent = 'Error al enviar. Intenta nuevamente.';
+      recoverMsg.style.display = 'block';
+      link.textContent = '¿Olvidaste tu contraseña? Enviar email de recuperación →';
     }
   };
 
