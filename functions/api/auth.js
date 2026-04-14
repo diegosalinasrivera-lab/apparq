@@ -157,6 +157,11 @@ export async function onRequest(context) {
 
       const token        = data.access_token        || data.session?.access_token;
       const refreshToken = data.refresh_token       || data.session?.refresh_token;
+
+      if (!token) {
+        return corsResponse({ error: 'Email o contraseña incorrectos' }, 401);
+      }
+
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
 
       return corsResponse({ token, refresh_token: refreshToken, role, email: emailLower, architect });

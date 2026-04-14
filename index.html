@@ -4632,7 +4632,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       });
       const data = await res.json();
 
-      if (!res.ok || data.error) {
+      if (!res.ok || data.error || !data.token) {
         errEl.textContent = 'Email o contraseña incorrectos.';
         errEl.style.display = 'block';
         document.getElementById('paRecoverWrap').style.display = 'block';
