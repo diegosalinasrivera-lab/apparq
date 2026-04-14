@@ -4076,6 +4076,7 @@ function _sendTramiteConfirmation(commune, arq) {
           arq,
           svc:     S.svc,
           commune: commune,
+          waitlist: !!d.waitlist,
         });
       }
       /* También actualizar el badge dentro del wizard (queda de respaldo) */
@@ -5368,23 +5369,45 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   const overlay = document.getElementById('tramiteSuccessOverlay');
   const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
-  window.showTramiteSuccess = function({ projectNumber, arq, svc, commune }) {
+  window.showTramiteSuccess = function({ projectNumber, arq, svc, commune, waitlist }) {
     document.getElementById('tsProjectNum').textContent = projectNumber || '—';
     document.getElementById('tsSvcName').textContent    = SVC_LABELS[svc] || svc || '—';
     document.getElementById('tsCommune').textContent    = commune || '—';
 
-    const avaEl   = document.getElementById('tsArqAva');
-    const nameEl  = document.getElementById('tsArqName');
-    if (arq && (arq.nombre || arq.apellido)) {
-      nameEl.textContent = `${arq.nombre || ''} ${arq.apellido || ''}`.trim();
-      if (arq.foto_url) {
-        avaEl.innerHTML = `<img src="${arq.foto_url}" alt="${nameEl.textContent}" />`;
-      } else {
-        avaEl.textContent = '👷';
-      }
+    const box    = document.getElementById('tramiteSuccessBox');
+    const icoEl  = box.querySelector('.ts-ico');
+    const titEl  = box.querySelector('.ts-title');
+    const subEl  = box.querySelector('.ts-sub');
+    const arqRow = box.querySelector('.ts-arq-row');
+    const avaEl  = document.getElementById('tsArqAva');
+    const nameEl = document.getElementById('tsArqName');
+    const roleEl = box.querySelector('.ts-arq-role');
+
+    if (waitlist) {
+      /* Lista de espera: no hay arquitecto disponible aún */
+      icoEl.textContent = '⏳';
+      titEl.textContent = '¡Trámite registrado!';
+      subEl.textContent = 'Pago confirmado · En lista de espera';
+      avaEl.textContent = '⏳';
+      nameEl.textContent = 'En cola de espera';
+      if (roleEl) roleEl.textContent = 'Te asignaremos un arquitecto a la brevedad';
     } else {
-      nameEl.textContent = 'Por asignar';
-      avaEl.textContent  = '👷';
+      /* Flujo normal: arquitecto asignado */
+      icoEl.textContent = '🎉';
+      titEl.textContent = '¡Tu trámite está en marcha!';
+      subEl.textContent = 'Pago confirmado · Guarda tu número de trámite';
+      if (arq && (arq.nombre || arq.apellido)) {
+        nameEl.textContent = `${arq.nombre || ''} ${arq.apellido || ''}`.trim();
+        if (arq.foto_url) {
+          avaEl.innerHTML = `<img src="${arq.foto_url}" alt="${nameEl.textContent}" />`;
+        } else {
+          avaEl.textContent = '👷';
+        }
+      } else {
+        nameEl.textContent = 'Por asignar';
+        avaEl.textContent  = '👷';
+      }
+      if (roleEl) roleEl.textContent = 'Arquitecto asignado · APPARQ';
     }
 
     overlay.classList.add('open');

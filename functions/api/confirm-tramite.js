@@ -40,6 +40,7 @@ function clpFmt(n) {
 ══════════════════════════════════════════════════ */
 async function autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, commune, svc) {
   const SVC_LABEL_MAP = {
+    'ley-del-mono': 'Ley del Mono',
     regularizacion: 'Regularización',
     ampliacion:     'Ampliación',
     'obra-nueva':   'Obra Nueva',
@@ -158,7 +159,7 @@ export async function onRequest(context) {
             m2:               m2       || 0,
             total_clp:        clp      || 0,
             e1_clp:           e1       || 0,
-            stage:            'levantamiento',
+            stage:            arquitecto ? 'levantamiento' : 'en_espera',
           }),
         });
       } catch (projErr) {
@@ -167,7 +168,7 @@ export async function onRequest(context) {
     }
 
     const fecha     = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
     const svcName   = svcLabels[svc] || svc || 'Trámite';
     const nombreCliente = `${nombre || ''} ${apellido || ''}`.trim();
     const arqNombre = arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Por asignar';
@@ -242,15 +243,23 @@ export async function onRequest(context) {
       : '';
 
     /* ── Email interno a hola@apparq.cl ────────── */
+    const esWaitlist = !arquitecto;
     await sendEmail({
       to:      'hola@apparq.cl',
-      subject: `🚀 Nuevo trámite iniciado — ${nombreCliente} · ${svcName} · ${commune}`,
+      subject: esWaitlist
+        ? `⚠️ LISTA DE ESPERA — ${nombreCliente} · ${svcName} · ${commune} — SIN ARQUITECTO`
+        : `🚀 Nuevo trámite iniciado — ${nombreCliente} · ${svcName} · ${commune}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a2e">
           <div style="background:#1a1a2e;padding:28px 32px;border-radius:8px 8px 0 0">
             <h1 style="color:#fff;margin:0;font-size:20px">APPARQ</h1>
             <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Nuevo trámite confirmado</p>
           </div>
+          ${esWaitlist ? `
+          <div style="background:#FEF2F2;border:2px solid #FCA5A5;padding:16px 32px;text-align:center">
+            <p style="margin:0;font-size:16px;font-weight:900;color:#DC2626">⚠️ TRÁMITE EN LISTA DE ESPERA</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#7F1D1D">No hay arquitecto activo en <strong>${commune}</strong> para <strong>${svcName}</strong>. Asignar manualmente.</p>
+          </div>` : ''}
           <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
             <h2 style="margin-top:0;font-size:16px;color:#1a1a2e">📋 Datos del trámite</h2>
             <table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -292,6 +301,71 @@ export async function onRequest(context) {
     /* ── Email de confirmación al cliente ─────── */
     if (email) {
       const esInforme = svc === 'informe';
+
+      if (esWaitlist) {
+        /* Caso lista de espera: no hay arquitecto disponible */
+        await sendEmail({
+          to:      email,
+          subject: `⏳ Trámite recibido — en lista de espera — APPARQ`,
+          html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+              <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Trámites de arquitectura</p>
+            </div>
+            <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <h2 style="margin-top:0;color:#1a1a2e">¡Hola ${nombre || 'cliente'}! Hemos recibido tu trámite 🎉</h2>
+              <p style="color:#4a5568;font-size:14px;line-height:1.7">
+                Hemos recibido tu pago y tu trámite ha sido registrado con éxito.
+              </p>
+
+              ${projectNumber ? `
+              <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
+                <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700">TU NÚMERO DE TRÁMITE</p>
+                <p style="margin:0;font-size:28px;font-weight:900;color:#E8503A;letter-spacing:2px">${projectNumber}</p>
+                <p style="margin:6px 0 0;font-size:11px;color:#78350F">Guarda este número para revisar el avance en <strong>apparq.cl → Mi trámite</strong></p>
+              </div>` : ''}
+
+              <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0">
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Servicio:</strong> ${svcName}</p>
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Dirección:</strong> ${direccion || '—'}, ${commune}</p>
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago E1 recibido:</strong> ${clpFmt(e1)}</p>
+                <p style="margin:0 0 6px;font-size:13px"><strong>✓ Total del proyecto:</strong> ${clpFmt(clp)}</p>
+                ${payment_id ? `<p style="margin:4px 0 0;font-size:11px;color:#718096">ID comprobante: ${payment_id}</p>` : ''}
+              </div>
+
+              <div style="background:#FEF9C3;border:1.5px solid #FDE047;border-radius:8px;padding:20px 24px;margin:24px 0;text-align:center">
+                <p style="margin:0;font-size:28px">⏳</p>
+                <p style="margin:8px 0 4px;font-size:15px;font-weight:800;color:#78350F">Tu trámite está en cola de espera</p>
+                <p style="margin:0;font-size:13px;color:#92400E;line-height:1.6">
+                  Te asignaremos un arquitecto a la brevedad.<br>
+                  Te avisaremos por correo en cuanto esté confirmado.
+                </p>
+              </div>
+
+              <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
+                <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Sigue el avance de tu trámite en:</p>
+                <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
+              </div>
+
+              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
+                <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
+                <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
+                  Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>.
+                </p>
+              </div>
+
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
+              <p style="font-size:11px;color:#a0aec0;margin:0">
+                APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+                ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a>
+                o por <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a>
+              </p>
+            </div>
+          </div>
+          `,
+        }, RESEND_API_KEY);
+      } else {
       await sendEmail({
         to:      email,
         subject: `✅ Tu trámite está en marcha — APPARQ`,
@@ -368,6 +442,7 @@ export async function onRequest(context) {
           </div>
         `,
       }, RESEND_API_KEY);
+      } /* end else (not waitlist) */
     }
 
     /* ── Email al arquitecto asignado ─────────── */
@@ -498,7 +573,7 @@ export async function onRequest(context) {
       }, RESEND_API_KEY);
     }
 
-    return corsResponse({ ok: true, project_number: projectNumber });
+    return corsResponse({ ok: true, project_number: projectNumber, waitlist: esWaitlist });
 
   } catch (err) {
     console.error('confirm-tramite error:', err);
