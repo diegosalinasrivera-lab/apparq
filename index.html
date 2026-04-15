@@ -2023,6 +2023,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="mform-group">
         <label class="mform-label">Comunas en que trabajas <span style="color:var(--orange)">*</span></label>
         <div class="commune-pills" id="arqComunasPills"></div>
+        <div id="arqComunasCounter" style="font-size:0.72rem;font-weight:700;margin-top:4px;color:var(--muted);">0 / 50 comunas seleccionadas</div>
         <div class="commune-pills-hint">Selecciona las comunas donde prestarás servicios — región por región. Solo recibirás proyectos de esas comunas.<br><span style="color:var(--orange);font-weight:700;">Usa el botón "Todas" dentro de cada región para seleccionarlas en bloque.</span></div>
         <input type="hidden" name="comunas" id="arqComunasHidden" />
       </div>
@@ -4184,10 +4185,19 @@ async function loadArchitectPicker() {
 (function initArqComunasPills() {
   const container = document.getElementById('arqComunasPills');
   const hiddenInp = document.getElementById('arqComunasHidden');
+  const counterEl = document.getElementById('arqComunasCounter');
   if (!container || !hiddenInp) return;
   const selected = new Set();
+  const MAX_COMUNAS = 50;
 
-  function sync() { hiddenInp.value = Array.from(selected).join(', '); }
+  function sync() {
+    hiddenInp.value = Array.from(selected).join(', ');
+    const n = selected.size;
+    if (counterEl) {
+      counterEl.textContent = `${n} / ${MAX_COMUNAS} comunas seleccionadas`;
+      counterEl.style.color = n >= MAX_COMUNAS ? '#DC2626' : n >= 40 ? '#D97706' : 'var(--muted)';
+    }
+  }
 
   const chevronSVG = `<svg class="arq-reg-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 
@@ -4210,7 +4220,10 @@ async function loadArchitectPicker() {
       regDiv.classList.add('open');
       regDiv.querySelectorAll('.commune-pill').forEach(pill => {
         const c = pill.dataset.comuna;
-        if (!selected.has(c)) { selected.add(c); pill.classList.add('sel'); }
+        if (!selected.has(c)) {
+          if (selected.size >= MAX_COMUNAS) return; /* tope alcanzado */
+          selected.add(c); pill.classList.add('sel');
+        }
       });
       sync();
     });
@@ -4225,8 +4238,12 @@ async function loadArchitectPicker() {
       pill.dataset.comuna = c;
       pill.textContent = c;
       pill.addEventListener('click', () => {
-        if (selected.has(c)) { selected.delete(c); pill.classList.remove('sel'); }
-        else                 { selected.add(c);    pill.classList.add('sel');    }
+        if (selected.has(c)) {
+          selected.delete(c); pill.classList.remove('sel');
+        } else {
+          if (selected.size >= MAX_COMUNAS) return; /* tope alcanzado */
+          selected.add(c); pill.classList.add('sel');
+        }
         sync();
       });
       body.appendChild(pill);
