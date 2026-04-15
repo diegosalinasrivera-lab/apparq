@@ -1586,7 +1586,7 @@ function renderCommunePills() {
     return;
   }
   wrap.innerHTML = selectedCommunes.map(c =>
-    `<span class="commune-pill" onclick="removeCommune('${c}')">${c} ✕</span>`
+    `<span class="commune-pill" data-comuna="${c.replace(/"/g, '&quot;')}" onclick="removeCommune(this.dataset.comuna)">${c} ✕</span>`
   ).join('');
 }
 
@@ -1683,7 +1683,7 @@ function renderEditCommunePills() {
     return;
   }
   wrap.innerHTML = editSelectedCommunes.map(c =>
-    `<span class="commune-pill" onclick="removeEditCommune('${c}')">${c} ✕</span>`
+    `<span class="commune-pill" data-comuna="${c.replace(/"/g, '&quot;')}" onclick="removeEditCommune(this.dataset.comuna)">${c} ✕</span>`
   ).join('');
 }
 
