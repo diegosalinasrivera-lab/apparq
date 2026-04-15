@@ -2023,8 +2023,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="mform-group">
         <label class="mform-label">Comunas en que trabajas <span style="color:var(--orange)">*</span></label>
         <div class="commune-pills" id="arqComunasPills"></div>
-        <button type="button" id="arqSelectAllComunas" style="margin-top:0.5rem;padding:0.3rem 0.9rem;font-size:0.75rem;font-weight:700;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;">Seleccionar todas</button>
-        <div class="commune-pills-hint">Selecciona todas las comunas donde prestarás servicios. Solo recibirás proyectos de esas comunas.<br><span style="color:var(--orange);font-weight:700;">Elige varias comunas para aumentar tus posibilidades de recibir un trámite.</span></div>
+        <div class="commune-pills-hint">Selecciona las comunas donde prestarás servicios — región por región. Solo recibirás proyectos de esas comunas.<br><span style="color:var(--orange);font-weight:700;">Usa el botón "Todas" dentro de cada región para seleccionarlas en bloque.</span></div>
         <input type="hidden" name="comunas" id="arqComunasHidden" />
       </div>
       <div class="mform-group">
@@ -4241,14 +4240,6 @@ async function loadArchitectPicker() {
     if (region === 'Metropolitana') regDiv.classList.add('open');
   });
 
-  /* Seleccionar todas (botón global) */
-  document.getElementById('arqSelectAllComunas').addEventListener('click', () => {
-    container.querySelectorAll('.commune-pill').forEach(pill => {
-      const c = pill.dataset.comuna;
-      if (!selected.has(c)) { selected.add(c); pill.classList.add('sel'); }
-    });
-    sync();
-  });
 })();
 
 /* ══════════════════════════════════════════════════
