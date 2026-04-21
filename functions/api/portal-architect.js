@@ -608,6 +608,30 @@ export async function onRequest(context) {
       }
     }
 
+    /* ── UPDATE-TRAMITES ─────────────────────── */
+    if (action === 'update-tramites') {
+      const { tramites } = rest;
+      if (!Array.isArray(tramites)) {
+        return corsResponse({ error: 'tramites debe ser un array' }, 400);
+      }
+      const updRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify({ tramites }),
+        }
+      );
+      if (!updRes.ok) {
+        return corsResponse({ error: 'Error al guardar servicios' }, 500);
+      }
+      return corsResponse({ ok: true });
+    }
+
     /* ── UPDATE-PHOTO ─────────────────────────── */
     if (action === 'update-photo') {
       const { foto_url } = rest;

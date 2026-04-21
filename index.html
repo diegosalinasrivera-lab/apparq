@@ -2346,7 +2346,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <button id="paToggleAvail" style="background:#DC2626;color:#fff;border:none;border-radius:var(--radius-pill);padding:0.35rem 0.85rem;font-size:0.72rem;font-weight:700;cursor:pointer;">Pausar</button>
       </div>
-      <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:420px;overflow-y:auto;"></div>
+      <!-- Mis servicios -->
+      <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.85rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--dark);">🛠 Mis servicios</div>
+          <span id="paTramitesSaveMsg" style="font-size:0.68rem;color:#059669;font-weight:700;display:none;">✓ Guardado</span>
+        </div>
+        <div id="paTramitesChips" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
+        <div style="font-size:0.67rem;color:var(--muted);margin-top:0.45rem;">Activa solo los servicios que puedes realizar. Solo recibirás trámites de los seleccionados.</div>
+      </div>
+      <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:380px;overflow-y:auto;"></div>
     </div>
 
     <!-- Project detail (mensajes + etapa) -->
@@ -4869,6 +4878,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       /* Sync availability toggle */
       updateAvailUI(data.architect?.activo !== false);
 
+      /* Sync servicios chips */
+      renderTramitesChips(data.architect?.tramites || [], token);
+
       renderArqProjects(projects, token);
     } catch(e) {
       document.getElementById('paProjects').innerHTML = '<div style="color:#DC2626;font-size:0.82rem;">Error de conexión.</div>';
@@ -4883,6 +4895,48 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     visita:'Visita a terreno', elaboracion_inf:'Elaboración del informe', entrega_informe:'Informe entregado',
   };
   const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+
+  const ALL_TRAMITES = ['Regularización','Ampliación','Ampliación Ley 21.718','Obra Nueva','Ley del Mono','Informe'];
+
+  function renderTramitesChips(currentTramites, token) {
+    const container = document.getElementById('paTramitesChips');
+    const saveMsg   = document.getElementById('paTramitesSaveMsg');
+    if (!container) return;
+    const active = new Set(currentTramites);
+    container.innerHTML = '';
+    let saveTimer = null;
+
+    ALL_TRAMITES.forEach(t => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.textContent = t;
+      chip.style.cssText = `padding:0.25rem 0.7rem;font-size:0.72rem;font-weight:700;border-radius:20px;cursor:pointer;border:1.5px solid;transition:all 0.15s;`;
+      const setStyle = () => {
+        chip.style.background  = active.has(t) ? 'var(--orange)' : '#fff';
+        chip.style.color       = active.has(t) ? '#fff' : 'var(--muted)';
+        chip.style.borderColor = active.has(t) ? 'var(--orange)' : 'var(--border)';
+      };
+      setStyle();
+
+      chip.onclick = async () => {
+        if (active.has(t)) active.delete(t); else active.add(t);
+        setStyle();
+        /* Auto-save con debounce */
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+          try {
+            await fetch('/api/portal-architect', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update-tramites', token, tramites: Array.from(active) }),
+            });
+            saveMsg.style.display = 'inline';
+            setTimeout(() => { saveMsg.style.display = 'none'; }, 2000);
+          } catch(e) { console.warn('Error guardando servicios:', e); }
+        }, 400);
+      };
+      container.appendChild(chip);
+    });
+  }
 
   function renderArqProjects(projects, token) {
     const box = document.getElementById('paProjects');
