@@ -2054,6 +2054,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <label class="mform-check"><input type="checkbox" name="tramite_ley_del_mono" value="Ley del Mono"> Ley del Mono</label>
           <label class="mform-check"><input type="checkbox" name="tramite_regularizacion" value="Regularización" checked> Regularización</label>
           <label class="mform-check"><input type="checkbox" name="tramite_ampliacion" value="Ampliación"> Ampliación</label>
+          <label class="mform-check"><input type="checkbox" name="tramite_amp_ley21718" value="Ampliación Ley 21.718"> Ampliación Ley 21.718</label>
           <label class="mform-check"><input type="checkbox" name="tramite_obra_nueva" value="Obra Nueva"> Obra Nueva</label>
           <label class="mform-check"><input type="checkbox" name="tramite_informe" value="Informe"> Informes de Propiedad</label>
         </div>
@@ -3173,6 +3174,7 @@ document.getElementById('arqForm').onsubmit = async e => {
     if (fd.get('tramite_ley_del_mono'))   tramites.push('Ley del Mono');
     if (fd.get('tramite_regularizacion')) tramites.push('Regularización');
     if (fd.get('tramite_ampliacion'))     tramites.push('Ampliación');
+    if (fd.get('tramite_amp_ley21718'))   tramites.push('Ampliación Ley 21.718');
     if (fd.get('tramite_obra_nueva'))     tramites.push('Obra Nueva');
     if (fd.get('tramite_informe'))        tramites.push('Informe');
 

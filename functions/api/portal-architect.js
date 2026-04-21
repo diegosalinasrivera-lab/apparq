@@ -135,7 +135,7 @@ export async function onRequest(context) {
 
     /* Verificar que el email existe en architects */
     const arqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}&select=id,nombre,apellido,foto_url,activo&limit=1`,
+      `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}&select=id,nombre,apellido,foto_url,activo,tramites,comunas&limit=1`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     const arqData = await arqRes.json();
