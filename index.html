@@ -602,7 +602,7 @@
     }
 
     /* Service selector */
-    .service-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.4rem; }
+    .service-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.4rem; }
     .sbtn {
       padding: 0.55rem 0.2rem;
       border: 1.5px solid var(--border);
@@ -1377,11 +1377,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="calc-group">
           <label class="calc-label">🏗 Tipo de trámite</label>
           <div class="service-grid">
-            <button class="sbtn" data-svc="ley-del-mono"><span class="sbtn-ico">⚖️</span>Ley del Mono</button>
             <button class="sbtn" data-svc="regularizacion"><span class="sbtn-ico">📋</span>Regularización</button>
             <button class="sbtn" data-svc="ampliacion"><span class="sbtn-ico">🔨</span>Ampliación</button>
+            <button class="sbtn" data-svc="amp-ley21718" style="position:relative"><span class="sbtn-ico">⚡</span>Amp. Ley 21.718<span style="position:absolute;top:-6px;right:-4px;background:#E8503A;color:#fff;font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:8px;line-height:1.4;">NUEVO</span></button>
             <button class="sbtn" data-svc="obra-nueva"><span class="sbtn-ico">🏠</span>Obra Nueva</button>
             <button class="sbtn" data-svc="informe"><span class="sbtn-ico">📄</span>Informe</button>
+            <button class="sbtn" data-svc="ley-del-mono"><span class="sbtn-ico">⚖️</span>Ley del Mono</button>
           </div>
         </div>
 
@@ -1619,6 +1620,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="exc">Especialidades (sanitario, eléctrico, gas)</div>
           </div>
           <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('ampliacion')">Saber más →</button>
+        </div>
+
+        <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})" style="position:relative">
+          <span style="position:absolute;top:12px;right:12px;background:#E8503A;color:#fff;font-size:0.65rem;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:0.05em;">NUEVO</span>
+          <div class="svc-ico">⚡</div>
+          <h3>Ampliación Ley 21.718</h3>
+          <p>Amplía sin tramitar permiso DOM. El arquitecto certifica con Declaración Jurada bajo la nueva ley — más rápido, sin esperar la municipalidad.</p>
+          <div class="inc-list">
+            <div class="inc-section-label">Incluye</div>
+            <div class="inc">Proyecto de ampliación completo</div>
+            <div class="inc">Verificación normativa OGUC</div>
+            <div class="inc">Declaración Jurada firmada por arquitecto</div>
+            <div class="inc">Registro ante la DOM</div>
+            <div class="inc-section-label">No incluye</div>
+            <div class="exc">Cálculo estructural</div>
+            <div class="exc">Especialidades (sanitario, eléctrico, gas)</div>
+          </div>
+          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('amp-ley21718')">Saber más →</button>
         </div>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
@@ -2728,7 +2747,8 @@ const PRECIO_LEY_MONO = { hasta90: 12, hasta140: 18 };
 /* B. Regularización: fijos por sub-tipo */
 const PRECIO_REG = { 'obra-menor': 28, 'obra-nueva-reg-hasta140': 38, 'obra-nueva-reg-por-m2': 0.39 };
 /* C. Ampliación: tramos fijos */
-const PRECIO_AMP = { hasta50: 20, hasta100: 28 };
+const PRECIO_AMP    = { hasta50: 20, hasta100: 28 };
+const PRECIO_AMP_DJ = { hasta50: 22, hasta100: 30 }; /* Ampliación vía DJ Ley 21.718 */
 /* D. Obra Nueva: por m², mínimo */
 const PRECIO_ON = { tarifa: 0.80, minimo: 35 };
 /* E. Informe: fijos por sub-tipo */
@@ -3368,6 +3388,7 @@ document.querySelectorAll('.sbtn').forEach(b => {
     const isInf     = S.svc === 'informe';
     const isLeyMono = S.svc === 'ley-del-mono';
     const isReg     = S.svc === 'regularizacion';
+    const isAmpDJ   = S.svc === 'amp-ley21718';
 
     /* m²: ocultar solo para informe (precio fijo por sub-tipo, no por m²) */
     document.getElementById('grp-m2').classList.toggle('hidden', isInf);
@@ -3436,6 +3457,7 @@ function isReady() {
   if (S.svc === 'ley-del-mono')  return true;
   if (S.svc === 'regularizacion') return !!S.svcSub;
   if (S.svc === 'ampliacion')    return true;
+  if (S.svc === 'amp-ley21718')  return true;
   if (S.svc === 'obra-nueva')    return S.mat && S.dest && S.dest.length > 0;
   return false;
 }
@@ -3464,6 +3486,12 @@ function calcTotal() {
   /* C. Ampliación: tramos fijos */
   if (S.svc === 'ampliacion') {
     const uf = m2 <= 50 ? PRECIO_AMP.hasta50 : PRECIO_AMP.hasta100;
+    return { uf, clp: uf * S.uf };
+  }
+
+  /* C2. Ampliación vía DJ Ley 21.718 */
+  if (S.svc === 'amp-ley21718') {
+    const uf = m2 <= 50 ? PRECIO_AMP_DJ.hasta50 : PRECIO_AMP_DJ.hasta100;
     return { uf, clp: uf * S.uf };
   }
 
@@ -3579,7 +3607,7 @@ document.addEventListener('keydown', e => {
 
 /* ── prefill from cotizador state ─────────────── */
 function prefillWizard() {
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón' };
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa' };
   const destText = Array.isArray(S.dest) && S.dest.length ? S.dest.map(d => DEST_LABELS[d] || d).join(', ') : '—';
@@ -3849,7 +3877,7 @@ function setupPaymentStep() {
       const { clp } = calcTotal();
       const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
       const e1      = Math.round(clp * e1pct);
-      const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+      const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
       const svcName = SVC_LABELS[S.svc] || 'Trámite';
       const commune = S.commune || 'Santiago';
       const email   = document.getElementById('wizEmail')?.value || 'cliente@apparq.cl';
@@ -3904,7 +3932,7 @@ function showPayUI() { /* ya no se usa — mantenemos por compatibilidad */ }
 
 /* ── submit tramite to Netlify Forms (AJAX) ──── */
 async function submitTramiteToNetlify() {
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón', none:'' };
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa', none:'' };
 
@@ -4424,7 +4452,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('pcProjBar').style.width = (p.stage_pct || 0) + '%';
     document.getElementById('pcProjDesc').textContent = p.stage_desc || '';
 
-    const SVC = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    const SVC = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
     document.getElementById('pcProjInfo').innerHTML =
       `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
 
@@ -4854,7 +4882,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     ingreso_dom:'Ingreso a la DOM', tramitacion:'Tramitación municipal', completado:'Trámite completado',
     visita:'Visita a terreno', elaboracion_inf:'Elaboración del informe', entrega_informe:'Informe entregado',
   };
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
   function renderArqProjects(projects, token) {
     const box = document.getElementById('paProjects');
@@ -5441,7 +5469,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 <script>
 (function() {
   const overlay = document.getElementById('tramiteSuccessOverlay');
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
   window.showTramiteSuccess = function({ projectNumber, arq, svc, commune, waitlist }) {
     document.getElementById('tsProjectNum').textContent = projectNumber || '—';

@@ -40,11 +40,12 @@ function clpFmt(n) {
 ══════════════════════════════════════════════════ */
 async function autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, commune, svc) {
   const SVC_LABEL_MAP = {
-    'ley-del-mono': 'Ley del Mono',
-    regularizacion: 'Regularización',
-    ampliacion:     'Ampliación',
-    'obra-nueva':   'Obra Nueva',
-    informe:        'Informe',
+    'ley-del-mono':  'Ley del Mono',
+    regularizacion:  'Regularización',
+    ampliacion:      'Ampliación',
+    'amp-ley21718':  'Ampliación Ley 21.718',
+    'obra-nueva':    'Obra Nueva',
+    informe:         'Informe',
   };
   const svcLabel = SVC_LABEL_MAP[svc] || svc;
 
@@ -168,7 +169,7 @@ export async function onRequest(context) {
     }
 
     const fecha     = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
     const svcName   = svcLabels[svc] || svc || 'Trámite';
     const nombreCliente = `${nombre || ''} ${apellido || ''}`.trim();
     const arqNombre = arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Por asignar';
