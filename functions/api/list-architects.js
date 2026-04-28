@@ -16,10 +16,11 @@ function corsResponse(body, status = 200) {
 }
 
 const TRAMITE_MAP = {
-  regularizacion: 'Regularización',
-  ampliacion:     'Ampliación',
-  'obra-nueva':   'Obra Nueva',
-  informe:        'Informe',
+  regularizacion:       'Regularización',
+  ampliacion:           'Ampliación',
+  'declaracion-jurada': 'Declaración Jurada',
+  'obra-nueva':         'Obra Nueva',
+  informe:              'Informe',
 };
 
 const COMUNAS_ADYACENTES = {

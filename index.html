@@ -1379,7 +1379,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="service-grid">
             <button class="sbtn" data-svc="regularizacion"><span class="sbtn-ico">📋</span>Regularización</button>
             <button class="sbtn" data-svc="ampliacion"><span class="sbtn-ico">🔨</span>Ampliación</button>
-            <button class="sbtn" data-svc="amp-ley21718" style="position:relative"><span class="sbtn-ico">⚡</span>Amp. Ley 21.718<span style="position:absolute;top:-6px;right:-4px;background:#E8503A;color:#fff;font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:8px;line-height:1.4;">NUEVO</span></button>
+            <button class="sbtn" data-svc="declaracion-jurada" style="position:relative"><span class="sbtn-ico">📜</span>Decl. Jurada<span style="position:absolute;top:-6px;right:-4px;background:#E8503A;color:#fff;font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:8px;line-height:1.4;">NUEVO</span></button>
             <button class="sbtn" data-svc="obra-nueva"><span class="sbtn-ico">🏠</span>Obra Nueva</button>
             <button class="sbtn" data-svc="informe"><span class="sbtn-ico">📄</span>Informe</button>
             <button class="sbtn" data-svc="ley-del-mono"><span class="sbtn-ico">⚖️</span>Ley del Mono</button>
@@ -1417,6 +1417,47 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="chip" data-sub="evaluacion">Evaluación normativa</button>
             <button class="chip" data-sub="factibilidad">Factibilidad</button>
             <button class="chip" data-sub="compraventa">Compraventa</button>
+          </div>
+        </div>
+
+        <!-- Sub-tipo Declaración Jurada -->
+        <div class="calc-group hidden" id="grp-sub-dj">
+          <label class="calc-label">📌 Tipo de Declaración Jurada</label>
+          <div class="chip-row">
+            <button class="chip" data-sub="piscina_privada">🏊 Piscina Privada</button>
+            <button class="chip" data-sub="pergola_sombreadero">🌿 Pérgola / Sombreadero</button>
+            <button class="chip" data-sub="demolicion">🔨 Demolición</button>
+          </div>
+        </div>
+
+        <!-- DJ: Elegibilidad piscina -->
+        <div class="calc-group hidden" id="grp-dj-piscina">
+          <label class="calc-label">📏 ¿La piscina está a 1,5 m o menos del deslinde con tu vecino?</label>
+          <div class="chip-row">
+            <button class="chip" data-dj-elig="si_15m">Sí, a 1,5 m o menos</button>
+            <button class="chip" data-dj-elig="no_15m">No, a más de 1,5 m</button>
+            <button class="chip" data-dj-elig="no_se">No estoy seguro</button>
+          </div>
+        </div>
+        <!-- DJ: Nota "no estoy seguro" piscina -->
+        <div class="hidden" id="grp-dj-piscina-note" style="margin:0 0 1rem;padding:0.75rem 1rem;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:0.82rem;color:#1e40af;line-height:1.5;">
+          💡 <strong>Verifica la distancia con un metro antes de continuar.</strong> Si no estás seguro también puedes ver el servicio de <a href="#" onclick="djDerivToService('regularizacion');return false;" style="color:#E8503A;font-weight:700;">Regularización</a>.
+        </div>
+        <!-- DJ: Derivación (piscina fuera de deslinde) -->
+        <div class="hidden" id="grp-dj-derivar" style="margin:0 0 1rem;padding:0.8rem 1rem;background:#FEF9C3;border:1.5px solid #FDE047;border-radius:8px;font-size:0.82rem;color:#78350F;line-height:1.55;">
+          <strong>⚠️ Tu caso requiere permiso DOM regular.</strong><br>
+          Una piscina a más de 1,5 m del deslinde necesita un permiso de ampliación tradicional.
+          <br><button onclick="djDerivToService('ampliacion')" style="margin-top:0.5rem;background:#E8503A;color:#fff;border:none;border-radius:6px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:700;cursor:pointer;">Ver Ampliación →</button>
+        </div>
+
+        <!-- DJ: Tipo de obra pérgola/sombreadero -->
+        <div class="calc-group hidden" id="grp-dj-pergola">
+          <label class="calc-label">📌 ¿Qué tipo de obra necesitas?</label>
+          <div class="chip-row">
+            <button class="chip" data-dj-obra="pergola">Pérgola</button>
+            <button class="chip" data-dj-obra="sombreadero">Sombreadero</button>
+            <button class="chip" data-dj-obra="baño">Baño exterior</button>
+            <button class="chip" data-dj-obra="pañol">Pañol</button>
           </div>
         </div>
 
@@ -1624,20 +1665,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})" style="position:relative">
           <span style="position:absolute;top:12px;right:12px;background:#E8503A;color:#fff;font-size:0.65rem;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:0.05em;">NUEVO</span>
-          <div class="svc-ico">⚡</div>
-          <h3>Ampliación Ley 21.718</h3>
-          <p>Amplía sin tramitar permiso DOM. El arquitecto certifica con Declaración Jurada bajo la nueva ley — más rápido, sin esperar la municipalidad.</p>
+          <div class="svc-ico">📜</div>
+          <h3>Declaración Jurada</h3>
+          <p>Trámite express (Ley 21.718, vigente desde abril 2026). Piscinas privadas, pérgolas, sombreaderos y demoliciones sin permiso DOM tradicional — la DOM solo cobra y archiva.</p>
           <div class="inc-list">
-            <div class="inc-section-label">Incluye</div>
-            <div class="inc">Proyecto de ampliación completo</div>
-            <div class="inc">Verificación normativa OGUC</div>
-            <div class="inc">Declaración Jurada firmada por arquitecto</div>
-            <div class="inc">Registro ante la DOM</div>
-            <div class="inc-section-label">No incluye</div>
-            <div class="exc">Cálculo estructural</div>
-            <div class="exc">Especialidades (sanitario, eléctrico, gas)</div>
+            <div class="inc-section-label">Aplica para</div>
+            <div class="inc">🏊 Piscinas privadas (a ≤ 1,5 m del deslinde)</div>
+            <div class="inc">🌿 Pérgolas, sombreaderos, baños o pañoles en jardín</div>
+            <div class="inc">🔨 Demoliciones formales</div>
+            <div class="inc-section-label">Ventajas</div>
+            <div class="inc">Plazo DOM: 3 días hábiles para emitir giro</div>
+            <div class="inc">Sin observaciones técnicas previas</div>
+            <div class="inc">Pago en 2 etapas (50% / 50%)</div>
           </div>
-          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('amp-ley21718')">Saber más →</button>
+          <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('declaracion-jurada')">Saber más →</button>
         </div>
 
         <div class="svc-card" onclick="document.getElementById('cotizador').scrollIntoView({behavior:'smooth'})">
@@ -2054,7 +2095,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <label class="mform-check"><input type="checkbox" name="tramite_ley_del_mono" value="Ley del Mono"> Ley del Mono</label>
           <label class="mform-check"><input type="checkbox" name="tramite_regularizacion" value="Regularización" checked> Regularización</label>
           <label class="mform-check"><input type="checkbox" name="tramite_ampliacion" value="Ampliación"> Ampliación</label>
-          <label class="mform-check"><input type="checkbox" name="tramite_amp_ley21718" value="Ampliación Ley 21.718"> Ampliación Ley 21.718</label>
+          <label class="mform-check"><input type="checkbox" name="tramite_decl_jurada" value="Declaración Jurada"> Declaración Jurada (Ley 21.718)</label>
           <label class="mform-check"><input type="checkbox" name="tramite_obra_nueva" value="Obra Nueva"> Obra Nueva</label>
           <label class="mform-check"><input type="checkbox" name="tramite_informe" value="Informe"> Informes de Propiedad</label>
         </div>
@@ -2758,7 +2799,14 @@ const PRECIO_LEY_MONO = { hasta90: 12, hasta140: 18 };
 const PRECIO_REG = { 'obra-menor': 28, 'obra-nueva-reg-hasta140': 38, 'obra-nueva-reg-por-m2': 0.39 };
 /* C. Ampliación: tramos fijos */
 const PRECIO_AMP    = { hasta50: 20, hasta100: 28 };
-const PRECIO_AMP_DJ = { hasta50: 22, hasta100: 30 }; /* Ampliación vía DJ Ley 21.718 */
+/* F. Declaración Jurada Ley 21.718 — precios configurables (sin redeploy vía variables) */
+const PRECIO_DJ = {
+  piscina:           10,   /* UF tarifa fija — piscina privada          */
+  pergola:            6,   /* UF tarifa fija — pérgola/sombreadero/baño */
+  demolicion_base:    8,   /* UF base demolición                        */
+  demolicion_umbral: 100,  /* m² a partir del que se cobra por m²       */
+  demolicion_por_m2: 0.05, /* UF adicionales por m² sobre el umbral     */
+};
 /* D. Obra Nueva: por m², mínimo */
 const PRECIO_ON = { tarifa: 0.80, minimo: 35 };
 /* E. Informe: fijos por sub-tipo */
@@ -2772,6 +2820,11 @@ const STAGES_NORMAL = [
 const STAGES_INFORME = [
   { name: 'Inicio (E1)',          pct: 0.50 },
   { name: 'Entrega informe (E2)', pct: 0.50 },
+];
+/* Declaración Jurada: 2 etapas 50/50 */
+const STAGES_DJ = [
+  { name: 'Inicio (E1)',  pct: 0.50 },
+  { name: 'Cierre (E2)', pct: 0.50 },
 ];
 
 const REGIONES_COMUNAS = {
@@ -2795,7 +2848,8 @@ const REGIONES_COMUNAS = {
 /* Lista plana derivada — usada para búsquedas y compatibilidad */
 const COMMUNES = Object.values(REGIONES_COMUNAS).flat();
 
-let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, dest: [], uf: 39841 }; // actualizado vía /api/get-uf al cargar
+let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, dest: [], uf: 39841,
+          djElig: null, djObra: null }; // actualizado vía /api/get-uf al cargar
 
 /* ══════════════════════════════════════════════════
    RETORNO DESDE MERCADO PAGO
@@ -2819,10 +2873,12 @@ let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, d
       /* Restaurar estado global S (incluye datos del cliente para usar en confirm-tramite) */
       Object.assign(S, {
         svc:        saved.svc,
-        svcSub:     saved.svcSub || null,
+        svcSub:     saved.svcSub  || null,
         m2:         saved.m2,
         mat:        saved.mat,
         dest:       Array.isArray(saved.dest) ? saved.dest : (saved.dest ? [saved.dest] : []),
+        djElig:     saved.djElig  || null,
+        djObra:     saved.djObra  || null,
         commune:    saved.commune,
         firma_data: saved.firma_data || null,
         payment_id: paymentId || null,
@@ -3174,7 +3230,7 @@ document.getElementById('arqForm').onsubmit = async e => {
     if (fd.get('tramite_ley_del_mono'))   tramites.push('Ley del Mono');
     if (fd.get('tramite_regularizacion')) tramites.push('Regularización');
     if (fd.get('tramite_ampliacion'))     tramites.push('Ampliación');
-    if (fd.get('tramite_amp_ley21718'))   tramites.push('Ampliación Ley 21.718');
+    if (fd.get('tramite_decl_jurada'))    tramites.push('Declaración Jurada');
     if (fd.get('tramite_obra_nueva'))     tramites.push('Obra Nueva');
     if (fd.get('tramite_informe'))        tramites.push('Informe');
 
@@ -3399,17 +3455,27 @@ document.querySelectorAll('.sbtn').forEach(b => {
     const isInf     = S.svc === 'informe';
     const isLeyMono = S.svc === 'ley-del-mono';
     const isReg     = S.svc === 'regularizacion';
-    const isAmpDJ   = S.svc === 'amp-ley21718';
+    const isDJ      = S.svc === 'declaracion-jurada';
 
-    /* m²: ocultar solo para informe (precio fijo por sub-tipo, no por m²) */
-    document.getElementById('grp-m2').classList.toggle('hidden', isInf);
+    /* m²: ocultar para informe y DJ base (DJ-demolición lo re-muestra al elegir sub-tipo) */
+    document.getElementById('grp-m2').classList.toggle('hidden', isInf || isDJ);
 
     /* sub-tipo: mostrar según servicio */
     document.getElementById('grp-sub-reg').classList.toggle('hidden', !isReg);
     document.getElementById('grp-sub-inf').classList.toggle('hidden', !isInf);
+    document.getElementById('grp-sub-dj').classList.toggle('hidden',  !isDJ);
 
-    /* material/destino: ocultar para informe y ley del mono */
-    const hideMat = isInf || isLeyMono;
+    /* Ocultar sub-grupos DJ cuando se cambia de servicio */
+    if (!isDJ) {
+      document.getElementById('grp-dj-piscina').classList.add('hidden');
+      document.getElementById('grp-dj-piscina-note').classList.add('hidden');
+      document.getElementById('grp-dj-derivar').classList.add('hidden');
+      document.getElementById('grp-dj-pergola').classList.add('hidden');
+    }
+    S.djElig = null; S.djObra = null;
+
+    /* material/destino: ocultar para informe, ley del mono y DJ */
+    const hideMat = isInf || isLeyMono || isDJ;
     document.getElementById('grp-mat').classList.toggle('hidden', hideMat);
     document.getElementById('grp-dest').classList.toggle('hidden', hideMat);
 
@@ -3428,10 +3494,55 @@ document.querySelectorAll('.chip[data-sub]').forEach(c => {
   c.onclick = () => {
     c.closest('.calc-group').querySelectorAll('.chip[data-sub]').forEach(x => x.classList.remove('on'));
     c.classList.add('on');
-    S.svcSub = c.dataset.sub;
+    S.svcSub  = c.dataset.sub;
+    S.djElig  = null;
+    S.djObra  = null;
+
+    /* Visibilidad condicional para sub-grupos DJ */
+    if (S.svc === 'declaracion-jurada') {
+      const isPiscina = S.svcSub === 'piscina_privada';
+      const isPergola = S.svcSub === 'pergola_sombreadero';
+      const isDemo    = S.svcSub === 'demolicion';
+      document.getElementById('grp-dj-piscina').classList.toggle('hidden', !isPiscina);
+      document.getElementById('grp-dj-piscina-note').classList.add('hidden');
+      document.getElementById('grp-dj-derivar').classList.add('hidden');
+      document.getElementById('grp-dj-pergola').classList.toggle('hidden', !isPergola);
+      /* m² solo visible para demolición dentro de DJ */
+      document.getElementById('grp-m2').classList.toggle('hidden', !isDemo);
+      document.querySelectorAll('.chip[data-dj-elig]').forEach(x => x.classList.remove('on'));
+      document.querySelectorAll('.chip[data-dj-obra]').forEach(x => x.classList.remove('on'));
+    }
     recalc();
   };
 });
+
+/* ── DJ eligibilidad chips (piscina) ─────── */
+document.querySelectorAll('.chip[data-dj-elig]').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('.chip[data-dj-elig]').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    S.djElig = c.dataset.djElig;
+    document.getElementById('grp-dj-derivar').classList.toggle('hidden', S.djElig !== 'no_15m');
+    document.getElementById('grp-dj-piscina-note').classList.toggle('hidden', S.djElig !== 'no_se');
+    recalc();
+  };
+});
+
+/* ── DJ obra-type chips (pérgola) ─────────── */
+document.querySelectorAll('.chip[data-dj-obra]').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('.chip[data-dj-obra]').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    S.djObra = c.dataset.djObra;
+    recalc();
+  };
+});
+
+/* ── Derivar a otro servicio desde mensaje DJ */
+function djDerivToService(targetSvc) {
+  const btn = document.querySelector(`.sbtn[data-svc="${targetSvc}"]`);
+  if (btn) btn.click();
+}
 
 /* ── m² input ─────────────────────────────── */
 document.getElementById('m2Input').addEventListener('input', e => {
@@ -3464,12 +3575,21 @@ document.querySelectorAll('.chip[data-dest]').forEach(c => {
 function isReady() {
   if (!S.svc) return false;
   if (S.svc === 'informe')       return !!S.svcSub;
+
+  /* Declaración Jurada: lógica por sub-tipo */
+  if (S.svc === 'declaracion-jurada') {
+    if (!S.svcSub) return false;
+    if (S.svcSub === 'piscina_privada')    return !!S.djElig && S.djElig !== 'no_15m';
+    if (S.svcSub === 'pergola_sombreadero') return !!S.djObra;
+    if (S.svcSub === 'demolicion')          return !!S.m2;
+    return false;
+  }
+
   if (!S.m2) return false;
-  if (S.svc === 'ley-del-mono')  return true;
+  if (S.svc === 'ley-del-mono')   return true;
   if (S.svc === 'regularizacion') return !!S.svcSub;
-  if (S.svc === 'ampliacion')    return true;
-  if (S.svc === 'amp-ley21718')  return true;
-  if (S.svc === 'obra-nueva')    return S.mat && S.dest && S.dest.length > 0;
+  if (S.svc === 'ampliacion')     return true;
+  if (S.svc === 'obra-nueva')     return S.mat && S.dest && S.dest.length > 0;
   return false;
 }
 
@@ -3500,10 +3620,16 @@ function calcTotal() {
     return { uf, clp: uf * S.uf };
   }
 
-  /* C2. Ampliación vía DJ Ley 21.718 */
-  if (S.svc === 'amp-ley21718') {
-    const uf = m2 <= 50 ? PRECIO_AMP_DJ.hasta50 : PRECIO_AMP_DJ.hasta100;
-    return { uf, clp: uf * S.uf };
+  /* F. Declaración Jurada — tarifa fija por sub-tipo, demolición con escala m² */
+  if (S.svc === 'declaracion-jurada') {
+    let uf = 0;
+    if (S.svcSub === 'piscina_privada')    uf = PRECIO_DJ.piscina;
+    else if (S.svcSub === 'pergola_sombreadero') uf = PRECIO_DJ.pergola;
+    else if (S.svcSub === 'demolicion') {
+      uf = PRECIO_DJ.demolicion_base
+         + Math.max(0, (m2 - PRECIO_DJ.demolicion_umbral)) * PRECIO_DJ.demolicion_por_m2;
+    }
+    return { uf: parseFloat(uf.toFixed(2)), clp: uf * S.uf };
   }
 
   /* D. Obra Nueva: 0.80 UF/m², mínimo 35 UF */
@@ -3541,7 +3667,9 @@ function recalc() {
   document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
 
-  const stages = S.svc === 'informe' ? STAGES_INFORME : STAGES_NORMAL;
+  const stages = S.svc === 'informe' ? STAGES_INFORME
+               : S.svc === 'declaracion-jurada' ? STAGES_DJ
+               : STAGES_NORMAL;
   document.getElementById('stagesGrid').innerHTML = stages.map(st => `
     <div class="stage">
       <div class="stage-name">${st.name}</div>
@@ -3618,13 +3746,13 @@ document.addEventListener('keydown', e => {
 
 /* ── prefill from cotizador state ─────────────── */
 function prefillWizard() {
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón' };
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa' };
   const destText = Array.isArray(S.dest) && S.dest.length ? S.dest.map(d => DEST_LABELS[d] || d).join(', ') : '—';
 
   const { uf: ufVal, clp } = calcTotal();
-  const e1pct = S.svc === 'informe' ? 0.50 : 0.20;
+  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
   const e1 = clp * e1pct;
 
   /* summary card on step 1 */
@@ -3652,13 +3780,25 @@ function prefillWizard() {
     Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el cliente que firma este documento (en adelante "el Cliente"), se acuerda:<br><br>
     <strong>1. Servicio contratado:</strong> ${svcName} · ${S.m2} m² · ${commune}.<br>
     <strong>2. Honorarios:</strong> ${clpFmt(clp)} (${ufVal.toFixed(2)} UF al valor del día).<br>
-    <strong>3. Forma de pago:</strong> ${S.svc === 'informe' ? 'E1 50% al inicio · E2 50% a la entrega del informe.' : 'E1 20% al inicio · E2 30% entrega planos · E3 20% ingreso DOM · E4 30% Recepción Final.'}<br>
-    <strong>4. Plazo estimado:</strong> ${S.svc === 'informe' ? 'Aproximadamente 2 semanas desde la visita a terreno.' : 'Entre 3 y 6 meses según complejidad del trámite y respuesta municipal.'}<br>
+    <strong>3. Forma de pago:</strong> ${
+      S.svc === 'informe' ? 'E1 50% al inicio · E2 50% a la entrega del informe.' :
+      S.svc === 'declaracion-jurada' ? (
+        S.svcSub === 'demolicion'
+          ? 'E1 50% al inicio · E2 50% al ingreso DOM y ejecución.'
+          : 'E1 50% al inicio · E2 50% al archivo de la DJTE ante la DOM.'
+      ) :
+      'E1 20% al inicio · E2 30% entrega planos · E3 20% ingreso DOM · E4 30% Recepción Final.'
+    }<br>
+    <strong>4. Plazo estimado:</strong> ${
+      S.svc === 'informe' ? 'Aproximadamente 2 semanas desde la visita a terreno.' :
+      S.svc === 'declaracion-jurada' ? 'Entre 5 y 15 días hábiles. Plazo DOM: 3 días hábiles para emitir giro de derechos.' :
+      'Entre 3 y 6 meses según complejidad del trámite y respuesta municipal.'
+    }<br>
     <strong>5. Responsabilidades:</strong> APPARQ asignará un arquitecto habilitado para ejecutar el proyecto completo. El cliente deberá proveer el acceso a la propiedad y los antecedentes existentes.<br>
     <strong>6. Resolución:</strong> Cualquier diferencia se resolverá por la vía arbitral conforme a la legislación chilena vigente.<br>
-    <strong>7. Obligatoriedad de pago exclusivo por plataforma:</strong> TODOS los pagos del servicio (${S.svc === 'informe' ? 'E1 y E2' : 'E1, E2, E3 y E4'}) deben realizarse EXCLUSIVAMENTE a través de la plataforma <strong>apparq.cl</strong>. Queda estrictamente prohibido realizar pagos directamente al arquitecto asignado o a cualquier tercero vinculado. Los pagos efectuados fuera de la plataforma no serán reconocidos por APPARQ y no generarán obligación alguna de prestación de servicios.<br>
+    <strong>7. Obligatoriedad de pago exclusivo por plataforma:</strong> TODOS los pagos del servicio (${(S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 'E1 y E2' : 'E1, E2, E3 y E4'}) deben realizarse EXCLUSIVAMENTE a través de la plataforma <strong>apparq.cl</strong>. Queda estrictamente prohibido realizar pagos directamente al arquitecto asignado o a cualquier tercero vinculado. Los pagos efectuados fuera de la plataforma no serán reconocidos por APPARQ y no generarán obligación alguna de prestación de servicios.<br>
     <strong>8. Entregas y avances por plataforma:</strong> Todas las entregas de documentos, planos, informes y avances del proyecto serán realizadas EXCLUSIVAMENTE a través de la plataforma apparq.cl. El arquitecto asignado no está autorizado a entregar documentación ni coordinar avances por medios externos (WhatsApp, correo personal, entrega física directa u otros). Cualquier entrega fuera de la plataforma no tendrá validez contractual.<br>
-    <strong>9. Notificaciones de hitos de pago:</strong> APPARQ notificará al cliente por correo electrónico cuando corresponda el pago de cada etapa (${S.svc === 'informe' ? 'E2' : 'E2, E3 y E4'}). El cliente deberá realizar el pago dentro de los <strong>5 días hábiles</strong> siguientes a la notificación para mantener la continuidad del proyecto. El incumplimiento de este plazo faculta a APPARQ a suspender el avance del trámite hasta regularizar el pago pendiente.<br>
+    <strong>9. Notificaciones de hitos de pago:</strong> APPARQ notificará al cliente por correo electrónico cuando corresponda el pago de cada etapa (${(S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 'E2' : 'E2, E3 y E4'}). El cliente deberá realizar el pago dentro de los <strong>5 días hábiles</strong> siguientes a la notificación para mantener la continuidad del proyecto. El incumplimiento de este plazo faculta a APPARQ a suspender el avance del trámite hasta regularizar el pago pendiente.<br>
     <strong>10. Factibilidad técnica y regularizabilidad:</strong> APPARQ no garantiza la regularizabilidad, aprobación municipal ni resultado favorable de ningún trámite. La viabilidad solo puede determinarse una vez iniciado el proceso. En caso de inviabilidad técnica o rechazo definitivo municipal: (a) detectada antes del levantamiento en terreno: reembolso del 80% del E1; (b) detectada después del levantamiento pero antes de elaborar planos: reembolso del 30% del E1, reteniendo el 70% por costos del levantamiento y diagnóstico profesional; (c) detectada durante o después de la elaboración de planos: sin reembolso de etapas completadas. APPARQ emitirá un Informe de Inviabilidad documentando las causas. Los rechazos municipales por cambios normativos, condiciones del terreno o incumplimiento de la OGUC son riesgos propios del proceso y no constituyen incumplimiento de APPARQ ni del Arquitecto.<br>
     <strong>11. Cambio o reasignación de arquitecto:</strong> Si el arquitecto asignado no puede continuar el proyecto por cualquier causa, APPARQ reasignará el proyecto a otro profesional habilitado en un plazo máximo de <strong>5 días hábiles</strong>, sin costo adicional para el cliente. Los avances y documentos quedarán disponibles en la plataforma para el nuevo arquitecto. APPARQ no será responsable por los retrasos derivados del cambio cuando sean imputables al arquitecto cesante.<br>
     <strong>12. Responsabilidad por información falsa o incompleta:</strong> El cliente es responsable de la veracidad de los datos declarados (superficie, materialidad, dirección, uso del inmueble). Si se detectan diferencias significativas durante la ejecución, APPARQ podrá: (a) ajustar el valor del servicio proporcionalmente; (b) emitir una cotización complementaria; o (c) terminar el contrato reteniendo los pagos correspondientes al trabajo ejecutado. No procederá reembolso alguno cuando la inviabilidad sea causada por información falsa o incompleta del cliente.<br>
@@ -3670,15 +3810,18 @@ function prefillWizard() {
   document.getElementById('wizPayAmt').textContent = clpFmt(e1);
   document.getElementById('wizPaySub').textContent = 'Del total de ' + clpFmt(clp);
 
-  /* dynamic labels informe vs normal */
+  /* dynamic labels informe / DJ vs normal */
   const isInforme = S.svc === 'informe';
-  const e1Label   = isInforme ? 'E1 (50%)' : 'E1 (20%)';
+  const isDJWiz   = S.svc === 'declaracion-jurada';
+  const e1Label   = (isInforme || isDJWiz) ? 'E1 (50%)' : 'E1 (20%)';
   const payLbl    = document.getElementById('wizPayAmtLbl');
   const paySub3   = document.getElementById('wizPaySub3');
   if (payLbl)  payLbl.textContent  = `Monto a pagar ahora · ${e1Label}`;
   if (paySub3) paySub3.textContent = isInforme
     ? 'Paga el 50% inicial (Etapa 1) para que tu arquitecto comience el informe.'
-    : 'Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.';
+    : isDJWiz
+      ? 'Paga el 50% inicial (Etapa 1) para que tu arquitecto prepare y presente la Declaración Jurada.'
+      : 'Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.';
 
   /* tracking step 5 */
   const trackList = document.getElementById('wizTrackList');
@@ -3690,6 +3833,16 @@ function prefillWizard() {
         <div class="track-item"><div class="track-num active">→</div><div><div class="track-label">Visita a terreno</div><div class="track-status cur">En progreso · Tu arquitecto coordinará la visita</div></div></div>
         <div class="track-item"><div class="track-num">4</div><div><div class="track-label pending">Elaboración del informe técnico</div><div class="track-status">Plazo estimado: 2 semanas desde la visita</div></div></div>
         <div class="track-item"><div class="track-num">5</div><div><div class="track-label pending">🎉 Entrega del informe</div><div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E2 (50%)</strong> por apparq.cl</div></div></div>`;
+    } else if (isDJWiz) {
+      /* Declaración Jurada: 2 etapas, flujo express */
+      const isDemocion = S.svcSub === 'demolicion';
+      const e2Label    = isDemocion ? 'Ingreso DOM y ejecución' : 'Archivo DJTE ante la DOM';
+      trackList.innerHTML = `
+        <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Registro y contrato firmado</div><div class="track-status">Completado · Hoy</div></div></div>
+        <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Pago E1 (50%) confirmado</div><div class="track-status">Completado · Hoy</div></div></div>
+        <div class="track-item"><div class="track-num active">→</div><div><div class="track-label">Elaboración de Declaración Jurada</div><div class="track-status cur">En progreso · Tu arquitecto preparará y presentará la DJ ante la DOM</div></div></div>
+        <div class="track-item"><div class="track-num">4</div><div><div class="track-label pending">Ejecución de obras</div><div class="track-status">Pendiente · Plazo DOM: 3 días hábiles para emitir giro de derechos</div></div></div>
+        <div class="track-item"><div class="track-num">5</div><div><div class="track-label pending">🎉 ${e2Label}</div><div class="track-status">Pendiente · APPARQ te notificará cuando corresponda el <strong>Pago E2 (50%)</strong> por apparq.cl</div></div></div>`;
     } else {
       trackList.innerHTML = `
         <div class="track-item"><div class="track-num done">✓</div><div><div class="track-label">Registro y contrato firmado</div><div class="track-status">Completado · Hoy</div></div></div>
@@ -3704,8 +3857,9 @@ function prefillWizard() {
 
   /* architect commune badge */
   document.getElementById('wizArqComune').textContent = commune;
-  document.getElementById('wizTrackSub').textContent =
-    `Sigue el avance de tu ${svcName} en ${commune} hasta la Recepción Final aprobada.`;
+  document.getElementById('wizTrackSub').textContent = isDJWiz
+    ? `Sigue el avance de tu Declaración Jurada en ${commune} hasta el archivo ante la DOM.`
+    : `Sigue el avance de tu ${svcName} en ${commune} hasta la Recepción Final aprobada.`;
 }
 
 /* ── render a step ────────────────────────────── */
@@ -3886,9 +4040,9 @@ function setupPaymentStep() {
 
     try {
       const { clp } = calcTotal();
-      const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
+      const e1pct   = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
       const e1      = Math.round(clp * e1pct);
-      const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+      const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
       const svcName = SVC_LABELS[S.svc] || 'Trámite';
       const commune = S.commune || 'Santiago';
       const email   = document.getElementById('wizEmail')?.value || 'cliente@apparq.cl';
@@ -3906,6 +4060,7 @@ function setupPaymentStep() {
         rut:      document.getElementById('wizRut')?.value,
         addr:     document.getElementById('wizAddr')?.value,
         svc: S.svc, svcSub: S.svcSub, m2: S.m2, mat: S.mat, dest: S.dest,
+        djElig: S.djElig, djObra: S.djObra,
         commune, clp, e1,
         firma_data: firmaData,
         selectedArqId:   S.selectedArqId   || null,
@@ -3943,12 +4098,13 @@ function showPayUI() { /* ya no se usa — mantenemos por compatibilidad */ }
 
 /* ── submit tramite to Netlify Forms (AJAX) ──── */
 async function submitTramiteToNetlify() {
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
   const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón', none:'' };
   const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa', none:'' };
 
   const { clp } = calcTotal();
-  const e1 = clp * 0.20;
+  const e1pctNF  = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
+  const e1 = clp * e1pctNF;
 
   const payload = new URLSearchParams({
     'form-name':    'tramite',
@@ -4114,7 +4270,7 @@ async function loadArchitectForCommune(commune) {
 
 function _sendTramiteConfirmation(commune, arq) {
     const { clp } = calcTotal();
-    const e1pct   = S.svc === 'informe' ? 0.50 : 0.20;
+    const e1pct   = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
     /* Usar S (restaurado desde localStorage tras MP redirect) con fallback al DOM */
     const nombre    = S.nombre    || document.getElementById('wizNombre')?.value   || '';
     const apellido  = S.apellido  || document.getElementById('wizApellido')?.value || '';
@@ -4127,7 +4283,7 @@ function _sendTramiteConfirmation(commune, arq) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre, apellido, email, telefono, rut, direccion,
-        svc: S.svc, m2: S.m2, commune, clp,
+        svc: S.svc, servicio_subtipo: S.svcSub || null, m2: S.m2, commune, clp,
         e1: Math.round(clp * e1pct),
         arquitecto: arq ? { nombre: arq.nombre, apellido: arq.apellido, email: arq.email || null, comunas: arq.comunas, tramites: arq.tramites, foto_url: arq.foto_url || null, calificacion: arq.calificacion || null } : null,
         firma_data: S.firma_data || null,
@@ -4463,7 +4619,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('pcProjBar').style.width = (p.stage_pct || 0) + '%';
     document.getElementById('pcProjDesc').textContent = p.stage_desc || '';
 
-    const SVC = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    const SVC = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
     document.getElementById('pcProjInfo').innerHTML =
       `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
 
@@ -4896,9 +5052,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     ingreso_dom:'Ingreso a la DOM', tramitacion:'Tramitación municipal', completado:'Trámite completado',
     visita:'Visita a terreno', elaboracion_inf:'Elaboración del informe', entrega_informe:'Informe entregado',
   };
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
-  const ALL_TRAMITES = ['Regularización','Ampliación','Ampliación Ley 21.718','Obra Nueva','Ley del Mono','Informe'];
+  const ALL_TRAMITES = ['Regularización','Ampliación','Declaración Jurada','Obra Nueva','Ley del Mono','Informe'];
 
   function renderTramitesChips(currentTramites, token) {
     const container = document.getElementById('paTramitesChips');
@@ -5449,6 +5605,18 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         { n:8, title:'Recepción Definitiva', body:'Se presentan planos As-Built junto a los certificados SEC correspondientes (TE1 y/o TC6) y se solicita la Recepción Final a la DOM (Formulario 1-5.1 o 2-7.2 según tamaño). La DOM inspecciona en terreno y emite el certificado correspondiente.' },
       ]
     },
+    'declaracion-jurada': {
+      title: '📜 Declaración Jurada (Ley 21.718) — Proceso paso a paso',
+      steps: [
+        { n:1, title:'¿Qué es la Declaración Jurada?', body:'La Ley 21.718, vigente desde abril 2026, introduce un mecanismo express para ciertas obras menores: en lugar de esperar un permiso DOM completo, el arquitecto presenta una <strong>Declaración Jurada</strong> ante la municipalidad. La DOM solo cobra los derechos y archiva — sin revisión técnica previa. Plazo: 3 días hábiles para emitir giro.' },
+        { n:2, title:'¿A qué obras aplica?', body:'Aplica exclusivamente a:<ul><li><strong>Piscinas privadas</strong> ubicadas a 1,5 m o menos del deslinde con el vecino</li><li><strong>Pérgolas, sombreaderos, baños exteriores y pañoles</strong> en jardín privado</li><li><strong>Demoliciones</strong> de construcciones (completas, parciales o accesorias)</li></ul>No aplica a inmuebles de conservación histórica, zonas típicas, monumentos nacionales ni predios en áreas de riesgo o utilidad pública.' },
+        { n:3, title:'Ventajas frente al permiso tradicional', body:'<ul><li>Plazo DOM: solo 3 días hábiles para emitir el giro de derechos</li><li>Sin observaciones técnicas previas — la DOM cobra y archiva</li><li>Sin espera de aprobación: el trámite avanza con la presentación de la DJ</li><li>Pago en 2 etapas iguales (50/50) en lugar de 4 etapas</li><li>Mismo respaldo profesional: arquitecto registrado asume responsabilidad técnica</li></ul>' },
+        { n:4, title:'Piscinas: restricción de deslinde', body:'La Ley 21.718 aplica a piscinas ubicadas a <strong>1,5 m o menos</strong> del deslinde con el vecino. Si tu piscina está a más de 1,5 m, necesitas un permiso de ampliación tradicional. Si no estás seguro, mide con metro antes de cotizar.' },
+        { n:5, title:'Demoliciones: particularidad operativa', body:'Según la DDU 542, las demoliciones por Declaración Jurada <strong>no requieren DJTE</strong> (Declaración de Término de Ejecución). Por eso la segunda etapa de pago (E2) se cobra al ingreso DOM y ejecución, no al archivo de DJTE como en piscinas y pérgolas.' },
+        { n:6, title:'Forma de pago (2 etapas — 50/50)', body:'<ul><li><strong>E1 (50%) al contratar</strong>: cubre la elaboración de la DJ, verificación normativa y presentación ante la DOM.</li><li><strong>E2 (50%) al cierre</strong>: al archivo de la DJTE (piscinas y pérgolas) o al ingreso DOM y ejecución (demoliciones).</li></ul>APPARQ te notificará por email cuando corresponda el Pago E2.' },
+        { n:7, title:'¿Qué pasa si tu caso no califica?', body:'Si el cotizador detecta que tu obra no aplica para Declaración Jurada (por ejemplo, piscina fuera del deslinde permitido, zona patrimonial o área de riesgo), el sistema te derivará automáticamente al servicio adecuado sin costo adicional.' },
+      ]
+    },
     'obra-nueva': {
       title: '🏠 Obra Nueva — Proceso paso a paso',
       steps: [
@@ -5525,7 +5693,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 <script>
 (function() {
   const overlay = document.getElementById('tramiteSuccessOverlay');
-  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+  const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
   window.showTramiteSuccess = function({ projectNumber, arq, svc, commune, waitlist }) {
     document.getElementById('tsProjectNum').textContent = projectNumber || '—';

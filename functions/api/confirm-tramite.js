@@ -40,29 +40,34 @@ function clpFmt(n) {
 ══════════════════════════════════════════════════ */
 async function autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, commune, svc) {
   const SVC_LABEL_MAP = {
-    'ley-del-mono':  'Ley del Mono',
-    regularizacion:  'Regularización',
-    ampliacion:      'Ampliación',
-    'amp-ley21718':  'Ampliación Ley 21.718',
-    'obra-nueva':    'Obra Nueva',
-    informe:         'Informe',
+    'ley-del-mono':       'Ley del Mono',
+    regularizacion:       'Regularización',
+    ampliacion:           'Ampliación',
+    'declaracion-jurada': 'Declaración Jurada',  /* Ley 21.718 — reemplaza amp-ley21718 */
+    'obra-nueva':         'Obra Nueva',
+    informe:              'Informe',
   };
   const svcLabel = SVC_LABEL_MAP[svc] || svc;
 
   try {
     /* 1 — Obtener todos los arquitectos activos */
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&select=id,nombre,apellido,email,tramites,comunas,foto_url,calificacion`,
+      `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&select=id,nombre,apellido,email,tramites,comunas,foto_url,calificacion,habilitado_declaracion_jurada`,
       { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
     );
     if (!res.ok) { console.error('Error obteniendo arquitectos:', await res.text()); return null; }
     const all = await res.json();
 
-    /* 2 — Filtrar por comuna y tipo de trámite */
+    /* 2 — Filtrar por comuna y tipo de trámite
+       Para Declaración Jurada: además se requiere habilitado_declaracion_jurada = true */
+    const isDJ = svc === 'declaracion-jurada';
     const matching = all.filter(a => {
       const comunas  = Array.isArray(a.comunas)  ? a.comunas  : [];
-      const tramites = Array.isArray(a.tramites) ? a.tramites : [];
-      return comunas.includes(commune) && tramites.includes(svcLabel);
+      const tramites = Array.isArray(a.tramites)  ? a.tramites : [];
+      const habDJ    = a.habilitado_declaracion_jurada === true;
+      return comunas.includes(commune)
+          && tramites.includes(svcLabel)
+          && (!isDJ || habDJ);
     });
     if (!matching.length) {
       console.warn(`Sin arquitecto disponible para ${commune} / ${svcLabel}`);
@@ -109,7 +114,7 @@ export async function onRequest(context) {
     const body = await request.json();
     const {
       nombre, apellido, email, telefono, rut, direccion,
-      svc, m2, commune, clp, e1,
+      svc, servicio_subtipo, m2, commune, clp, e1,
       firma_data,   /* base64 PNG de la firma del cliente */
       payment_id,   /* ID de pago de Mercado Pago */
     } = body;
@@ -145,22 +150,26 @@ export async function onRequest(context) {
             'Prefer':        'return=minimal',
           },
           body: JSON.stringify({
-            project_number:   projectNumber,
-            client_email:     email.trim().toLowerCase(),
-            client_nombre:    nombre  || '',
-            client_apellido:  apellido || '',
-            client_telefono:  telefono || '',
-            client_rut:       rut      || '',
-            architect_email:  architect_email,
-            architect_nombre: arquitecto?.nombre  || '',
+            project_number:     projectNumber,
+            client_email:       email.trim().toLowerCase(),
+            client_nombre:      nombre   || '',
+            client_apellido:    apellido || '',
+            client_telefono:    telefono || '',
+            client_rut:         rut      || '',
+            architect_email:    architect_email,
+            architect_nombre:   arquitecto?.nombre   || '',
             architect_apellido: arquitecto?.apellido || '',
-            service_type:     svc      || '',
-            address:          direccion || '',
-            commune:          commune  || '',
-            m2:               m2       || 0,
-            total_clp:        clp      || 0,
-            e1_clp:           e1       || 0,
-            stage:            arquitecto ? 'levantamiento' : 'en_espera',
+            service_type:       svc      || '',
+            /* Declaración Jurada: sub-tipo (piscina_privada, pergola_sombreadero, demolicion) */
+            servicio_subtipo:   servicio_subtipo || null,
+            /* num_etapas_pago: 2 para DJ e Informe, 4 para el resto */
+            num_etapas_pago:    (svc === 'declaracion-jurada' || svc === 'informe') ? 2 : 4,
+            address:            direccion || '',
+            commune:            commune   || '',
+            m2:                 m2        || 0,
+            total_clp:          clp       || 0,
+            e1_clp:             e1        || 0,
+            stage:              arquitecto ? 'levantamiento' : 'en_espera',
           }),
         });
       } catch (projErr) {
@@ -169,7 +178,7 @@ export async function onRequest(context) {
     }
 
     const fecha     = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'amp-ley21718':'Ampliación Ley 21.718', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+    const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
     const svcName   = svcLabels[svc] || svc || 'Trámite';
     const nombreCliente = `${nombre || ''} ${apellido || ''}`.trim();
     const arqNombre = arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Por asignar';
@@ -416,7 +425,9 @@ export async function onRequest(context) {
                 <li>Podrás coordinar y comunicarte con tu arquitecto a través de la plataforma</li>
                 ${esInforme
                   ? '<li>Recibirás tu informe en <strong>aproximadamente 2 semanas</strong></li>'
-                  : '<li>Una vez entregados los planos, recibirás el aviso del pago E2</li><li>El trámite completo toma entre <strong>3 y 6 meses</strong></li>'
+                  : svc === 'declaracion-jurada'
+                    ? `<li>Tu arquitecto elaborará y presentará la Declaración Jurada ante la DOM</li><li>Plazo DOM: <strong>3 días hábiles</strong> para emitir el giro de derechos</li><li>Al ${servicio_subtipo === 'demolicion' ? 'ingreso DOM y ejecución' : 'archivo de la DJTE'} recibirás el aviso del <strong>Pago E2</strong></li>`
+                    : '<li>Una vez entregados los planos, recibirás el aviso del pago E2</li><li>El trámite completo toma entre <strong>3 y 6 meses</strong></li>'
                 }
               </ol>
 
@@ -461,14 +472,24 @@ export async function onRequest(context) {
       const arqTotal = Math.round((clp || 0) * ARQ_PCT);
       const arqE1    = Math.round((e1  || 0) * ARQ_PCT);
 
-      /* Etapas de pago para regularización / ampliación / obra nueva */
+      /* Etapas de pago según tipo de servicio */
+      const esDJ        = svc === 'declaracion-jurada';
+      const isDemocion  = servicio_subtipo === 'demolicion';
+      const e2DJLabel   = isDemocion ? 'Ingreso DOM y ejecución' : 'Archivo DJTE ante la DOM';
+
       const etapasBlock = esInforme
-        ? `<tr><td style="padding:8px 10px;color:#718096">Visita + elaboración</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>
-           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Entrega de informe</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>`
-        : `<tr><td style="padding:8px 10px;color:#718096">E1 · Levantamiento (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
-           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Elaboración de planos</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>
-           <tr><td style="padding:8px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.20*ARQ_PCT))}</td></tr>
-           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E4 · Recepción final</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>`;
+        ? /* Informe: 2 etapas 50/50 */
+          `<tr><td style="padding:8px 10px;color:#718096">E1 · Visita + elaboración (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))} ✓</td></tr>
+           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Entrega de informe</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>`
+        : esDJ
+          ? /* Declaración Jurada: 2 etapas 50/50 */
+            `<tr><td style="padding:8px 10px;color:#718096">E1 · Inicio (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
+             <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · ${e2DJLabel}</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.50*ARQ_PCT))}</td></tr>`
+          : /* Resto: 4 etapas 20-30-20-30 */
+            `<tr><td style="padding:8px 10px;color:#718096">E1 · Levantamiento (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
+             <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Elaboración de planos</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>
+             <tr><td style="padding:8px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.20*ARQ_PCT))}</td></tr>
+             <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E4 · Recepción final</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>`;
 
       /* Firma del cliente (contrato de servicio) — usa URL https://, no base64 */
       const firmaArqBlock = firmaUrl
@@ -544,7 +565,9 @@ export async function onRequest(context) {
                 <li>Coordina la visita a terreno con el cliente a través de la plataforma</li>
                 ${esInforme
                   ? '<li>Elabora el informe y actualiza el avance en la plataforma</li><li>Entrega el informe antes de 2 semanas desde la visita</li>'
-                  : '<li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
+                  : esDJ
+                    ? `<li>Elabora la Declaración Jurada según la DDU 542 y la Ley 21.718</li><li>Presenta la DJ ante la DOM (plazo DOM: <strong>3 días hábiles</strong> para emitir giro)</li><li>${isDemocion ? '<strong>Nota:</strong> demolición no requiere DJTE — E2 se cobra al ingreso DOM y ejecución' : 'Al archivo de la DJTE, APPARQ cobrará el Pago E2 al cliente'}</li>`
+                    : '<li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
                 }
                 <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ para recibir cada pago</li>
               </ol>
