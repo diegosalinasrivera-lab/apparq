@@ -1500,6 +1500,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="stages-grid" id="stagesGrid"></div>
         </div>
 
+        <!-- Lead capture — aparece junto con el precio -->
+        <div id="leadBox" class="hidden" style="
+          margin: 0.6rem 0 0;
+          background: var(--bg-soft, #f9f6f0);
+          border: 1.5px solid var(--border, #e8e4dc);
+          border-radius: 10px;
+          padding: 0.9rem 1rem;
+        ">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:0.5rem;">
+            📩 Recibir esta cotización por email
+          </div>
+          <div id="leadForm" style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <input id="leadEmail" type="email" placeholder="tu@email.com"
+              style="flex:1;min-width:160px;padding:0.45rem 0.7rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;background:#fff;color:var(--dark);outline:none;" />
+            <button id="leadBtn" type="button"
+              style="background:var(--orange,#E8503A);color:#fff;border:none;border-radius:7px;padding:0.45rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;">
+              Enviarme cotización →
+            </button>
+          </div>
+          <div id="leadMsg" style="display:none;font-size:0.78rem;margin-top:0.45rem;"></div>
+        </div>
+
         <button class="btn-cta" id="btnCta" disabled>Comenzar mi trámite →</button>
 
       </div>
@@ -3655,6 +3677,7 @@ function recalc() {
 
   if (!isReady()) {
     box.classList.add('hidden');
+    document.getElementById('leadBox')?.classList.add('hidden');
     cta.disabled = true;
     sub.textContent = 'Completa los campos';
     return;
@@ -3679,12 +3702,81 @@ function recalc() {
   box.classList.remove('hidden');
   cta.disabled = false;
   sub.textContent = '¡Listo! Tu cotización';
+
+  /* Mostrar captura de lead junto con el precio */
+  const leadBox = document.getElementById('leadBox');
+  const leadMsg = document.getElementById('leadMsg');
+  if (leadBox) {
+    leadBox.classList.remove('hidden');
+    /* Resetear si ya había enviado anteriormente al cambiar los parámetros */
+    const leadForm = document.getElementById('leadForm');
+    if (leadForm && leadForm.dataset.sent !== '1') {
+      leadMsg.style.display = 'none';
+    }
+  }
 }
 
 /* ── CTA → open wizard ────────────────────── */
 document.getElementById('btnCta').onclick = () => {
   if (!isReady()) return;
   openWizard();
+};
+
+/* ── Lead capture — enviar cotización por email ── */
+document.getElementById('leadBtn').onclick = async () => {
+  const emailEl = document.getElementById('leadEmail');
+  const msgEl   = document.getElementById('leadMsg');
+  const btn     = document.getElementById('leadBtn');
+  const form    = document.getElementById('leadForm');
+  const email   = emailEl.value.trim();
+
+  if (!email || !email.includes('@')) {
+    emailEl.style.borderColor = '#E8503A';
+    emailEl.focus();
+    return;
+  }
+  emailEl.style.borderColor = '';
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    const { uf, clp } = calcTotal();
+    const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    const payload = {
+      email,
+      svc:             S.svc,
+      servicio_subtipo: S.svcSub || null,
+      m2:              S.m2     || null,
+      commune:         S.commune || null,
+      uf,
+      clp,
+      svc_label:       SVC_LABELS[S.svc] || S.svc,
+    };
+
+    const res = await fetch('/api/save-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      form.dataset.sent = '1';
+      emailEl.style.display = 'none';
+      btn.style.display     = 'none';
+      msgEl.style.display   = 'block';
+      msgEl.style.color     = '#059669';
+      msgEl.textContent     = '✓ ¡Listo! Revisa tu email — te enviamos el resumen de tu cotización.';
+    } else {
+      throw new Error('server error');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Enviarme cotización →';
+    msgEl.style.display = 'block';
+    msgEl.style.color   = '#E8503A';
+    msgEl.textContent   = 'No pudimos enviar el email. Intenta nuevamente.';
+  }
 };
 
 function showToast(msg) {
