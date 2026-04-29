@@ -121,17 +121,27 @@ export async function onRequest(context) {
       return json({ payments: data });
     }
 
+    if (section === 'leads') {
+      const { ok, data } = await sb(
+        '/leads?select=id,email,svc,servicio_subtipo,m2,commune,uf,clp,created_at,converted&order=created_at.desc&limit=500'
+      );
+      if (!ok) return json({ error: 'Error al obtener leads' }, 500);
+      return json({ leads: data });
+    }
+
     if (section === 'dashboard') {
       /* Fetch all in parallel */
-      const [archRes, projRes, payRes] = await Promise.all([
+      const [archRes, projRes, payRes, leadRes] = await Promise.all([
         sb('/architects?select=id,activo'),
         sb('/projects?select=id,project_number,client_nombre,client_apellido,client_email,service_type,commune,architect_nombre,architect_apellido,stage,total_clp,created_at&order=created_at.desc&limit=500'),
         sb('/payments?select=id,amount,status,payer_email,payment_method,created_at&order=created_at.desc&limit=500'),
+        sb('/leads?select=id,converted,created_at'),
       ]);
 
       const architects = archRes.ok && Array.isArray(archRes.data) ? archRes.data : [];
       const projects   = projRes.ok && Array.isArray(projRes.data) ? projRes.data : [];
       const payments   = payRes.ok  && Array.isArray(payRes.data)  ? payRes.data  : [];
+      const leads      = leadRes.ok && Array.isArray(leadRes.data)  ? leadRes.data  : [];
 
       const now        = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -140,12 +150,14 @@ export async function onRequest(context) {
       const tramitesActivos   = projects.filter(p => p.stage && p.stage !== 'completado').length;
       const recaudadoTotal    = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
       const tramitesMes       = projects.filter(p => p.created_at >= monthStart).length;
+      const totalLeads        = leads.length;
+      const leadsNoConvertidos = leads.filter(l => !l.converted).length;
 
       /* Last 10 projects + last 5 payments for recent tables */
       const recentProjects = projects.slice(0, 10);
       const recentPayments = payments.slice(0, 5);
 
-      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, recentProjects, recentPayments });
+      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, recentProjects, recentPayments });
     }
 
     return json({ error: 'Sección no válida' }, 400);
@@ -224,6 +236,19 @@ export async function onRequest(context) {
       });
       if (!ok) return json({ error: 'Error al actualizar arquitecto', detail: data }, 500);
       return json({ success: true, architect: Array.isArray(data) ? data[0] : data });
+    }
+
+    /* mark_lead_converted */
+    if (action === 'mark_lead_converted') {
+      const { id, converted } = body;
+      if (!id) return json({ error: 'id requerido' }, 400);
+      const { ok, data } = await sb(`/leads?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ converted: converted !== false }),
+        prefer: 'return=representation',
+      });
+      if (!ok) return json({ error: 'Error al actualizar lead', detail: data }, 500);
+      return json({ success: true });
     }
 
     /* update_stage */

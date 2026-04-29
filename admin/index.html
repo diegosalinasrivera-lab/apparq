@@ -803,6 +803,9 @@
         <div class="nav-item" data-section="pagos">
           <span class="nav-icon">💰</span> Pagos
         </div>
+        <div class="nav-item" data-section="leads">
+          <span class="nav-icon">🎯</span> Leads
+        </div>
       </div>
       <div class="sidebar-footer">
         <div class="user-info-sidebar" id="sidebar-user-email"></div>
@@ -849,6 +852,12 @@
                 <div class="stat-icon">📅</div>
                 <div class="stat-label">Trámites este Mes</div>
                 <div class="stat-value" id="stat-mes">—</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-label">Leads Captados</div>
+                <div class="stat-value" id="stat-leads">—</div>
+                <div class="stat-sub" id="stat-leads-sub"></div>
               </div>
             </div>
 
@@ -998,6 +1007,56 @@
                     </tr>
                   </thead>
                   <tbody id="pago-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEADS -->
+        <div id="section-leads" class="section">
+          <div class="section-header">
+            <h2>Leads del Cotizador</h2>
+            <button class="btn btn-outline" onclick="exportLeadsCSV()">⬇ Exportar CSV</button>
+          </div>
+          <div class="filter-row">
+            <button class="filter-btn active" data-lead-filter="todos">Todos</button>
+            <button class="filter-btn" data-lead-filter="pendientes">Pendientes</button>
+            <button class="filter-btn" data-lead-filter="convertidos">Convertidos</button>
+          </div>
+          <div id="leads-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+          <div id="leads-content" style="display:none">
+            <div class="summary-row">
+              <div class="summary-item">
+                <div class="sum-label">Total leads</div>
+                <div class="sum-value" id="leads-total">—</div>
+              </div>
+              <div class="summary-item">
+                <div class="sum-label">Pendientes</div>
+                <div class="sum-value" id="leads-pendientes">—</div>
+              </div>
+              <div class="summary-item">
+                <div class="sum-label">Convertidos</div>
+                <div class="sum-value" id="leads-convertidos">—</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Email</th>
+                      <th>Servicio</th>
+                      <th>Comuna</th>
+                      <th>m²</th>
+                      <th>Presupuesto</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leads-table-body"></tbody>
                 </table>
               </div>
             </div>
@@ -1206,7 +1265,9 @@ let token = sessionStorage.getItem('admin_token') || null;
 let architects = [];
 let projects   = [];
 let payments   = [];
+let leads      = [];
 let tramiteFilter = 'todos';
+let leadFilter    = 'todos';
 let pendingDeleteId = null;
 let pendingAssignProjectId = null;
 let selectedCommunes = [];
@@ -1351,10 +1412,11 @@ function showApp(email) {
    NAVIGATION
 ══════════════════════════════════════════════════ */
 const SECTION_TITLES = {
-  dashboard: 'Dashboard',
+  dashboard:   'Dashboard',
   arquitectos: 'Arquitectos',
-  tramites: 'Trámites',
-  pagos: 'Pagos',
+  tramites:    'Trámites',
+  pagos:       'Pagos',
+  leads:       'Leads del Cotizador',
 };
 
 function navigateTo(section) {
@@ -1376,6 +1438,7 @@ function navigateTo(section) {
   if (section === 'arquitectos')  loadArchitects();
   if (section === 'tramites')     loadTramites();
   if (section === 'pagos')        loadPagos();
+  if (section === 'leads')        loadLeads();
 }
 
 /* ══════════════════════════════════════════════════
@@ -1390,6 +1453,10 @@ async function loadDashboard() {
     document.getElementById('stat-activos').textContent     = d.tramitesActivos ?? '—';
     document.getElementById('stat-recaudado').textContent   = fmtCLP(d.recaudadoTotal);
     document.getElementById('stat-mes').textContent         = d.tramitesMes ?? '—';
+    document.getElementById('stat-leads').textContent       = d.totalLeads ?? '—';
+    if (d.leadsNoConvertidos != null) {
+      document.getElementById('stat-leads-sub').textContent = d.leadsNoConvertidos + ' sin convertir';
+    }
 
     renderRecentProjects(d.recentProjects || []);
     renderRecentPayments(d.recentPayments || []);
@@ -1982,6 +2049,113 @@ function exportPagosCSV() {
 }
 
 /* ══════════════════════════════════════════════════
+   LEADS
+══════════════════════════════════════════════════ */
+const SVC_LABELS_LEAD = {
+  regularizacion:       'Regularización',
+  ampliacion:           'Ampliación',
+  'declaracion-jurada': 'Declaración Jurada',
+  'obra-nueva':         'Obra Nueva',
+  informe:              'Informe',
+  'ley-del-mono':       'Ley del Mono',
+};
+
+async function loadLeads() {
+  document.getElementById('leads-loading').style.display = 'flex';
+  document.getElementById('leads-content').style.display = 'none';
+  try {
+    const d = await apiGet('leads');
+    leads = d.leads || [];
+    renderLeadsTable();
+    document.getElementById('leads-loading').style.display = 'none';
+    document.getElementById('leads-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar leads', 'error');
+    document.getElementById('leads-loading').style.display = 'none';
+  }
+}
+
+function renderLeadsTable() {
+  const total      = leads.length;
+  const convertidos = leads.filter(l => l.converted).length;
+  const pendientes  = total - convertidos;
+
+  document.getElementById('leads-total').textContent      = total;
+  document.getElementById('leads-pendientes').textContent = pendientes;
+  document.getElementById('leads-convertidos').textContent = convertidos;
+
+  let list = leads;
+  if (leadFilter === 'pendientes')  list = leads.filter(l => !l.converted);
+  if (leadFilter === 'convertidos') list = leads.filter(l => l.converted);
+
+  const tbody = document.getElementById('leads-table-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🎯</div>Sin leads</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(l => {
+    const svc    = SVC_LABELS_LEAD[l.svc] || l.svc || '—';
+    const clp    = l.clp ? '$' + Math.round(l.clp).toLocaleString('es-CL') : '—';
+    const badge  = l.converted
+      ? '<span style="background:#D1FAE5;color:#065F46;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">✓ Convertido</span>'
+      : '<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">Pendiente</span>';
+    const btn = l.converted
+      ? `<button class="btn btn-sm btn-outline" style="font-size:11px" onclick="toggleLeadConverted('${l.id}', false)">↩ Revertir</button>`
+      : `<button class="btn btn-sm btn-success" style="font-size:11px" onclick="toggleLeadConverted('${l.id}', true)">✓ Marcar convertido</button>`;
+    return `
+    <tr>
+      <td style="font-size:12px;color:var(--muted)">${fmtDate(l.created_at)}</td>
+      <td><a href="mailto:${l.email}" style="color:var(--dark);font-weight:600;font-size:13px;">${l.email}</a></td>
+      <td style="font-size:13px">${svc}</td>
+      <td style="font-size:13px">${l.commune || '—'}</td>
+      <td style="font-size:13px">${l.m2 ? l.m2 + ' m²' : '—'}</td>
+      <td style="font-weight:700;color:var(--orange);font-size:13px">${clp}</td>
+      <td>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${badge}
+          ${btn}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function toggleLeadConverted(id, converted) {
+  try {
+    const d = await apiPost({ action: 'mark_lead_converted', id, converted });
+    if (d.error) throw new Error(d.error);
+    const idx = leads.findIndex(l => l.id == id);
+    if (idx >= 0) leads[idx].converted = converted;
+    renderLeadsTable();
+    showToast(converted ? 'Lead marcado como convertido' : 'Lead revertido a pendiente', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function exportLeadsCSV() {
+  if (!leads.length) { showToast('No hay leads para exportar', 'info'); return; }
+  const rows = [
+    ['Fecha','Email','Servicio','Subtipo','m²','Comuna','UF','CLP','Convertido'],
+    ...leads.map(l => [
+      l.created_at ? new Date(l.created_at).toLocaleDateString('es-CL') : '',
+      l.email || '',
+      SVC_LABELS_LEAD[l.svc] || l.svc || '',
+      l.servicio_subtipo || '',
+      l.m2 || '',
+      l.commune || '',
+      l.uf || '',
+      l.clp || '',
+      l.converted ? 'Sí' : 'No',
+    ])
+  ];
+  const today = new Date().toISOString().slice(0,10);
+  downloadCSV(rows, `leads_apparq_${today}.csv`);
+  showToast('CSV descargado', 'success');
+}
+
+/* ══════════════════════════════════════════════════
    MODALS
 ══════════════════════════════════════════════════ */
 function showModal(id) {
@@ -2072,12 +2246,23 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-confirm-assign').addEventListener('click', doAssign);
 
   // Tramite filters
-  document.querySelectorAll('.filter-btn').forEach(btn => {
+  document.querySelectorAll('[data-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      const section = btn.closest('.section');
+      section.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       tramiteFilter = btn.dataset.filter;
       renderTramitesTable();
+    });
+  });
+
+  // Lead filters
+  document.querySelectorAll('[data-lead-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-lead-filter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      leadFilter = btn.dataset.leadFilter;
+      renderLeadsTable();
     });
   });
 });
