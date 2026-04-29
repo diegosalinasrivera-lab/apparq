@@ -54,6 +54,7 @@ export async function onRequest(context) {
   const MP_ACCESS_TOKEN = env.MP_ACCESS_TOKEN || 'APP_USR-8464091449756756-032117-1cb0461b0053151dd99159498a8ebb3c-3280513372';
   const SUPABASE_URL    = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
   const SUPABASE_KEY    = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
+  const SUPABASE_SVC    = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
   const RESEND_API_KEY  = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
 
   /* MP envía GET para verificar y POST con la notificación */
@@ -147,6 +148,44 @@ export async function onRequest(context) {
           console.error('Error Supabase al guardar pago:', err);
         } else {
           console.log('Pago guardado en Supabase:', payment.id);
+        }
+      }
+
+      /* 3 — Auto-convertir leads: email + monto coinciden con E1 del presupuesto */
+      const svcKey = SUPABASE_SVC || SUPABASE_KEY;
+      if (emailCliente && svcKey) {
+        try {
+          const leadsRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/leads?email=eq.${encodeURIComponent(emailCliente)}&converted=eq.false&select=id,clp,svc`,
+            { headers: { 'apikey': svcKey, 'Authorization': `Bearer ${svcKey}` } }
+          );
+          if (leadsRes.ok) {
+            const matchingLeads = await leadsRes.json();
+            const amount = payment.transaction_amount;
+            for (const lead of matchingLeads) {
+              if (!lead.clp) continue;
+              /* E1: 50% para DJ e Informe, 20% para el resto */
+              const esDJ = lead.svc === 'declaracion-jurada' || lead.svc === 'informe';
+              const e1   = lead.clp * (esDJ ? 0.50 : 0.20);
+              /* Tolerancia ±10% para cubrir redondeos y ajustes de UF */
+              const coincide = Math.abs(amount - e1) / e1 <= 0.10;
+              if (coincide) {
+                await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${lead.id}`, {
+                  method:  'PATCH',
+                  headers: {
+                    'apikey':        svcKey,
+                    'Authorization': `Bearer ${svcKey}`,
+                    'Content-Type':  'application/json',
+                    'Prefer':        'return=minimal',
+                  },
+                  body: JSON.stringify({ converted: true }),
+                });
+                console.log(`Lead auto-convertido: ${emailCliente} | id=${lead.id} | clp=${lead.clp} | e1=${e1} | pagado=${amount}`);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error al auto-convertir lead:', e);
         }
       }
 
