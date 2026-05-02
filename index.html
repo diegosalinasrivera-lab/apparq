@@ -3719,6 +3719,8 @@ function recalc() {
 /* ── CTA → open wizard ────────────────────── */
 document.getElementById('btnCta').onclick = () => {
   if (!isReady()) return;
+  /* Tracking silencioso — no bloquea el flujo */
+  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp }) }); } catch(_) {}
   openWizard();
 };
 
@@ -4172,6 +4174,9 @@ function setupPaymentStep() {
       const data = await res.json();
 
       if (!res.ok || data.error) throw new Error(data.error || 'Error MP');
+
+      /* Tracking silencioso — inscripción iniciada (antes de pagar) */
+      try { fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'inscripcion_iniciada', email, svc: S.svc, commune, clp }) }); } catch(_) {}
 
       /* Redirigir al checkout de Mercado Pago */
       window.location.href = data.init_point;

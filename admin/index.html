@@ -861,6 +861,37 @@
               </div>
             </div>
 
+            <!-- Funnel de conversión -->
+            <div class="card" style="margin-bottom:24px;">
+              <div class="card-header">
+                <span class="card-title">Funnel de conversión</span>
+              </div>
+              <div class="card-body" style="padding:20px 24px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;">
+                  <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">① Click CTA</div>
+                    <div style="font-size:28px;font-weight:900;color:#1a1a2e;" id="funnel-cta">—</div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:2px;">"Comenzar trámite"</div>
+                  </div>
+                  <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">② Se inscribió</div>
+                    <div style="font-size:28px;font-weight:900;color:#1a1a2e;" id="funnel-inscripcion">—</div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Completó el formulario</div>
+                  </div>
+                  <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                    <div style="font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">⚠ Abandonó</div>
+                    <div style="font-size:28px;font-weight:900;color:#dc2626;" id="funnel-abandonos">—</div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Antes de pagar</div>
+                  </div>
+                  <div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+                    <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">③ Pagó ✓</div>
+                    <div style="font-size:28px;font-weight:900;color:#15803d;" id="funnel-pagaron">—</div>
+                    <div style="font-size:11px;color:#86efac;margin-top:2px;">Trámite iniciado</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="card">
               <div class="card-header">
                 <span class="card-title">Últimos trámites</span>
@@ -1457,6 +1488,12 @@ async function loadDashboard() {
     if (d.leadsNoConvertidos != null) {
       document.getElementById('stat-leads-sub').textContent = d.leadsNoConvertidos + ' sin convertir';
     }
+
+    /* Funnel */
+    document.getElementById('funnel-cta').textContent         = d.ctaClicks         ?? '—';
+    document.getElementById('funnel-inscripcion').textContent = d.inscripIniciadas   ?? '—';
+    document.getElementById('funnel-abandonos').textContent   = d.abandonos          ?? '—';
+    document.getElementById('funnel-pagaron').textContent     = d.inscripCompletadas ?? '—';
 
     renderRecentProjects(d.recentProjects || []);
     renderRecentPayments(d.recentPayments || []);

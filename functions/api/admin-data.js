@@ -121,6 +121,14 @@ export async function onRequest(context) {
       return json({ payments: data });
     }
 
+    if (section === 'funnel') {
+      const { ok, data } = await sb(
+        '/funnel_events?select=id,event_type,svc,commune,clp,email,created_at&order=created_at.desc&limit=500'
+      );
+      if (!ok) return json({ error: 'Error al obtener funnel' }, 500);
+      return json({ events: data });
+    }
+
     if (section === 'leads') {
       const { ok, data } = await sb(
         '/leads?select=id,email,svc,servicio_subtipo,m2,commune,uf,clp,created_at,converted&order=created_at.desc&limit=500'
@@ -131,33 +139,42 @@ export async function onRequest(context) {
 
     if (section === 'dashboard') {
       /* Fetch all in parallel */
-      const [archRes, projRes, payRes, leadRes] = await Promise.all([
+      const [archRes, projRes, payRes, leadRes, funnelRes] = await Promise.all([
         sb('/architects?select=id,activo'),
         sb('/projects?select=id,project_number,client_nombre,client_apellido,client_email,service_type,commune,architect_nombre,architect_apellido,stage,total_clp,created_at&order=created_at.desc&limit=500'),
         sb('/payments?select=id,amount,status,payer_email,payment_method,created_at&order=created_at.desc&limit=500'),
         sb('/leads?select=id,converted,created_at'),
+        sb('/funnel_events?select=event_type,created_at'),
       ]);
 
-      const architects = archRes.ok && Array.isArray(archRes.data) ? archRes.data : [];
-      const projects   = projRes.ok && Array.isArray(projRes.data) ? projRes.data : [];
-      const payments   = payRes.ok  && Array.isArray(payRes.data)  ? payRes.data  : [];
-      const leads      = leadRes.ok && Array.isArray(leadRes.data)  ? leadRes.data  : [];
+      const architects   = archRes.ok   && Array.isArray(archRes.data)   ? archRes.data   : [];
+      const projects     = projRes.ok   && Array.isArray(projRes.data)   ? projRes.data   : [];
+      const payments     = payRes.ok    && Array.isArray(payRes.data)    ? payRes.data    : [];
+      const leads        = leadRes.ok   && Array.isArray(leadRes.data)   ? leadRes.data   : [];
+      const funnelEvents = funnelRes.ok && Array.isArray(funnelRes.data) ? funnelRes.data : [];
 
       const now        = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const totalArchitectos  = architects.length;
-      const tramitesActivos   = projects.filter(p => p.stage && p.stage !== 'completado').length;
-      const recaudadoTotal    = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
-      const tramitesMes       = projects.filter(p => p.created_at >= monthStart).length;
-      const totalLeads        = leads.length;
+      const totalArchitectos   = architects.length;
+      const tramitesActivos    = projects.filter(p => p.stage && p.stage !== 'completado').length;
+      const recaudadoTotal     = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
+      const tramitesMes        = projects.filter(p => p.created_at >= monthStart).length;
+      const totalLeads         = leads.length;
       const leadsNoConvertidos = leads.filter(l => !l.converted).length;
+
+      /* Funnel */
+      const ctaClicks         = funnelEvents.filter(e => e.event_type === 'cta_click').length;
+      const inscripIniciadas  = funnelEvents.filter(e => e.event_type === 'inscripcion_iniciada').length;
+      const inscripCompletadas = projects.length;                                           /* confirm-tramite = pagaron */
+      const abandonos         = inscripIniciadas - inscripCompletadas > 0
+                                  ? inscripIniciadas - inscripCompletadas : 0;
 
       /* Last 10 projects + last 5 payments for recent tables */
       const recentProjects = projects.slice(0, 10);
       const recentPayments = payments.slice(0, 5);
 
-      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, recentProjects, recentPayments });
+      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, inscripIniciadas, inscripCompletadas, abandonos, recentProjects, recentPayments });
     }
 
     return json({ error: 'Sección no válida' }, 400);
