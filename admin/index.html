@@ -550,6 +550,44 @@
     }
     .modal-close:hover { background: var(--bg-soft); color: var(--dark); }
     .modal-body { padding: 24px; }
+
+    /* ── DETAIL TABS ────────────────────────────── */
+    .detail-tab-btn {
+      background: none; border: none; padding: 12px 18px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s; margin-bottom: -1px;
+    }
+    .detail-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .detail-tab-btn:hover  { color: var(--dark); }
+
+    /* detail timeline */
+    .dt-timeline { list-style:none; padding:0; margin:0; }
+    .dt-item { display:flex; gap:12px; margin-bottom:18px; }
+    .dt-dot  { width:10px; height:10px; border-radius:50%; background:var(--primary); margin-top:5px; flex-shrink:0; }
+    .dt-body { flex:1; }
+    .dt-stage { font-weight:600; font-size:13.5px; }
+    .dt-nota  { font-size:12.5px; color:var(--muted); margin-top:3px; white-space:pre-wrap; }
+    .dt-time  { font-size:11px; color:var(--light); margin-top:4px; }
+
+    /* detail messages */
+    .dm-bubble { margin-bottom:14px; max-width:85%; }
+    .dm-bubble.client   { margin-left:0; }
+    .dm-bubble.architect { margin-left:auto; text-align:right; }
+    .dm-role   { font-size:11px; font-weight:600; color:var(--muted); margin-bottom:3px; }
+    .dm-text   { background:var(--bg-soft); border-radius:8px; padding:9px 13px; font-size:13px; display:inline-block; text-align:left; white-space:pre-wrap; word-break:break-word; }
+    .dm-bubble.architect .dm-text { background:#EFF6FF; }
+    .dm-time   { font-size:11px; color:var(--light); margin-top:4px; }
+
+    /* detail files */
+    .df-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+    .df-card { background:var(--bg-soft); border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+    .df-name { font-size:13px; font-weight:500; word-break:break-word; }
+    .df-meta { font-size:11px; color:var(--muted); }
+    .df-who  { font-size:11px; font-weight:600; }
+    .df-who.arquitecto { color:#2563EB; }
+    .df-who.cliente    { color:#059669; }
+
     .modal-footer {
       padding: 16px 24px;
       border-top: 1px solid var(--border);
@@ -1098,6 +1136,29 @@
     </div><!-- /main-area -->
   </div><!-- /app-shell -->
 </div><!-- /app-view -->
+
+<!-- ── MODAL: Detalle de Trámite ─────────────── -->
+<div id="modal-tramite-detail" class="modal-overlay hidden">
+  <div class="modal" style="max-width:820px;width:95vw">
+    <div class="modal-header">
+      <span class="modal-title" id="detail-modal-title">Detalle del Trámite</span>
+      <button class="modal-close" data-close="modal-tramite-detail">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 20px;background:var(--bg-soft)">
+        <button class="detail-tab-btn active" data-dtab="avances" onclick="switchDetailTab('avances')">📋 Avances</button>
+        <button class="detail-tab-btn" data-dtab="mensajes" onclick="switchDetailTab('mensajes')">💬 Mensajes</button>
+        <button class="detail-tab-btn" data-dtab="archivos" onclick="switchDetailTab('archivos')">📎 Archivos</button>
+      </div>
+      <div id="detail-loading" class="loading-state" style="padding:40px 24px"><div class="spinner spinner-dark"></div> Cargando…</div>
+      <div id="detail-panels" style="display:none;padding:20px 24px;max-height:62vh;overflow-y:auto">
+        <div id="detail-panel-avances"  class="detail-panel"></div>
+        <div id="detail-panel-mensajes" class="detail-panel" style="display:none"></div>
+        <div id="detail-panel-archivos" class="detail-panel" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ── MODAL: Agregar Arquitecto ─────────────── -->
 <div id="modal-add-arch" class="modal-overlay hidden">
@@ -1885,6 +1946,9 @@ function renderTramitesTable() {
       <td>${fmtDate(p.created_at)}</td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-accent" onclick="openTramiteDetail('${(p.project_number||'').replace(/'/g,"\\'")}')">
+            🔍 Ver
+          </button>
           <button class="btn btn-sm btn-outline" onclick="openAssignModal('${p.id}', null)">
             Asignar / Reasignar
           </button>
@@ -1896,6 +1960,130 @@ function renderTramitesTable() {
       </td>
     </tr>
   `).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   TRAMITE DETAIL MODAL
+══════════════════════════════════════════════════ */
+let detailData   = null;
+let activeDetailTab = 'avances';
+
+async function openTramiteDetail(projectNumber) {
+  if (!projectNumber) return;
+  detailData = null;
+  activeDetailTab = 'avances';
+  document.getElementById('detail-modal-title').textContent = `Trámite ${projectNumber}`;
+  document.getElementById('detail-loading').style.display = 'flex';
+  document.getElementById('detail-panels').style.display = 'none';
+  // Reset tabs
+  document.querySelectorAll('.detail-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-dtab="avances"]').classList.add('active');
+  showModal('modal-tramite-detail');
+
+  try {
+    const res = await fetch(`/api/admin-data?section=project-detail&project_number=${encodeURIComponent(projectNumber)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cargar');
+    detailData = data;
+    renderDetailTab('avances');
+    document.getElementById('detail-loading').style.display = 'none';
+    document.getElementById('detail-panels').style.display = 'block';
+  } catch (err) {
+    document.getElementById('detail-loading').innerHTML = `<div style="color:red">⚠ ${err.message}</div>`;
+  }
+}
+
+function switchDetailTab(tab) {
+  if (!detailData) return;
+  activeDetailTab = tab;
+  document.querySelectorAll('.detail-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.dtab === tab));
+  document.querySelectorAll('.detail-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(`detail-panel-${tab}`).style.display = 'block';
+  renderDetailTab(tab);
+}
+
+function renderDetailTab(tab) {
+  if (!detailData) return;
+
+  /* ── Avances ───────────────────────────────── */
+  if (tab === 'avances') {
+    const panel = document.getElementById('detail-panel-avances');
+    panel.style.display = 'block';
+    const updates = detailData.updates || [];
+    if (!updates.length) {
+      panel.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>Sin avances registrados aún.</div>';
+      return;
+    }
+    panel.innerHTML = `<ul class="dt-timeline">${updates.map(u => `
+      <li class="dt-item">
+        <div class="dt-dot"></div>
+        <div class="dt-body">
+          <div class="dt-stage">${u.stage_label || u.stage || '—'}</div>
+          ${u.nota ? `<div class="dt-nota">${escHtml(u.nota)}</div>` : ''}
+          <div class="dt-time">${fmtDateTime(u.created_at)}</div>
+        </div>
+      </li>
+    `).join('')}</ul>`;
+  }
+
+  /* ── Mensajes ──────────────────────────────── */
+  if (tab === 'mensajes') {
+    const panel = document.getElementById('detail-panel-mensajes');
+    panel.style.display = 'block';
+    const msgs = detailData.messages || [];
+    if (!msgs.length) {
+      panel.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div>Sin mensajes aún.</div>';
+      return;
+    }
+    panel.innerHTML = msgs.map(m => {
+      const isArch = m.sender_role === 'architect';
+      return `
+        <div class="dm-bubble ${isArch ? 'architect' : 'client'}">
+          <div class="dm-role">${isArch ? '🏛 Arquitecto' : '👤 Cliente'} · ${escHtml(m.sender_email || '')}</div>
+          <div class="dm-text">${escHtml(m.content || '')}</div>
+          <div class="dm-time">${fmtDateTime(m.created_at)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Archivos ──────────────────────────────── */
+  if (tab === 'archivos') {
+    const panel = document.getElementById('detail-panel-archivos');
+    panel.style.display = 'block';
+    const files = detailData.files || [];
+    if (!files.length) {
+      panel.innerHTML = '<div class="empty-state"><div class="empty-icon">📎</div>Sin archivos subidos aún.</div>';
+      return;
+    }
+    panel.innerHTML = `<div class="df-grid">${files.map(f => {
+      const kb = f.size ? (f.size / 1024).toFixed(0) + ' KB' : '';
+      const icon = (f.mimetype || '').includes('image') ? '🖼' :
+                   (f.mimetype || '').includes('pdf')   ? '📄' : '📎';
+      return `
+        <div class="df-card">
+          <div class="df-name">${icon} ${escHtml(f.name)}</div>
+          ${kb ? `<div class="df-meta">${kb}</div>` : ''}
+          <div class="df-who ${f.uploader}">${f.uploader === 'arquitecto' ? '🏛 Arquitecto' : '👤 Cliente'}</div>
+          <div class="df-meta">${fmtDate(f.created_at)}</div>
+          ${f.downloadUrl ? `<a href="${f.downloadUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="margin-top:4px">⬇ Descargar</a>` : '<span style="font-size:11px;color:var(--light)">URL no disponible</span>'}
+        </div>`;
+    }).join('')}</div>`;
+  }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' })
+       + ' ' + d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
 }
 
 /* ── ASSIGN MODAL ─────────────────────────────── */

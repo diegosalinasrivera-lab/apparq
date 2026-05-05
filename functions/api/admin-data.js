@@ -40,6 +40,38 @@ async function verifyAdmin(authHeader) {
   return user.email;
 }
 
+/* ── Supabase Storage helpers (admin) ─────────── */
+async function storageList(SUPABASE_URL, serviceKey, prefix) {
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/tramite-files`, {
+    method: 'POST',
+    headers: {
+      'apikey':        serviceKey,
+      'Authorization': `Bearer ${serviceKey}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ prefix, limit: 200, offset: 0, sortBy: { column: 'created_at', order: 'desc' } }),
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function storageSignUrl(SUPABASE_URL, serviceKey, path, expiresIn = 7200) {
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/tramite-files/${path}`, {
+    method: 'POST',
+    headers: {
+      'apikey':        serviceKey,
+      'Authorization': `Bearer ${serviceKey}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ expiresIn }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.signedURL) return null;
+  return `${SUPABASE_URL}/storage/v1${data.signedURL}`;
+}
+
 /* ── Supabase REST helper (service role) ──────── */
 function makeSb(serviceKey) {
   return async function sb(path, opts = {}) {
@@ -175,6 +207,46 @@ export async function onRequest(context) {
       const recentPayments = payments.slice(0, 5);
 
       return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, inscripIniciadas, inscripCompletadas, abandonos, recentProjects, recentPayments });
+    }
+
+    if (section === 'project-detail') {
+      const pnum = new URL(request.url).searchParams.get('project_number');
+      if (!pnum) return json({ error: 'project_number requerido' }, 400);
+      const numUpper = pnum.trim().toUpperCase();
+
+      /* Fetch updates, messages and storage folders in parallel */
+      const [updRes, msgRes, clientFiles, archFiles] = await Promise.all([
+        sb(`/project_updates?project_number=eq.${encodeURIComponent(numUpper)}&order=created_at.asc`),
+        sb(`/messages?project_number=eq.${encodeURIComponent(numUpper)}&order=created_at.asc`),
+        storageList(SUPABASE_URL, SERVICE_KEY, `${numUpper}/cliente`),
+        storageList(SUPABASE_URL, SERVICE_KEY, `${numUpper}/arquitecto`),
+      ]);
+
+      const updates  = updRes.ok && Array.isArray(updRes.data) ? updRes.data : [];
+      const messages = msgRes.ok && Array.isArray(msgRes.data) ? msgRes.data : [];
+
+      const placeholder = '.emptyFolderPlaceholder';
+      const toFile = (f, uploader) => ({
+        name:       f.name.replace(/^\d+_/, ''),
+        rawName:    f.name,
+        path:       `${numUpper}/${uploader}/${f.name}`,
+        size:       f.metadata?.size    || 0,
+        mimetype:   f.metadata?.mimetype || '',
+        created_at: f.created_at        || '',
+        uploader,
+      });
+
+      const allFiles = [
+        ...clientFiles.filter(f => f.name && f.name !== placeholder).map(f => toFile(f, 'cliente')),
+        ...archFiles.filter(f   => f.name && f.name !== placeholder).map(f => toFile(f, 'arquitecto')),
+      ];
+
+      const filesWithUrls = await Promise.all(allFiles.map(async f => ({
+        ...f,
+        downloadUrl: await storageSignUrl(SUPABASE_URL, SERVICE_KEY, f.path),
+      })));
+
+      return json({ updates, messages, files: filesWithUrls });
     }
 
     return json({ error: 'Sección no válida' }, 400);
