@@ -2815,7 +2815,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ──────────────────────────────────────────────── */
 /* Precios base en UF — todos los cálculos en UF, display en CLP */
 /* A. Ley del Mono: tramos fijos */
-const PRECIO_LEY_MONO = { hasta90: 12, hasta140: 18 };
+const PRECIO_LEY_MONO = { hasta90: 14, hasta140: 19 };
 /* B. Regularización: fijos por sub-tipo */
 const PRECIO_REG = { 'obra-menor': 28, 'obra-nueva-reg-hasta140': 38, 'obra-nueva-reg-por-m2': 0.39 };
 /* C. Ampliación: tramos fijos */
@@ -2835,8 +2835,8 @@ const PRECIO_INF = { evaluacion: 3, factibilidad: 6, compraventa: 8 };
 const STAGES_NORMAL = [
   { name: 'Inicio (E1)',    pct: 0.20 },
   { name: 'Planos (E2)',    pct: 0.30 },
-  { name: 'Ingreso (E3)',   pct: 0.20 },
-  { name: 'Recepción (E4)', pct: 0.30 },
+  { name: 'Ingreso (E3)',   pct: 0.30 },
+  { name: 'Recepción (E4)', pct: 0.20 },
 ];
 const STAGES_INFORME = [
   { name: 'Inicio (E1)',          pct: 0.50 },
