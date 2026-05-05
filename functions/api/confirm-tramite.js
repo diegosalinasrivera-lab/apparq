@@ -130,14 +130,18 @@ export async function onRequest(context) {
     let projectNumber = null;
     if (SUPABASE_URL && SUPABASE_KEY && email) {
       try {
-        /* Generar número secuencial: contar proyectos existentes */
-        const countRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/projects?select=id`,
-          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'count=exact' } }
+        /* Generar número secuencial: tomar el máximo existente + 1, mínimo 100 */
+        const maxRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/projects?select=project_number&order=project_number.desc&limit=1`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
         );
-        const countHeader = parseInt(countRes.headers.get('content-range')?.split('/')[1] || '0', 10);
-        const seq = String(countHeader + 1).padStart(6, '0');
-        projectNumber = `ARQ-${new Date().getFullYear()}-${seq}`;
+        const maxData = await maxRes.json();
+        let nextSeq = 100;
+        if (Array.isArray(maxData) && maxData.length > 0 && maxData[0].project_number) {
+          const match = maxData[0].project_number.match(/(\d+)$/);
+          if (match) nextSeq = Math.max(parseInt(match[1], 10) + 1, 100);
+        }
+        projectNumber = `ARQ-${new Date().getFullYear()}-${String(nextSeq).padStart(6, '0')}`;
 
         const architect_email = arquitecto ? (arquitecto.email || null) : null;
 
