@@ -21,6 +21,174 @@ function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: CORS });
 }
 
+function clpFmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-CL');
+}
+
+async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
+  if (!RESEND_API_KEY) return;
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: 'APPARQ <hola@apparq.cl>', to, subject, html }),
+  });
+  if (!res.ok) console.error('Resend error admin-data:', await res.text());
+}
+
+/* ── Envía emails de pago al arquitecto + recordatorio a APPARQ ── */
+async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
+  const clp        = project.total_clp || 0;
+  const e1         = project.e1_clp    || 0;
+  const svc        = project.service_type || '';
+  const pnum       = project.project_number || '—';
+  const svcLabels  = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+  const svcName    = svcLabels[svc] || svc;
+  const esInforme  = svc === 'informe';
+  const esDJ       = svc === 'declaracion-jurada';
+  const is2stages  = esInforme || esDJ;
+
+  const ARQ_PCT    = architect.patente ? 0.80 : 0.70;
+  const arqTotal   = Math.round(clp * ARQ_PCT);
+
+  const payDue     = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+  const payDueFmt  = payDue.toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+
+  const clientName = `${project.client_nombre || ''} ${project.client_apellido || ''}`.trim();
+
+  /* Bloque etapas para email arquitecto */
+  const etapasArqBlock = is2stages
+    ? `<tr><td style="padding:8px 10px;color:#718096">E1 · Inicio (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round(clp*0.50*ARQ_PCT))} ✓</td></tr>
+       <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · ${esInforme ? 'Entrega informe' : 'Cierre DJ'}</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round(clp*0.50*ARQ_PCT))}</td></tr>`
+    : `<tr><td style="padding:8px 10px;color:#718096">E1 · Levantamiento (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round(e1*ARQ_PCT))} ✓</td></tr>
+       <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Elaboración de planos</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round(clp*0.30*ARQ_PCT))}</td></tr>
+       <tr><td style="padding:8px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round(clp*0.30*ARQ_PCT))}</td></tr>
+       <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E4 · Recepción final</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round(clp*0.20*ARQ_PCT))}</td></tr>`;
+
+  /* Bloque etapas para email admin */
+  const e1archPct  = is2stages ? 0.50 : 0.20;
+  const etapasAdminBlock = is2stages
+    ? `<tr><td style="padding:6px 10px;color:#718096">E1 · Inicio</td><td style="padding:6px 10px;font-weight:700;color:#059669">${clpFmt(Math.round(clp*0.50*ARQ_PCT))}</td><td style="padding:6px 10px;font-weight:700;color:#E8503A">${payDueFmt}</td></tr>
+       <tr style="background:#f7fafc"><td style="padding:6px 10px;color:#718096">E2 · ${esInforme ? 'Entrega informe' : 'Cierre DJ'}</td><td style="padding:6px 10px;font-weight:700">${clpFmt(Math.round(clp*0.50*ARQ_PCT))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E2</td></tr>`
+    : `<tr><td style="padding:6px 10px;color:#718096">E1 · Levantamiento</td><td style="padding:6px 10px;font-weight:700;color:#059669">${clpFmt(Math.round(clp*0.20*ARQ_PCT))}</td><td style="padding:6px 10px;font-weight:700;color:#E8503A">${payDueFmt}</td></tr>
+       <tr style="background:#f7fafc"><td style="padding:6px 10px;color:#718096">E2 · Planos</td><td style="padding:6px 10px;font-weight:700">${clpFmt(Math.round(clp*0.30*ARQ_PCT))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E2</td></tr>
+       <tr><td style="padding:6px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:6px 10px;font-weight:700">${clpFmt(Math.round(clp*0.30*ARQ_PCT))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E3</td></tr>
+       <tr style="background:#f7fafc"><td style="padding:6px 10px;color:#718096">E4 · Recepción</td><td style="padding:6px 10px;font-weight:700">${clpFmt(Math.round(clp*0.20*ARQ_PCT))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E4</td></tr>`;
+
+  /* Email al arquitecto */
+  await sendEmail({
+    to:      architect.email,
+    subject: `APPARQ · Trámite ${pnum} — Instrucciones de pago por etapas`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+        <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+          <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+          <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Información de pagos — Portal del Arquitecto</p>
+        </div>
+        <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+          <h2 style="margin-top:0;color:#1a1a2e">Hola ${architect.nombre}, estructura de pagos del trámite</h2>
+
+          <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:14px 20px;margin:0 0 20px;text-align:center">
+            <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700;text-transform:uppercase;">N° de Trámite</p>
+            <p style="margin:0;font-size:28px;font-weight:900;color:#E8503A;letter-spacing:2px">${pnum}</p>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:42%">Servicio</td><td style="padding:7px 10px;font-weight:700">${svcName}</td></tr>
+            <tr><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${clientName}</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Dirección</td><td style="padding:7px 10px">${project.address || '—'}, ${project.commune || '—'}</td></tr>
+            <tr><td style="padding:7px 10px;color:#718096">Superficie</td><td style="padding:7px 10px">${project.m2 ? project.m2 + ' m²' : '—'}</td></tr>
+          </table>
+
+          <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:16px 20px;margin:20px 0">
+            <p style="margin:0 0 10px;font-size:13px;font-weight:800;color:#15803d;">💰 Tus honorarios netos (${Math.round(ARQ_PCT*100)}%)</p>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              ${etapasArqBlock}
+              <tr style="border-top:2px solid #86efac">
+                <td style="padding:10px;color:#15803d;font-weight:800">TOTAL a recibir</td>
+                <td style="padding:10px;font-weight:900;color:#15803d;font-size:15px">${clpFmt(arqTotal)}</td>
+              </tr>
+            </table>
+            <p style="margin:10px 0 0;font-size:11px;color:#4ade80;">* Pago dentro de los 5 días hábiles tras la confirmación de pago del cliente, contra boleta de honorarios.</p>
+          </div>
+
+          <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#92400E">⏰ Primer pago — E1</p>
+            <p style="margin:0;font-size:13px;color:#78350F;">Monto: <strong>${clpFmt(Math.round(clp*e1archPct*ARQ_PCT))}</strong> &nbsp;·&nbsp; Vence: <strong>${payDueFmt}</strong></p>
+          </div>
+
+          <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">🧾 Datos para emitir tu boleta de honorarios</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Razón Social</td><td style="padding:8px 10px;font-weight:700">DSR ARQ SPA</td></tr>
+            <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px;font-weight:700">76.341.206-7</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Giro</td><td style="padding:8px 10px">Arquitectura y servicios conexos</td></tr>
+            <tr><td style="padding:8px 10px;color:#718096">Correo boleta</td><td style="padding:8px 10px">hola@apparq.cl</td></tr>
+          </table>
+          <p style="color:#4a5568;font-size:12px;margin:8px 0 0;line-height:1.6">Envía la boleta a <strong>hola@apparq.cl</strong> para que procesemos el pago. Sin boleta no se puede efectuar la transferencia.</p>
+
+          <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:16px 18px;margin-top:16px">
+            <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#15803D">📤 Envíanos tus datos de transferencia</p>
+            <ul style="margin:0;padding-left:18px;font-size:12px;color:#166534;line-height:2">
+              <li>Banco</li><li>Tipo de cuenta (corriente / vista / ahorro)</li>
+              <li>Número de cuenta</li><li>Nombre del titular</li>
+              <li>RUT del titular</li><li>Email para comprobante</li>
+            </ul>
+            <p style="margin:8px 0 0;font-size:12px;color:#166534">Responde este correo o escríbenos a <strong>hola@apparq.cl</strong></p>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
+          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7<br>
+          ¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+        </div>
+      </div>
+    `,
+  }, RESEND_API_KEY);
+
+  /* Email a APPARQ (recordatorio de pago) */
+  await sendEmail({
+    to:      'hola@apparq.cl',
+    subject: `⚠️ Pagar arquitecto · ${pnum} · ${architect.nombre} ${architect.apellido} · E1 vence ${payDueFmt}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#1a1a2e">
+        <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+          <h1 style="color:#fff;margin:0;font-size:20px">APPARQ · Pago pendiente a arquitecto</h1>
+          <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Recordatorio automático</p>
+        </div>
+        <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${pnum}</td></tr>
+            <tr><td style="padding:7px 10px;color:#718096">Servicio</td><td style="padding:7px 10px">${svcName}</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Arquitecto</td><td style="padding:7px 10px;font-weight:700">${architect.nombre} ${architect.apellido} — ${architect.email}</td></tr>
+            <tr><td style="padding:7px 10px;color:#718096">% honorarios</td><td style="padding:7px 10px">${Math.round(ARQ_PCT*100)}% ${architect.patente ? '(con patente)' : '(sin patente)'}</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${clientName}</td></tr>
+            <tr><td style="padding:7px 10px;color:#718096">Total cliente</td><td style="padding:7px 10px">${clpFmt(clp)}</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Total arquitecto</td><td style="padding:7px 10px;font-weight:700">${clpFmt(arqTotal)}</td></tr>
+          </table>
+          <h3 style="font-size:13px;color:#1a1a2e;margin-bottom:8px">📅 Calendario de pagos</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="background:#1a1a2e;color:#fff">
+              <th style="padding:7px 10px;text-align:left">Etapa</th>
+              <th style="padding:7px 10px;text-align:left">Monto arquitecto</th>
+              <th style="padding:7px 10px;text-align:left">Fecha estimada</th>
+            </tr></thead>
+            <tbody>${etapasAdminBlock}
+              <tr style="border-top:2px solid #e2e8f0">
+                <td style="padding:8px 10px;font-weight:800">TOTAL</td>
+                <td style="padding:8px 10px;font-weight:800">${clpFmt(arqTotal)}</td><td></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:14px 18px;margin-top:20px">
+            <p style="margin:0;font-size:13px;font-weight:700;color:#92400E">⚠️ Pago E1 — vence ${payDueFmt} — ${clpFmt(Math.round(clp*e1archPct*ARQ_PCT))}</p>
+            <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">Verificar que el arquitecto envíe datos bancarios y boleta de honorarios antes de transferir.</p>
+          </div>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 10px">
+          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · Sistema de notificaciones internas</p>
+        </div>
+      </div>
+    `,
+  }, RESEND_API_KEY);
+}
+
 /* ── Verify JWT and return user email ─────────── */
 async function verifyAdmin(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -311,6 +479,21 @@ export async function onRequest(context) {
         prefer: 'return=representation',
       });
       if (!ok) return json({ error: 'Error al asignar arquitecto', detail: data }, 500);
+
+      /* Enviar emails de pago al arquitecto + recordatorio a APPARQ */
+      const RESEND_API_KEY = env.RESEND_API_KEY;
+      if (RESEND_API_KEY) {
+        const [projRes, archRes] = await Promise.all([
+          sb(`/projects?id=eq.${project_id}&select=project_number,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp&limit=1`),
+          sb(`/architects?email=eq.${encodeURIComponent(architect_email)}&select=nombre,apellido,email,patente&limit=1`),
+        ]);
+        const project  = projRes.ok  && Array.isArray(projRes.data)  && projRes.data[0]  ? projRes.data[0]  : null;
+        const architect = archRes.ok && Array.isArray(archRes.data)  && archRes.data[0]  ? archRes.data[0]  : null;
+        if (project && architect) {
+          sendPaymentEmails({ project, architect, RESEND_API_KEY }).catch(e => console.error('sendPaymentEmails error:', e));
+        }
+      }
+
       return json({ success: true, project: Array.isArray(data) ? data[0] : data });
     }
 
