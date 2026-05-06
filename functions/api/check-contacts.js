@@ -55,7 +55,7 @@ async function findReplacementArchitect(SERVICE_KEY, commune, svc, excludeEmail)
   const svcLabel = SVC_LABEL_MAP[svc] || svc;
 
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&select=id,nombre,apellido,email,tramites,comunas,patente`,
+    `${SUPABASE_URL}/rest/v1/architects?activo=eq.true&no_auto_assign=eq.false&select=id,nombre,apellido,email,tramites,comunas,patente`,
     { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
   );
   if (!res.ok) return null;
