@@ -1,10 +1,10 @@
-name: APPARQ ¬∑ Alerta contacto cliente
+name: APPARQ - Alerta contacto cliente
 
 on:
   schedule:
-    # Lunes‚ÄìViernes a las 09:15 CLT (= 12:15 UTC)
+    # Lunes-Viernes a las 09:15 CLT (= 12:15 UTC)
     - cron: '15 12 * * 1-5'
-    # Segunda revisi√≥n a las 14:00 CLT (= 17:00 UTC) por si acaso
+    # Segunda revision a las 14:00 CLT (= 17:00 UTC) por si acaso
     - cron: '0 17 * * 1-5'
   workflow_dispatch:   # permite ejecutar manualmente desde GitHub
 
@@ -20,7 +20,7 @@ jobs:
           ALERTS=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('alerts',0))" 2>/dev/null || echo "?")
           CHECKED=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('checked',0))" 2>/dev/null || echo "?")
 
-          echo "‚úÖ Revisados: $CHECKED tr√°mites | üö® Alertas enviadas: $ALERTS"
+          echo "Revisados: $CHECKED tramites | Alertas enviadas: $ALERTS"
 
-          # Falla el job si la respuesta no es OK (√∫til para ver errores en GitHub)
+          # Falla el job si la respuesta no es OK (util para ver errores en GitHub)
           echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('ok') else 1)"
