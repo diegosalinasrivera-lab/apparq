@@ -307,7 +307,7 @@ export async function onRequest(context) {
 
     if (section === 'projects') {
       const { ok, data } = await sb(
-        '/projects?select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,architect_email,architect_nombre,architect_apellido,service_type,address,commune,m2,total_clp,e1_clp,stage,created_at&order=created_at.desc&limit=200'
+        '/projects?select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,architect_email,architect_nombre,architect_apellido,service_type,address,commune,m2,total_clp,e1_clp,stage,created_at,cliente_contactado&order=created_at.desc&limit=200'
       );
       if (!ok) return json({ error: 'Error al obtener trámites' }, 500);
       return json({ projects: data });
