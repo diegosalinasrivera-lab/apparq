@@ -837,6 +837,7 @@
         </div>
         <div class="nav-item" data-section="tramites">
           <span class="nav-icon">📋</span> Trámites
+          <span id="descarte-badge" style="display:none;margin-left:auto;background:#DC2626;color:#fff;border-radius:9999px;font-size:10px;font-weight:800;padding:1px 6px;line-height:1.6;"></span>
         </div>
         <div class="nav-item" data-section="pagos">
           <span class="nav-icon">💰</span> Pagos
@@ -1016,6 +1017,15 @@
             <button class="filter-btn" data-filter="activos">Activos</button>
             <button class="filter-btn" data-filter="completados">Completados</button>
           </div>
+          <!-- Descartes pendientes -->
+          <div id="descartes-section" style="display:none;margin-bottom:1.5rem;">
+            <h3 style="font-size:14px;font-weight:800;color:#DC2626;margin:0 0 10px;display:flex;align-items:center;gap:8px;">
+              ⚠️ Descartes pendientes de revisión
+              <span id="descartes-count" style="background:#DC2626;color:#fff;border-radius:9999px;font-size:11px;padding:2px 8px;"></span>
+            </h3>
+            <div id="descartes-cards" style="display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+
           <div id="tram-loading" class="loading-state">
             <div class="spinner spinner-dark"></div> Cargando…
           </div>
@@ -1609,8 +1619,12 @@ async function loadArchitects() {
   document.getElementById('arch-loading').style.display = 'flex';
   document.getElementById('arch-content').style.display = 'none';
   try {
-    const d = await apiGet('architects');
-    architects = d.architects || [];
+    /* Load architects; also ensure projects are loaded for descarte metrics */
+    const promises = [apiGet('architects')];
+    if (!projects.length) promises.push(apiGet('projects'));
+    const results = await Promise.all(promises);
+    architects = results[0].architects || [];
+    if (results[1]) projects = results[1].projects || [];
     renderArchitectsTable();
     document.getElementById('arch-loading').style.display = 'none';
     document.getElementById('arch-content').style.display = 'block';
@@ -1636,10 +1650,27 @@ function renderArchitectsTable() {
       : '';
     const tags = shown.map(c => `<span class="tag">${c}</span>`).join('')
       + (extra > 0 ? `<span class="tag tag-more">+${extra}</span>` : '');
+
+    /* Métricas de descarte calculadas desde projects (client-side) */
+    const arqProjects = projects.filter(p => p.architect_email && p.architect_email.toLowerCase() === (a.email||'').toLowerCase());
+    const totalTram   = arqProjects.length;
+    const conDescarte = arqProjects.filter(p => p.descarte_estado && p.descarte_estado !== null).length;
+    const pctDescarte = totalTram > 0 ? Math.round(conDescarte / totalTram * 100) : 0;
+    const alertDescarte = totalTram >= 5 && pctDescarte > 20;
+    const descarteMetric = totalTram > 0
+      ? `<div style="font-size:11px;margin-top:3px;${alertDescarte ? 'color:#DC2626;font-weight:700;' : 'color:#718096;'}">
+           ${alertDescarte ? '⚠️ ' : ''}Descartes: ${conDescarte}/${totalTram} (${pctDescarte}%)
+         </div>`
+      : '';
+
     return `
     <tr>
       <td>${avatarHTML(a)}</td>
-      <td><strong>${a.nombre || ''} ${a.apellido || ''}</strong></td>
+      <td>
+        <strong>${a.nombre || ''} ${a.apellido || ''}</strong>
+        <div style="font-size:11px;color:#718096;margin-top:2px;">Trámites asignados: ${totalTram}</div>
+        ${descarteMetric}
+      </td>
       <td style="font-size:12.5px;color:var(--muted)">${a.email || '—'}</td>
       <td><div class="tags">${overloadWarning}${tags || '<span style="color:var(--light);font-size:12px">—</span>'}</div></td>
       <td><div class="tags">${tramites.map(t => `<span class="tag">${t}</span>`).join('') || '—'}</div></td>
@@ -1903,18 +1934,121 @@ document.getElementById('btn-save-edit-arch').addEventListener('click', saveEdit
 /* ══════════════════════════════════════════════════
    TRAMITES
 ══════════════════════════════════════════════════ */
+let descartesPendientes = [];
+
 async function loadTramites() {
   document.getElementById('tram-loading').style.display = 'flex';
   document.getElementById('tram-content').style.display = 'none';
+  document.getElementById('descartes-section').style.display = 'none';
   try {
     const d = await apiGet('projects');
     projects = d.projects || [];
+    descartesPendientes = d.descartes_pendientes || [];
     renderTramitesTable();
+    renderDescartesPendientes();
     document.getElementById('tram-loading').style.display = 'none';
     document.getElementById('tram-content').style.display = 'block';
   } catch(e) {
     showToast('Error al cargar trámites', 'error');
     document.getElementById('tram-loading').style.display = 'none';
+  }
+}
+
+function renderDescartesPendientes() {
+  const section = document.getElementById('descartes-section');
+  const cards   = document.getElementById('descartes-cards');
+  const countEl = document.getElementById('descartes-count');
+  const badge   = document.getElementById('descarte-badge');
+
+  if (!descartesPendientes.length) {
+    section.style.display = 'none';
+    badge.style.display = 'none';
+    return;
+  }
+
+  countEl.textContent = descartesPendientes.length;
+  badge.textContent   = descartesPendientes.length;
+  badge.style.display = '';
+  section.style.display = 'block';
+
+  const VIA_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', no_regularizable:'No regularizable' };
+  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'declaracion-jurada':'DJ', 'ley-del-mono':'Ley del Mono' };
+
+  cards.innerHTML = descartesPendientes.map(d => {
+    let requisitos = [];
+    try { requisitos = JSON.parse(d.descarte_motivo || '[]'); } catch(_) {}
+    const REQ_LABELS = { sup_excede:'Superficie excede límite', avaluo_excede:'Avalúo fiscal excede UF', fecha_construccion:'Fecha construcción fuera período', permisos_previos:'Problemas permisos previos', otro_motivo:'Otro motivo' };
+    const reqList = requisitos.map(r => `<li style="font-size:12px;color:#7F1D1D;">${REQ_LABELS[r.tipo]||r.tipo}${r.valor?' — '+r.valor:r.descripcion?' — '+r.descripcion.slice(0,60):''}</li>`).join('');
+    const viaProp = VIA_LABELS[d.descarte_via_propuesta] || d.descarte_via_propuesta || '—';
+    const svcName = SVC_LABELS[d.service_type] || d.service_type;
+
+    return `
+      <div style="border:1.5px solid #FECACA;border-radius:8px;overflow:hidden;background:#fff;">
+        <div style="background:#FEF2F2;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span style="font-size:13px;font-weight:800;color:#DC2626;">${d.project_number}</span>
+            <span style="font-size:12px;color:#718096;margin-left:8px;">${svcName} · ${d.commune}</span>
+          </div>
+          <div style="font-size:11px;color:#718096;">Recibido: ${fmtDate(d.created_at)}</div>
+        </div>
+        <div style="padding:12px 14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.04em;">Arquitecto</div>
+              <div style="font-size:13px;">${d.architect_nombre} ${d.architect_apellido}</div>
+              <div style="font-size:11px;color:#718096;">${d.architect_email}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.04em;">Vía propuesta</div>
+              <div style="font-size:13px;font-weight:700;color:#7C3AED;">${viaProp}</div>
+              <div style="font-size:11px;color:#718096;">Visita: ${d.descarte_fecha_visita || '—'}</div>
+            </div>
+          </div>
+          ${reqList ? `<div style="background:#FEF2F2;border-radius:6px;padding:8px 10px;margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:#991B1B;margin-bottom:4px;">REQUISITOS INCUMPLIDOS</div><ul style="margin:0;padding-left:16px;">${reqList}</ul></div>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:120px;">
+              <label style="display:block;font-size:11px;font-weight:700;color:#718096;margin-bottom:4px;">Notas para el arquitecto</label>
+              <textarea id="dcNotas_${d.id}" placeholder="Opcional — motivo del rechazo o instrucciones…" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;resize:vertical;min-height:52px;box-sizing:border-box;"></textarea>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;justify-content:flex-end;">
+              <button onclick="reviewDescarte('${d.id}', 'aprobado')" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Aprobar</button>
+              <button onclick="reviewDescarte('${d.id}', 'rechazado')" style="background:#DC2626;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">❌ Rechazar</button>
+            </div>
+          </div>
+          <div id="dcMsg_${d.id}" style="display:none;font-size:12px;margin-top:6px;"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function reviewDescarte(projectId, decision) {
+  const notasEl = document.getElementById(`dcNotas_${projectId}`);
+  const msgEl   = document.getElementById(`dcMsg_${projectId}`);
+  const notas   = notasEl ? notasEl.value.trim() : '';
+
+  if (decision === 'rechazado' && !notas) {
+    if (msgEl) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Ingresa el motivo del rechazo.'; }
+    return;
+  }
+
+  const label = decision === 'aprobado' ? 'aprobar' : 'rechazar';
+  if (!confirm(`¿Confirmas ${label} este descarte? Se notificará al arquitecto por email.`)) return;
+
+  try {
+    const res = await fetch('/api/admin-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ action: 'review-descarte', project_id: projectId, decision, notas }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Descarte ${decision === 'aprobado' ? 'aprobado' : 'rechazado'}. Arquitecto notificado.`, 'success');
+      loadTramites();
+    } else {
+      if (msgEl) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent = data.error || 'Error'; }
+    }
+  } catch(e) {
+    if (msgEl) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Error de conexión'; }
   }
 }
 
@@ -1951,7 +2085,11 @@ function renderTramitesTable() {
             ? '<span title="Cliente contactado" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px #d1fae5"></span>'
             : '<span title="Sin contacto aún" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 3px #fee2e2"></span>'
       }</td>
-      <td>${stageBadge(p.stage)}</td>
+      <td>
+        ${stageBadge(p.stage)}
+        ${p.descarte_estado === 'pendiente' ? '<span class="badge badge-red" style="margin-left:4px;font-size:10px;">⚠️ Descarte</span>' : ''}
+        ${p.descarte_estado === 'aprobado'  ? '<span class="badge badge-green" style="margin-left:4px;font-size:10px;">✓ Desc. aprobado</span>' : ''}
+      </td>
       <td>${fmtDate(p.created_at)}</td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1987,6 +2125,9 @@ async function openTramiteDetail(projectNumber) {
   // Reset tabs
   document.querySelectorAll('.detail-tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('[data-dtab="avances"]').classList.add('active');
+  // Remove previous descarte banner if any
+  const prevBanner = document.getElementById('detail-descarte-banner');
+  if (prevBanner) prevBanner.remove();
   showModal('modal-tramite-detail');
 
   try {
@@ -1999,6 +2140,25 @@ async function openTramiteDetail(projectNumber) {
     renderDetailTab('avances');
     document.getElementById('detail-loading').style.display = 'none';
     document.getElementById('detail-panels').style.display = 'block';
+
+    /* Mostrar estado del descarte si existe */
+    const proj = projects.find(p => p.project_number === projectNumber);
+    if (proj && proj.descarte_estado) {
+      const VIA_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', no_regularizable:'No regularizable' };
+      const dcConfigs = {
+        pendiente: { bg:'#FEF3C7', border:'#FCD34D', color:'#92400E', text:`⏳ Descarte PENDIENTE — Vía propuesta: ${VIA_LABELS[proj.descarte_via_propuesta]||proj.descarte_via_propuesta||'—'} · Visita: ${proj.descarte_fecha_visita||'—'}` },
+        aprobado:  { bg:'#D1FAE5', border:'#6EE7B7', color:'#065F46', text:`✅ Descarte APROBADO — Vía: ${VIA_LABELS[proj.descarte_via_propuesta]||proj.descarte_via_propuesta||'—'}${proj.descarte_notas_admin ? ' · ' + proj.descarte_notas_admin : ''}` },
+        rechazado: { bg:'#FEF2F2', border:'#FECACA', color:'#991B1B', text:`❌ Descarte RECHAZADO${proj.descarte_notas_admin ? ' — Motivo: ' + proj.descarte_notas_admin : ''}` },
+      };
+      const cfg = dcConfigs[proj.descarte_estado];
+      if (cfg) {
+        const banner = document.createElement('div');
+        banner.id = 'detail-descarte-banner';
+        banner.style.cssText = `background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:6px;padding:8px 14px;margin-bottom:12px;font-size:12.5px;font-weight:700;color:${cfg.color};`;
+        banner.textContent = cfg.text;
+        document.getElementById('detail-panels').prepend(banner);
+      }
+    }
   } catch (err) {
     document.getElementById('detail-loading').innerHTML = `<div style="color:red">⚠ ${err.message}</div>`;
   }

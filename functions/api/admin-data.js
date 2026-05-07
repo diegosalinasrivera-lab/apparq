@@ -306,11 +306,15 @@ export async function onRequest(context) {
     }
 
     if (section === 'projects') {
-      const { ok, data } = await sb(
-        '/projects?select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,architect_email,architect_nombre,architect_apellido,service_type,address,commune,m2,total_clp,e1_clp,stage,created_at,cliente_contactado&order=created_at.desc&limit=200'
-      );
-      if (!ok) return json({ error: 'Error al obtener trámites' }, 500);
-      return json({ projects: data });
+      const [projResult, descartesResult] = await Promise.all([
+        sb('/projects?select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,architect_email,architect_nombre,architect_apellido,service_type,address,commune,m2,total_clp,e1_clp,stage,created_at,cliente_contactado,descarte_estado,descarte_motivo,descarte_via_propuesta,descarte_fecha_visita,descarte_revisado_at,descarte_notas_admin&order=created_at.desc&limit=200'),
+        sb('/projects?descarte_estado=eq.pendiente&select=id,project_number,architect_nombre,architect_apellido,architect_email,service_type,commune,descarte_motivo,descarte_via_propuesta,descarte_fecha_visita,created_at&order=created_at.desc'),
+      ]);
+      if (!projResult.ok) return json({ error: 'Error al obtener trámites' }, 500);
+      return json({
+        projects: projResult.data,
+        descartes_pendientes: descartesResult.ok && Array.isArray(descartesResult.data) ? descartesResult.data : [],
+      });
     }
 
     if (section === 'payments') {
@@ -521,6 +525,96 @@ export async function onRequest(context) {
       });
       if (!ok) return json({ error: 'Error al actualizar lead', detail: data }, 500);
       return json({ success: true });
+    }
+
+    /* review-descarte */
+    if (action === 'review-descarte') {
+      const { project_id, decision, notas } = body;
+      if (!project_id || !['aprobado', 'rechazado'].includes(decision)) {
+        return json({ error: 'project_id y decision (aprobado|rechazado) requeridos' }, 400);
+      }
+
+      /* PATCH projects */
+      const patchResult = await sb(`/projects?id=eq.${project_id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          descarte_estado:      decision,
+          descarte_revisado_at: new Date().toISOString(),
+          descarte_notas_admin: notas || null,
+        }),
+        prefer: 'return=representation',
+      });
+      if (!patchResult.ok) return json({ error: 'Error al actualizar descarte', detail: patchResult.data }, 500);
+
+      /* Obtener datos del proyecto para notificar al arquitecto */
+      const projResult = await sb(`/projects?id=eq.${project_id}&select=project_number,architect_email,architect_nombre,architect_apellido,service_type,commune,descarte_via_propuesta&limit=1`);
+      const p = projResult.ok && Array.isArray(projResult.data) && projResult.data[0] ? projResult.data[0] : null;
+
+      if (p && p.architect_email) {
+        const RESEND_API_KEY = env.RESEND_API_KEY;
+        const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+        const viaLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', no_regularizable:'No regularizable' };
+        const svcName  = svcLabels[p.service_type] || p.service_type;
+        const viaLabel = viaLabels[p.descarte_via_propuesta] || p.descarte_via_propuesta || '—';
+
+        if (decision === 'aprobado') {
+          await sendEmail({
+            to: p.architect_email,
+            subject: `✅ Descarte aprobado — ${p.project_number}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                  <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Descarte aprobado</h1>
+                </div>
+                <div style="background:#D1FAE5;border:2px solid #6EE7B7;padding:14px 32px">
+                  <p style="margin:0;font-size:14px;font-weight:700;color:#065F46">✅ Tu declaración de descarte fue aprobada por APPARQ</p>
+                </div>
+                <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                  <p style="font-size:14px;color:#4a5568;line-height:1.7;">Hola <strong>${p.architect_nombre}</strong>, tu descarte para el trámite <strong>${p.project_number}</strong> fue revisado y aprobado.</p>
+                  <p style="font-size:14px;color:#4a5568;line-height:1.7;"><strong>Ya puedes contactar al cliente e informarle el cambio de vía:</strong> ${viaLabel}.</p>
+                  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px">
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${p.project_number}</td></tr>
+                    <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcName} · ${p.commune}</td></tr>
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Vía propuesta aprobada</td><td style="padding:8px 10px;font-weight:700;color:#059669">${viaLabel}</td></tr>
+                  </table>
+                  ${notas ? `<div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:8px;padding:14px 18px;margin-top:16px"><p style="margin:0 0 4px;font-size:12px;color:#0369A1;font-weight:700">NOTAS DE APPARQ</p><p style="margin:0;font-size:13px;color:#0C4A6E">${notas}</p></div>` : ''}
+                  <div style="text-align:center;margin-top:20px"><a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px">Ir a mi portal</a></div>
+                  <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                </div>
+              </div>`,
+          }, RESEND_API_KEY);
+        } else {
+          await sendEmail({
+            to: p.architect_email,
+            subject: `❌ Descarte rechazado — ${p.project_number}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                  <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Descarte rechazado</h1>
+                </div>
+                <div style="background:#FEF2F2;border:2px solid #FECACA;padding:14px 32px">
+                  <p style="margin:0;font-size:14px;font-weight:700;color:#991B1B">❌ Tu declaración de descarte fue revisada y rechazada</p>
+                </div>
+                <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                  <p style="font-size:14px;color:#4a5568;line-height:1.7;">Hola <strong>${p.architect_nombre}</strong>, APPARQ revisó tu declaración de descarte para el trámite <strong>${p.project_number}</strong> y fue rechazada.</p>
+                  <p style="font-size:14px;color:#4a5568;">El trámite continúa en la vía original: <strong>${svcName}</strong>.</p>
+                  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px">
+                    <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${p.project_number}</td></tr>
+                    <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcName} · ${p.commune}</td></tr>
+                  </table>
+                  ${notas ? `<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:14px 18px;margin-top:16px"><p style="margin:0 0 4px;font-size:12px;color:#991B1B;font-weight:700">MOTIVO DEL RECHAZO</p><p style="margin:0;font-size:13px;color:#7F1D1D;line-height:1.6">${notas}</p></div>` : ''}
+                  <p style="font-size:13px;color:#4a5568;margin-top:16px;">Si tienes dudas, contáctanos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a>.</p>
+                  <div style="text-align:center;margin-top:20px"><a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px">Ir a mi portal</a></div>
+                  <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                </div>
+              </div>`,
+          }, RESEND_API_KEY);
+        }
+      }
+
+      return json({ ok: true });
     }
 
     /* update_stage */

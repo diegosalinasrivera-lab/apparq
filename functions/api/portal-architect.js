@@ -376,6 +376,118 @@ export async function onRequest(context) {
       return corsResponse({ ok: true });
     }
 
+    /* ── SUBMIT-DESCARTE ─────────────────────── */
+    if (action === 'submit-descarte') {
+      const { project_number, fecha_visita, requisitos, via_propuesta, observaciones } = rest;
+      if (!project_number || !fecha_visita || !Array.isArray(requisitos) || !requisitos.length || !via_propuesta) {
+        return corsResponse({ error: 'Faltan campos obligatorios del formulario de descarte' }, 400);
+      }
+
+      /* fecha_visita no puede ser futura */
+      const today = new Date(); today.setHours(23, 59, 59, 999);
+      if (new Date(fecha_visita) > today) {
+        return corsResponse({ error: 'La fecha de visita no puede ser futura' }, 400);
+      }
+
+      /* Verificar que el proyecto le pertenece */
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=*&limit=1`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const checkData = await checkRes.json();
+      if (!checkData.length) {
+        return corsResponse({ error: 'Proyecto no encontrado' }, 403);
+      }
+      const p = checkData[0];
+
+      /* Verificar que no hay descarte pendiente o ya aprobado */
+      if (p.descarte_estado === 'pendiente') {
+        return corsResponse({ error: 'Ya hay un descarte pendiente de revisión para este trámite' }, 400);
+      }
+      if (p.descarte_estado === 'aprobado') {
+        return corsResponse({ error: 'El descarte ya fue aprobado' }, 400);
+      }
+
+      /* PATCH projects con datos del descarte */
+      const patchRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}`,
+        {
+          method: 'PATCH',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            descarte_estado:        'pendiente',
+            descarte_motivo:        JSON.stringify(requisitos),
+            descarte_via_propuesta: via_propuesta,
+            descarte_fecha_visita:  fecha_visita,
+            updated_at:             new Date().toISOString(),
+          }),
+        }
+      );
+      if (!patchRes.ok) {
+        return corsResponse({ error: 'Error al registrar el descarte' }, 500);
+      }
+
+      /* Construir descripción de requisitos para el email */
+      const REQUISITO_LABELS = {
+        sup_excede:         'Superficie real excede límite normativo',
+        avaluo_excede:      'Avalúo fiscal excede límite en UF',
+        fecha_construccion: 'Fecha de construcción fuera del período regularizable',
+        permisos_previos:   'Problemas con permisos previos',
+        otro_motivo:        'Otro motivo',
+      };
+      const svcLabels2 = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+      const viaLabels  = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', no_regularizable:'No regularizable' };
+      const svcName2   = svcLabels2[p.service_type] || p.service_type;
+      const viaOriginal = svcName2;
+      const viaPropuesta = viaLabels[via_propuesta] || via_propuesta;
+      const fecha2 = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+
+      const reqRows = requisitos.map(r => {
+        const label = REQUISITO_LABELS[r.tipo] || r.tipo;
+        const detalle = r.valor ? ` — ${r.valor}` : (r.descripcion ? ` — ${r.descripcion}` : '');
+        return `<tr><td style="padding:6px 10px;color:#718096;width:35%">${label}</td><td style="padding:6px 10px">${detalle || 'Ver adjuntos'}</td></tr>`;
+      }).join('');
+
+      await sendEmail({
+        to: 'hola@apparq.cl',
+        subject: `⚠️ Descarte pendiente revisión — ${project_number}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Protocolo de Descarte</h1>
+            </div>
+            <div style="background:#FEF3C7;border:2px solid #FCD34D;padding:14px 32px">
+              <p style="margin:0;font-size:13px;font-weight:700;color:#92400E">⚠️ Un arquitecto declaró no viabilidad. Requiere revisión antes de notificar al cliente.</p>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:35%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido} · ${p.architect_email}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Vía original</td><td style="padding:8px 10px">${viaOriginal}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Vía propuesta</td><td style="padding:8px 10px;font-weight:700;color:#7C3AED">${viaPropuesta}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Fecha visita</td><td style="padding:8px 10px">${fecha_visita}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Fecha declaración</td><td style="padding:8px 10px">${fecha2}</td></tr>
+              </table>
+              <h3 style="font-size:13px;color:#1a1a2e;margin-bottom:8px">Requisitos incumplidos declarados</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+                ${reqRows}
+              </table>
+              ${observaciones ? `<div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:8px;padding:14px 18px;margin-top:16px"><p style="margin:0 0 4px;font-size:12px;color:#0369A1;font-weight:700">OBSERVACIONES DEL ARQUITECTO</p><p style="margin:0;font-size:13px;color:#0C4A6E;line-height:1.6">${observaciones}</p></div>` : ''}
+              <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:14px 18px;margin-top:20px">
+                <p style="margin:0;font-size:13px;font-weight:700;color:#991B1B">El cliente NO ha sido notificado. Debes aprobar o rechazar antes de que el arquitecto pueda comunicar cualquier cambio.</p>
+              </div>
+              <div style="text-align:center;margin-top:20px">
+                <a href="https://apparq.cl/admin" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px">Revisar en el Admin</a>
+              </div>
+            </div>
+          </div>`,
+      }, RESEND_API_KEY);
+
+      return corsResponse({ ok: true });
+    }
+
     /* ── DECLARE-INVIABLE ─────────────────────── */
     if (action === 'declare-inviable') {
       const { project_number, informe } = rest;
@@ -393,6 +505,11 @@ export async function onRequest(context) {
         return corsResponse({ error: 'Proyecto no encontrado' }, 403);
       }
       const p = checkData[0];
+
+      /* Verificar que el descarte fue aprobado por APPARQ */
+      if (p.descarte_estado !== 'aprobado') {
+        return corsResponse({ error: 'Debes completar el Protocolo de Descarte y obtener aprobación de APPARQ antes de declarar el trámite no viable.' }, 403);
+      }
 
       /* Actualizar stage a no_viable y guardar informe */
       await fetch(

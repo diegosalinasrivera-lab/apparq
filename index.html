@@ -5259,15 +5259,113 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           </div>
         </div>
 
-        <details style="margin-bottom:1rem;border:1.5px solid #FECACA;border-radius:var(--radius);overflow:hidden;">
-          <summary style="background:#FEF2F2;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#991B1B;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">⚠️ Declarar trámite no viable <span style="font-weight:400;font-size:0.72rem;">▼</span></summary>
-          <div style="padding:0.85rem 1rem;background:#fff;">
-            <p style="font-size:0.78rem;color:#7F1D1D;margin:0 0 0.6rem;line-height:1.5;">Si la propiedad no es técnicamente viable, debes dejar constancia con un informe fundado. Se notificará al cliente y a APPARQ. El pago E1 no es reembolsable.</p>
-            <textarea id="paInviableInforme" placeholder="Describe las razones técnicas de inviabilidad (normativa, distanciamientos, uso de suelo, etc.)…" maxlength="1200" style="width:100%;min-height:90px;border:1px solid #FECACA;border-radius:var(--radius);padding:0.5rem 0.75rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;margin-bottom:0.5rem;"></textarea>
-            <button id="paDeclareInviable" style="width:100%;background:#DC2626;color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Declarar no viable y notificar</button>
-            <div id="paInviableMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+        <!-- Protocolo de Control de Calidad de Descartes -->
+        <div id="paDescarteSection" style="margin-bottom:1rem;border:1.5px solid #FECACA;border-radius:var(--radius);overflow:hidden;">
+          <div style="background:#FEF2F2;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#991B1B;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="document.getElementById('paDescarteForm').style.display=document.getElementById('paDescarteForm').style.display==='none'?'block':'none'">
+            <span>⚠️ Protocolo de Descarte (no viabilidad)</span>
+            <span style="font-weight:400;font-size:0.72rem;" id="paDescarteToggleIcon">▼</span>
           </div>
-        </details>
+          <div id="paDescarteForm" style="display:none;padding:0.9rem 1rem;background:#fff;">
+            <div id="paDescarteStatus" style="display:none;"></div>
+            <p style="font-size:0.78rem;color:#7F1D1D;margin:0 0 0.8rem;line-height:1.5;">Completa este formulario si determinaste que la propiedad no es viable para el trámite solicitado. <strong>APPARQ revisará la declaración antes de notificar al cliente.</strong></p>
+
+            <!-- Fecha de visita -->
+            <div style="margin-bottom:0.75rem;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.3rem;">Fecha de visita a terreno <span style="color:#DC2626">*</span></label>
+              <input type="date" id="paDescarteFechaVisita" max="${new Date().toISOString().split('T')[0]}" style="width:100%;border:1px solid #FECACA;border-radius:var(--radius);padding:0.45rem 0.65rem;font-size:0.82rem;box-sizing:border-box;" />
+            </div>
+
+            <!-- Requisitos incumplidos -->
+            <div style="margin-bottom:0.75rem;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.4rem;">Requisito(s) incumplido(s) <span style="color:#DC2626">*</span> (al menos uno)</label>
+
+              <!-- Superficie excede -->
+              <div class="pa-req-block" style="border:1px solid #e2e8f0;border-radius:var(--radius);padding:0.6rem 0.75rem;margin-bottom:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;font-weight:700;cursor:pointer;">
+                  <input type="checkbox" id="paReqSup" style="width:16px;height:16px;cursor:pointer;accent-color:#DC2626;" />
+                  Superficie real excede límite normativo
+                </label>
+                <div id="paReqSupDet" style="display:none;margin-top:0.5rem;">
+                  <input type="number" id="paReqSupVal" placeholder="Superficie real levantada (m²)" style="width:100%;border:1px solid #FECACA;border-radius:var(--radius);padding:0.4rem 0.6rem;font-size:0.8rem;box-sizing:border-box;margin-bottom:0.4rem;" />
+                  <input type="file" id="paReqSupFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:0.75rem;width:100%;" />
+                  <p style="font-size:0.68rem;color:var(--muted);margin:0.2rem 0 0;">Adjunta levantamiento o croquis (obligatorio)</p>
+                </div>
+              </div>
+
+              <!-- Avalúo excede -->
+              <div class="pa-req-block" style="border:1px solid #e2e8f0;border-radius:var(--radius);padding:0.6rem 0.75rem;margin-bottom:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;font-weight:700;cursor:pointer;">
+                  <input type="checkbox" id="paReqAvaluo" style="width:16px;height:16px;cursor:pointer;accent-color:#DC2626;" />
+                  Avalúo fiscal excede límite en UF
+                </label>
+                <div id="paReqAvaluoDet" style="display:none;margin-top:0.5rem;">
+                  <input type="number" step="0.01" id="paReqAvaluoVal" placeholder="Avalúo fiscal en UF" style="width:100%;border:1px solid #FECACA;border-radius:var(--radius);padding:0.4rem 0.6rem;font-size:0.8rem;box-sizing:border-box;margin-bottom:0.4rem;" />
+                  <input type="file" id="paReqAvaluoFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:0.75rem;width:100%;" />
+                  <p style="font-size:0.68rem;color:var(--muted);margin:0.2rem 0 0;">Adjunta certificado de avalúo (obligatorio)</p>
+                </div>
+              </div>
+
+              <!-- Fecha construcción -->
+              <div class="pa-req-block" style="border:1px solid #e2e8f0;border-radius:var(--radius);padding:0.6rem 0.75rem;margin-bottom:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;font-weight:700;cursor:pointer;">
+                  <input type="checkbox" id="paReqFecha" style="width:16px;height:16px;cursor:pointer;accent-color:#DC2626;" />
+                  Fecha de construcción fuera del período regularizable
+                </label>
+                <div id="paReqFechaDet" style="display:none;margin-top:0.5rem;">
+                  <input type="text" id="paReqFechaVal" placeholder="Fecha estimada de construcción (ej: 2024)" style="width:100%;border:1px solid #FECACA;border-radius:var(--radius);padding:0.4rem 0.6rem;font-size:0.8rem;box-sizing:border-box;margin-bottom:0.4rem;" />
+                  <input type="file" id="paReqFechaFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:0.75rem;width:100%;" />
+                  <p style="font-size:0.68rem;color:var(--muted);margin:0.2rem 0 0;">Adjunta documentación o describe evidencia</p>
+                </div>
+              </div>
+
+              <!-- Permisos previos -->
+              <div class="pa-req-block" style="border:1px solid #e2e8f0;border-radius:var(--radius);padding:0.6rem 0.75rem;margin-bottom:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;font-weight:700;cursor:pointer;">
+                  <input type="checkbox" id="paReqPermisos" style="width:16px;height:16px;cursor:pointer;accent-color:#DC2626;" />
+                  Problemas con permisos previos
+                </label>
+                <div id="paReqPermisosDet" style="display:none;margin-top:0.5rem;">
+                  <textarea id="paReqPermisosDesc" placeholder="Describe el problema con permisos previos…" style="width:100%;min-height:64px;border:1px solid #FECACA;border-radius:var(--radius);padding:0.4rem 0.6rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;margin-bottom:0.4rem;"></textarea>
+                  <input type="file" id="paReqPermisosFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:0.75rem;width:100%;" />
+                </div>
+              </div>
+
+              <!-- Otro motivo -->
+              <div class="pa-req-block" style="border:1px solid #e2e8f0;border-radius:var(--radius);padding:0.6rem 0.75rem;margin-bottom:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;font-weight:700;cursor:pointer;">
+                  <input type="checkbox" id="paReqOtro" style="width:16px;height:16px;cursor:pointer;accent-color:#DC2626;" />
+                  Otro motivo técnico
+                </label>
+                <div id="paReqOtroDet" style="display:none;margin-top:0.5rem;">
+                  <textarea id="paReqOtroDesc" placeholder="Describe el motivo técnico de no viabilidad (mínimo 100 caracteres)…" minlength="100" style="width:100%;min-height:80px;border:1px solid #FECACA;border-radius:var(--radius);padding:0.4rem 0.6rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;margin-bottom:0.4rem;"></textarea>
+                  <input type="file" id="paReqOtroFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:0.75rem;width:100%;" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Vía propuesta -->
+            <div style="margin-bottom:0.75rem;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.3rem;">Vía alternativa propuesta <span style="color:#DC2626">*</span></label>
+              <select id="paDescarteVia" style="width:100%;border:1px solid #FECACA;border-radius:var(--radius);padding:0.45rem 0.6rem;font-size:0.82rem;background:#fff;box-sizing:border-box;">
+                <option value="">— Selecciona —</option>
+                <option value="regularizacion">Regularización</option>
+                <option value="ampliacion">Ampliación</option>
+                <option value="obra-nueva">Obra Nueva</option>
+                <option value="no_regularizable">No regularizable (descarte definitivo)</option>
+              </select>
+            </div>
+
+            <!-- Observaciones -->
+            <div style="margin-bottom:0.85rem;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.3rem;">Observaciones adicionales (opcional)</label>
+              <textarea id="paDescarteObs" placeholder="Información adicional para APPARQ…" maxlength="800" style="width:100%;min-height:64px;border:1px solid var(--border);border-radius:var(--radius);padding:0.45rem 0.65rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+
+            <button id="paDescarteSubmit" style="width:100%;background:#DC2626;color:#fff;border:none;border-radius:var(--radius);padding:0.6rem 1rem;font-size:0.85rem;font-weight:700;cursor:pointer;">Enviar para revisión APPARQ</button>
+            <div id="paDescarteMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+            <p style="font-size:0.7rem;color:var(--muted);margin:0.5rem 0 0;line-height:1.5;">El cliente NO será notificado hasta que APPARQ apruebe el descarte.</p>
+          </div>
+        </div>
 
         <details style="margin-bottom:1rem;border:1.5px solid #FED7AA;border-radius:var(--radius);overflow:hidden;">
           <summary style="background:#FFF7ED;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#92400E;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">🔄 Rechazar trámite y reasignar <span style="font-weight:400;font-size:0.72rem;">▼</span></summary>
@@ -5394,28 +5492,136 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       };
     }
 
-    /* Declare inviable */
-    document.getElementById('paDeclareInviable').onclick = async () => {
-      const informe = document.getElementById('paInviableInforme').value.trim();
-      const msgEl   = document.getElementById('paInviableMsg');
-      const btn     = document.getElementById('paDeclareInviable');
-      if (!informe) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Debes ingresar el informe técnico.'; return; }
-      if (!confirm('¿Confirmas declarar este trámite como NO VIABLE? Se notificará al cliente y a APPARQ. Esta acción no se puede deshacer.')) return;
+    /* Protocolo de Descarte — mostrar/ocultar detalles de cada requisito */
+    [
+      ['paReqSup',     'paReqSupDet'],
+      ['paReqAvaluo',  'paReqAvaluoDet'],
+      ['paReqFecha',   'paReqFechaDet'],
+      ['paReqPermisos','paReqPermisosDet'],
+      ['paReqOtro',    'paReqOtroDet'],
+    ].forEach(([cbId, detId]) => {
+      const cb  = document.getElementById(cbId);
+      const det = document.getElementById(detId);
+      if (cb && det) cb.onchange = () => { det.style.display = cb.checked ? 'block' : 'none'; };
+    });
+
+    /* Toggle icon del acordeón */
+    document.getElementById('paDescarteForm') && (() => {
+      const form = document.getElementById('paDescarteForm');
+      const icon = document.getElementById('paDescarteToggleIcon');
+      const observer = new MutationObserver(() => {
+        if (icon) icon.textContent = form.style.display === 'none' ? '▼' : '▲';
+      });
+      observer.observe(form, { attributes: true, attributeFilter: ['style'] });
+    })();
+
+    /* Mostrar estado del descarte si ya existe */
+    (() => {
+      const statusEl = document.getElementById('paDescarteStatus');
+      if (!statusEl) return;
+      const descarteEstado = p.descarte_estado;
+      if (!descarteEstado) return;
+      const configs = {
+        pendiente: { bg:'#FEF3C7', border:'#FCD34D', color:'#92400E', icon:'⏳', text:'Descarte enviado — pendiente revisión APPARQ. El cliente no ha sido notificado.' },
+        aprobado:  { bg:'#D1FAE5', border:'#6EE7B7', color:'#065F46', icon:'✅', text:'Descarte aprobado por APPARQ. Ya puedes informar al cliente el cambio de vía.' },
+        rechazado: { bg:'#FEF2F2', border:'#FECACA', color:'#991B1B', icon:'❌', text:`Descarte rechazado. ${p.descarte_notas_admin ? 'Motivo: ' + p.descarte_notas_admin : 'El trámite continúa en la vía original.'}` },
+      };
+      const cfg = configs[descarteEstado];
+      if (!cfg) return;
+      statusEl.style.cssText = `display:block;background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.75rem;`;
+      statusEl.innerHTML = `<p style="margin:0;font-size:0.8rem;font-weight:700;color:${cfg.color};">${cfg.icon} ${cfg.text}</p>`;
+      /* Si ya hay un descarte aprobado o pendiente, deshabilitar el formulario */
+      if (descarteEstado === 'pendiente' || descarteEstado === 'aprobado') {
+        const submitBtn = document.getElementById('paDescarteSubmit');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.5'; submitBtn.style.cursor = 'not-allowed'; }
+      }
+    })();
+
+    /* Submit descarte */
+    document.getElementById('paDescarteSubmit') && (document.getElementById('paDescarteSubmit').onclick = async () => {
+      const msgEl = document.getElementById('paDescarteMsg');
+      const btn   = document.getElementById('paDescarteSubmit');
+
+      const fechaVisita = document.getElementById('paDescarteFechaVisita').value;
+      if (!fechaVisita) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Ingresa la fecha de visita a terreno.'; return;
+      }
+      if (new Date(fechaVisita) > new Date()) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='La fecha de visita no puede ser futura.'; return;
+      }
+
+      /* Recopilar requisitos marcados */
+      const requisitos = [];
+      if (document.getElementById('paReqSup').checked) {
+        const val = document.getElementById('paReqSupVal').value;
+        if (!val) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Ingresa la superficie real para el requisito de superficie.'; return; }
+        requisitos.push({ tipo: 'sup_excede', valor: val + ' m²' });
+      }
+      if (document.getElementById('paReqAvaluo').checked) {
+        const val = document.getElementById('paReqAvaluoVal').value;
+        if (!val) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Ingresa el avalúo fiscal en UF.'; return; }
+        requisitos.push({ tipo: 'avaluo_excede', valor: val + ' UF' });
+      }
+      if (document.getElementById('paReqFecha').checked) {
+        const val = document.getElementById('paReqFechaVal').value;
+        requisitos.push({ tipo: 'fecha_construccion', valor: val });
+      }
+      if (document.getElementById('paReqPermisos').checked) {
+        const desc = document.getElementById('paReqPermisosDesc').value.trim();
+        requisitos.push({ tipo: 'permisos_previos', descripcion: desc });
+      }
+      if (document.getElementById('paReqOtro').checked) {
+        const desc = document.getElementById('paReqOtroDesc').value.trim();
+        if (desc.length < 100) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='La descripción del otro motivo debe tener al menos 100 caracteres.'; return; }
+        requisitos.push({ tipo: 'otro_motivo', descripcion: desc });
+      }
+
+      if (!requisitos.length) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Debes marcar al menos un requisito incumplido.'; return;
+      }
+
+      const via = document.getElementById('paDescarteVia').value;
+      if (!via) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Selecciona la vía alternativa propuesta.'; return; }
+
+      const obs = document.getElementById('paDescarteObs').value.trim();
+
+      if (!confirm('¿Confirmas enviar la declaración de descarte a APPARQ para revisión? El cliente NO será notificado hasta que APPARQ apruebe.')) return;
+
       btn.disabled = true; btn.textContent = 'Enviando…';
       try {
         const res  = await fetch('/api/portal-architect', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'declare-inviable', token, project_number: p.project_number, informe }),
+          body: JSON.stringify({
+            action:       'submit-descarte',
+            token,
+            project_number: p.project_number,
+            fecha_visita: fechaVisita,
+            requisitos,
+            via_propuesta: via,
+            observaciones: obs,
+          }),
         });
         const data = await res.json();
         msgEl.style.display = '';
         if (data.ok) {
           msgEl.style.color = '#059669';
-          msgEl.textContent = '✓ Declaración enviada. Cliente y APPARQ fueron notificados.';
+          msgEl.textContent = '✓ Descarte enviado a APPARQ para revisión. Te notificaremos por email con la decisión.';
           btn.style.display = 'none';
-        } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al enviar'; }
-      } finally { btn.disabled = false; if (btn.style.display !== 'none') btn.textContent = 'Declarar no viable y notificar'; }
-    };
+          /* Actualizar bloque de estado */
+          const statusEl = document.getElementById('paDescarteStatus');
+          if (statusEl) {
+            statusEl.style.cssText = 'display:block;background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.75rem;';
+            statusEl.innerHTML = '<p style="margin:0;font-size:0.8rem;font-weight:700;color:#92400E;">⏳ Descarte enviado — pendiente revisión APPARQ. El cliente no ha sido notificado.</p>';
+          }
+        } else {
+          msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al enviar descarte';
+          btn.disabled = false; btn.textContent = 'Enviar para revisión APPARQ';
+        }
+      } catch(e) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent = 'Error de conexión';
+        btn.disabled = false; btn.textContent = 'Enviar para revisión APPARQ';
+      }
+    });
 
     /* Reject tramite */
     document.getElementById('paRejectBtn').onclick = async () => {
