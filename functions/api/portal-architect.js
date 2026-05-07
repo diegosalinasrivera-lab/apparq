@@ -165,7 +165,7 @@ export async function onRequest(context) {
 
       /* Verificar que el proyecto le pertenece */
       const checkRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=id,service_type&limit=1`,
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=id,service_type,cliente_contactado&limit=1`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
       );
       const checkData = await checkRes.json();
@@ -214,6 +214,21 @@ export async function onRequest(context) {
           nota:           nota || `Etapa actualizada: ${STAGE_LABELS[new_stage] || new_stage}`,
         }),
       });
+
+      /* Si el arquitecto aún no había confirmado contacto, marcarlo automáticamente */
+      if (!checkData[0].cliente_contactado) {
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json', 'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({ cliente_contactado: true, cliente_contactado_at: new Date().toISOString() }),
+          }
+        );
+      }
 
       /* Enviar email a hola@apparq.cl con la actualización */
       try {

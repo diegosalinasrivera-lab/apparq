@@ -1030,6 +1030,7 @@
                       <th>Servicio</th>
                       <th>Dirección / Comuna</th>
                       <th>Arquitecto</th>
+                      <th title="¿Arquitecto contactó al cliente?">Contacto</th>
                       <th>Etapa</th>
                       <th>Fecha</th>
                       <th>Acciones</th>
@@ -1145,10 +1146,11 @@
       <button class="modal-close" data-close="modal-tramite-detail">✕</button>
     </div>
     <div class="modal-body" style="padding:0">
-      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 20px;background:var(--bg-soft)">
+      <div style="display:flex;align-items:center;border-bottom:1px solid var(--border);padding:0 20px;background:var(--bg-soft)">
         <button class="detail-tab-btn active" data-dtab="avances" onclick="switchDetailTab('avances')">📋 Avances</button>
         <button class="detail-tab-btn" data-dtab="mensajes" onclick="switchDetailTab('mensajes')">💬 Mensajes</button>
         <button class="detail-tab-btn" data-dtab="archivos" onclick="switchDetailTab('archivos')">📎 Archivos</button>
+        <button onclick="refreshTramiteDetail()" title="Recargar datos" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;padding:8px;color:var(--muted);transition:color 0.15s" onmouseover="this.style.color='var(--dark)'" onmouseout="this.style.color='var(--muted)'">🔄</button>
       </div>
       <div id="detail-loading" class="loading-state" style="padding:40px 24px"><div class="spinner spinner-dark"></div> Cargando…</div>
       <div id="detail-panels" style="display:none;padding:20px 24px;max-height:62vh;overflow-y:auto">
@@ -1923,7 +1925,7 @@ function renderTramitesTable() {
   if (tramiteFilter === 'completados') list = projects.filter(p => p.stage === 'completado');
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(p => `
@@ -1941,6 +1943,13 @@ function renderTramitesTable() {
       <td>${p.architect_nombre
         ? `<div>${p.architect_nombre} ${p.architect_apellido||''}</div><div style="font-size:11px;color:var(--muted)">${p.architect_email||''}</div>`
         : '<span style="color:var(--light);font-size:12px">Sin asignar</span>'
+      }</td>
+      <td style="text-align:center">${
+        !p.architect_email || p.stage === 'completado'
+          ? '<span style="color:var(--muted);font-size:12px">—</span>'
+          : p.cliente_contactado
+            ? '<span title="Cliente contactado" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px #d1fae5"></span>'
+            : '<span title="Sin contacto aún" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 3px #fee2e2"></span>'
       }</td>
       <td>${stageBadge(p.stage)}</td>
       <td>${fmtDate(p.created_at)}</td>
