@@ -1522,6 +1522,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div id="leadMsg" style="display:none;font-size:0.78rem;margin-top:0.45rem;"></div>
         </div>
 
+        <!-- Aviso no reembolso E1 -->
+        <div id="e1-notice" class="hidden" style="
+          margin: 0.6rem 0 0.2rem;
+          background: #FFFBEB;
+          border: 1.5px solid #FDE68A;
+          border-radius: 9px;
+          padding: 0.65rem 0.85rem;
+          font-size: 0.75rem;
+          color: #78350F;
+          line-height: 1.55;
+        ">
+          ⚠️ <strong>Importante:</strong> Si elegiste el trámite equivocado, tu arquitecto te lo notificará y APPARQ te redirigirá al servicio correcto con el precio correspondiente. El pago de la <strong>Etapa 1 no es reembolsable</strong> — se aplica íntegramente al nuevo trámite.
+        </div>
+
         <button class="btn-cta" id="btnCta" disabled>Comenzar mi trámite →</button>
 
       </div>
@@ -1873,6 +1887,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="pay-amount-lbl" id="wizPayAmtLbl">Monto a pagar ahora · E1 (20%)</div>
           <div class="pay-amount-val" id="wizPayAmt">$0</div>
           <div class="pay-amount-sub" id="wizPaySub">Del total de $0</div>
+        </div>
+
+        <!-- Aviso no reembolso E1 -->
+        <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:9px;padding:0.7rem 0.9rem;margin-bottom:1rem;font-size:0.76rem;color:#78350F;line-height:1.55;">
+          ⚠️ <strong>El pago de Etapa 1 no es reembolsable.</strong> Si el trámite seleccionado no corresponde a tu caso, tu arquitecto te lo informará y APPARQ te redirigirá al servicio correcto — el monto pagado se aplica al nuevo trámite.
         </div>
 
         <!-- Métodos aceptados -->
@@ -3678,6 +3697,7 @@ function recalc() {
   if (!isReady()) {
     box.classList.add('hidden');
     document.getElementById('leadBox')?.classList.add('hidden');
+    document.getElementById('e1-notice')?.classList.add('hidden');
     cta.disabled = true;
     sub.textContent = 'Completa los campos';
     return;
@@ -3702,6 +3722,9 @@ function recalc() {
   box.classList.remove('hidden');
   cta.disabled = false;
   sub.textContent = '¡Listo! Tu cotización';
+
+  /* Mostrar aviso E1 no reembolsable */
+  document.getElementById('e1-notice')?.classList.remove('hidden');
 
   /* Mostrar captura de lead junto con el precio */
   const leadBox = document.getElementById('leadBox');
