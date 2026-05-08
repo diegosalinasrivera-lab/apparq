@@ -1003,6 +1003,7 @@
                       <th>Foto</th>
                       <th>Nombre</th>
                       <th>Email</th>
+                      <th>Teléfono</th>
                       <th>Comunas</th>
                       <th>Trámites</th>
                       <th>Activo</th>
@@ -1655,11 +1656,11 @@ function renderArchitectsTable() {
       })
     : architects;
   if (!architects.length) {
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👷</div>No hay arquitectos registrados</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">👷</div>No hay arquitectos registrados</div></td></tr>';
     return;
   }
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔍</div>Sin resultados para "<strong>${q}</strong>"</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div>Sin resultados para "<strong>${q}</strong>"</div></td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(a => {
@@ -1694,6 +1695,7 @@ function renderArchitectsTable() {
         ${descarteMetric}
       </td>
       <td style="font-size:12.5px;color:var(--muted)">${a.email || '—'}</td>
+      <td style="font-size:12.5px;white-space:nowrap;">${a.telefono ? `<a href="tel:${a.telefono}" style="color:var(--muted);text-decoration:none;">${a.telefono}</a>` : '<span style="color:var(--light)">—</span>'}</td>
       <td><div class="tags">${overloadWarning}${tags || '<span style="color:var(--light);font-size:12px">—</span>'}</div></td>
       <td><div class="tags">${tramites.map(t => `<span class="tag">${t}</span>`).join('') || '—'}</div></td>
       <td>
