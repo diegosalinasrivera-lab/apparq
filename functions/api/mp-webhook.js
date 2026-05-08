@@ -166,14 +166,16 @@ export async function onRequest(context) {
       /* ── Declarar emailCliente al inicio del bloque approved ── */
       const emailCliente = payment.payer?.email;
 
-      /* 1 — Idempotencia: verificar si el pago ya fue procesado */
-      if (SUPABASE_URL && SUPABASE_KEY) {
+      /* 1 — Idempotencia: verificar si el pago ya fue procesado
+             SERVICE_KEY bypasa RLS para que el SELECT devuelva el registro si ya existe */
+      const idempotencyKey = SERVICE_KEY || SUPABASE_KEY;
+      if (SUPABASE_URL && idempotencyKey) {
         const checkRes = await fetch(
           `${SUPABASE_URL}/rest/v1/payments?mp_payment_id=eq.${String(payment.id)}&select=id`,
           {
             headers: {
-              'apikey':        SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'apikey':        idempotencyKey,
+              'Authorization': `Bearer ${idempotencyKey}`,
             },
           }
         );
@@ -186,8 +188,9 @@ export async function onRequest(context) {
         }
       }
 
-      /* 2 — Guardar en Supabase */
-      if (SUPABASE_URL && SUPABASE_KEY) {
+      /* 2 — Guardar en Supabase (SERVICE_KEY para bypassear RLS en escritura)
+             409 = constraint UNIQUE mp_payment_id disparado por carrera de webhooks → retornar OK sin duplicar. */
+      if (SUPABASE_URL && idempotencyKey) {
         const record = {
           mp_payment_id:  String(payment.id),
           external_ref:   payment.external_reference,
@@ -202,8 +205,8 @@ export async function onRequest(context) {
         const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
           method:  'POST',
           headers: {
-            'apikey':        SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'apikey':        idempotencyKey,
+            'Authorization': `Bearer ${idempotencyKey}`,
             'Content-Type':  'application/json',
             'Prefer':        'return=minimal',
           },
@@ -212,6 +215,10 @@ export async function onRequest(context) {
 
         if (!sbRes.ok) {
           const err = await sbRes.text();
+          if (sbRes.status === 409) {
+            console.log('Pago duplicado bloqueado por constraint único (carrera entre webhooks):', payment.id);
+            return new Response('OK', { status: 200 });
+          }
           console.error('Error Supabase al guardar pago:', err);
         } else {
           console.log('Pago guardado en Supabase:', payment.id);
