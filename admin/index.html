@@ -981,6 +981,16 @@
               <span>+</span> Agregar Arquitecto
             </button>
           </div>
+          <div style="margin-bottom:1rem;">
+            <div style="position:relative;max-width:360px;">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
+              <input id="arch-search" type="text" placeholder="Buscar por nombre o correo…"
+                style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13.5px;outline:none;box-sizing:border-box;transition:border-color .15s;"
+                oninput="renderArchitectsTable()"
+                onfocus="this.style.borderColor='#667eea'"
+                onblur="this.style.borderColor='#e2e8f0'" />
+            </div>
+          </div>
           <div id="arch-loading" class="loading-state">
             <div class="spinner spinner-dark"></div> Cargando…
           </div>
@@ -1636,11 +1646,23 @@ async function loadArchitects() {
 
 function renderArchitectsTable() {
   const tbody = document.getElementById('arch-table-body');
+  const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
+  const list = q
+    ? architects.filter(a => {
+        const nombre = `${a.nombre || ''} ${a.apellido || ''}`.toLowerCase();
+        const email  = (a.email || '').toLowerCase();
+        return nombre.includes(q) || email.includes(q);
+      })
+    : architects;
   if (!architects.length) {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👷</div>No hay arquitectos registrados</div></td></tr>';
     return;
   }
-  tbody.innerHTML = architects.map(a => {
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔍</div>Sin resultados para "<strong>${q}</strong>"</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(a => {
     const comunas = Array.isArray(a.comunas) ? a.comunas : (a.comunas ? [a.comunas] : []);
     const tramites = Array.isArray(a.tramites) ? a.tramites : (a.tramites ? [a.tramites] : []);
     const shown = comunas.slice(0, 3);
