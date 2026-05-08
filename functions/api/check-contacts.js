@@ -3,9 +3,9 @@
    Cron interno: detecta trámites donde el arquitecto
    no contactó al cliente en el plazo contractual.
 
-   Umbral 1 — 24h continuas: aviso al arquitecto
-     "tienes 5 horas más o el trámite será reasignado"
-   Umbral 2 — 29h continuas: reasignación automática
+   Umbral 1 — 96h (4 días): aviso al arquitecto
+     "tienes 24 horas más o el trámite será reasignado"
+   Umbral 2 — 120h (5 días): reasignación automática
      + email al nuevo arquitecto + alerta a APPARQ
 
    GET /api/check-contacts
@@ -14,9 +14,9 @@
 
 const SUPABASE_URL  = 'https://ibdafnzlsufsshczqvoa.supabase.co';
 const ADMIN_EMAIL   = 'hola@apparq.cl';
-const WARN_HOURS    = 24;   /* aviso al arquitecto          */
-const GRACE_HOURS   = 5;    /* plazo adicional tras aviso   */
-const REASSIGN_HOURS = WARN_HOURS + GRACE_HOURS; /* 29h → reasignar */
+const WARN_HOURS    = 96;   /* 4 días → aviso al arquitecto         */
+const GRACE_HOURS   = 24;   /* 1 día adicional tras aviso           */
+const REASSIGN_HOURS = WARN_HOURS + GRACE_HOURS; /* 120h (5 días) → reasignar */
 
 function hoursElapsed(createdAt) {
   return (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
@@ -159,7 +159,7 @@ export async function onRequest(context) {
               </div>
               <div style="background:#fff;padding:28px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
                 <p style="font-size:14px;color:#4a5568;line-height:1.7">Hola ${p.architect_nombre},<br><br>
-                El trámite <strong>${p.project_number}</strong> ha sido reasignado a otro arquitecto porque no se confirmó el contacto con el cliente dentro del plazo contractual de 24 horas (cláusula 7b).</p>
+                El trámite <strong>${p.project_number}</strong> ha sido reasignado a otro arquitecto porque no se confirmó el contacto con el cliente dentro del plazo contractual de 5 días (cláusula 7b).</p>
                 <p style="font-size:13px;color:#718096">Si tienes alguna consulta, escríbenos a <a href="mailto:hola@apparq.cl">hola@apparq.cl</a>.</p>
                 <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 12px">
                 <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7</p>
@@ -189,7 +189,7 @@ export async function onRequest(context) {
                   <tr><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune || '—'}</td></tr>
                   <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Superficie</td><td style="padding:8px 10px">${p.m2 ? p.m2 + ' m²' : '—'}</td></tr>
                 </table>
-                <p style="margin:20px 0 4px;font-size:13px;color:#DC2626;font-weight:700">⚠️ Contacta a la cliente en las próximas 24 horas.</p>
+                <p style="margin:20px 0 4px;font-size:13px;color:#DC2626;font-weight:700">⚠️ Contacta al cliente en los próximos 5 días.</p>
                 <div style="text-align:center;margin:20px 0">
                   <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 32px;border-radius:6px;">apparq.cl → Soy Arquitecto</a>
                 </div>
@@ -250,11 +250,11 @@ export async function onRequest(context) {
           </div>
           <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
             <p style="font-size:14px;line-height:1.7">Hola <strong>${p.architect_nombre}</strong>,<br><br>
-            Han transcurrido más de <strong>24 horas</strong> desde que se te asignó el trámite <strong>${p.project_number}</strong> y aún no has confirmado el contacto con el/la cliente en la plataforma.</p>
+            Han transcurrido más de <strong>4 días</strong> desde que se te asignó el trámite <strong>${p.project_number}</strong> y aún no has confirmado el contacto con el/la cliente en la plataforma.</p>
             <div style="background:#FEF2F2;border:2px solid #F87171;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center">
               <p style="margin:0 0 6px;font-size:12px;color:#991B1B;font-weight:700;text-transform:uppercase">Plazo máximo para confirmar contacto</p>
               <p style="margin:0;font-size:26px;font-weight:900;color:#DC2626">${reassignDeadline}</p>
-              <p style="margin:10px 0 0;font-size:13px;color:#991B1B">Tienes <strong>${GRACE_HOURS} horas</strong> para confirmar el contacto.<br>Si no lo haces, el trámite será <strong>reasignado automáticamente</strong>.</p>
+              <p style="margin:10px 0 0;font-size:13px;color:#991B1B">Tienes <strong>24 horas</strong> para confirmar el contacto.<br>Si no lo haces, el trámite será <strong>reasignado automáticamente</strong>.</p>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:13px;margin:16px 0">
               <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Cliente</td><td style="padding:8px 10px;font-weight:700">${clientName}</td></tr>
