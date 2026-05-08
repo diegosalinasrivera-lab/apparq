@@ -77,15 +77,16 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
   /* Email al arquitecto */
   await sendEmail({
     to:      architect.email,
-    subject: `APPARQ · Trámite ${pnum} — Instrucciones de pago por etapas`,
+    subject: `🏗 Te asignaron un trámite — ${pnum} · ${svcName} · ${project.commune || ''} — APPARQ`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
         <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
           <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
-          <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Información de pagos — Portal del Arquitecto</p>
+          <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Se te ha asignado un nuevo trámite</p>
         </div>
         <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
-          <h2 style="margin-top:0;color:#1a1a2e">Hola ${architect.nombre}, estructura de pagos del trámite</h2>
+          <h2 style="margin-top:0;color:#1a1a2e">¡Hola ${architect.nombre}! Te asignaron un trámite 🎉</h2>
+          <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:0 0 20px;">Un cliente completó su pago y quedas a cargo de este proyecto. Contáctalo dentro de las próximas <strong>24 horas</strong> para coordinar la visita de levantamiento.</p>
 
           <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:14px 20px;margin:0 0 20px;text-align:center">
             <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700;text-transform:uppercase;">N° de Trámite</p>
