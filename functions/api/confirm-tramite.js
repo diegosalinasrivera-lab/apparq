@@ -119,6 +119,27 @@ export async function onRequest(context) {
       payment_id,   /* ID de pago de Mercado Pago */
     } = body;
 
+    /* ── Idempotencia: si el webhook ya procesó el proyecto, devolver datos existentes ── */
+    if (email && SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        const emailLower = email.trim().toLowerCase();
+        /* Buscar proyecto activo (no pendiente_pago) para este email */
+        const existRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/projects?client_email=eq.${encodeURIComponent(emailLower)}&stage=neq.pendiente_pago&select=id,project_number,stage&order=created_at.desc&limit=1`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        if (existRes.ok) {
+          const existing = await existRes.json();
+          if (existing.length > 0 && existing[0].stage !== 'pendiente_pago') {
+            console.log('Proyecto ya procesado por webhook, devolviendo:', existing[0].project_number);
+            return corsResponse({ ok: true, project_number: existing[0].project_number, already_processed: true });
+          }
+        }
+      } catch (idempErr) {
+        console.warn('Error en check idempotencia confirm-tramite:', idempErr);
+      }
+    }
+
     /* ── Auto-asignación de arquitecto ──────────── */
     let arquitecto = body.arquitecto || null;
     if (!arquitecto && SERVICE_KEY && commune && svc) {

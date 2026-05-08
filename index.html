@@ -2912,16 +2912,17 @@ let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, d
     if (saved.svc) {
       /* Restaurar estado global S (incluye datos del cliente para usar en confirm-tramite) */
       Object.assign(S, {
-        svc:        saved.svc,
-        svcSub:     saved.svcSub  || null,
-        m2:         saved.m2,
-        mat:        saved.mat,
-        dest:       Array.isArray(saved.dest) ? saved.dest : (saved.dest ? [saved.dest] : []),
-        djElig:     saved.djElig  || null,
-        djObra:     saved.djObra  || null,
-        commune:    saved.commune,
-        firma_data: saved.firma_data || null,
-        payment_id: paymentId || null,
+        svc:            saved.svc,
+        svcSub:         saved.svcSub  || null,
+        m2:             saved.m2,
+        mat:            saved.mat,
+        dest:           Array.isArray(saved.dest) ? saved.dest : (saved.dest ? [saved.dest] : []),
+        djElig:         saved.djElig  || null,
+        djObra:         saved.djObra  || null,
+        commune:        saved.commune,
+        firma_data:     saved.firma_data || null,
+        payment_id:     paymentId || null,
+        project_number: saved.project_number || null,
         /* Datos del cliente — evita race condition con campos del formulario */
         nombre:    saved.nombre   || '',
         apellido:  saved.apellido || '',
@@ -4167,6 +4168,27 @@ function setupPaymentStep() {
       const sigCv = document.getElementById('sigCanvas');
       const firmaData = (sigCv && sigHasDraw) ? sigCv.toDataURL('image/png') : null;
 
+      /* 1 — Pre-crear proyecto en Supabase antes del redirect a MP */
+      btn.textContent = 'Creando trámite…';
+      const preRes = await fetch('/api/pre-create-project', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:   document.getElementById('wizNombre')?.value,
+          apellido: document.getElementById('wizApellido')?.value,
+          email,
+          telefono: document.getElementById('wizTel')?.value,
+          rut:      document.getElementById('wizRut')?.value,
+          direccion: document.getElementById('wizAddr')?.value,
+          svc: S.svc, servicio_subtipo: S.svcSub || null,
+          m2: S.m2, commune, clp, e1,
+          firma_data: firmaData,
+        }),
+      });
+      const preData = await preRes.json();
+      if (!preRes.ok || !preData.project_number) throw new Error(preData.error || 'Error al pre-crear proyecto');
+      const projectNumber = preData.project_number;
+
       /* Guardar estado en localStorage para recuperar tras redirect */
       localStorage.setItem('apparq_wiz', JSON.stringify({
         nombre:   document.getElementById('wizNombre')?.value,
@@ -4181,8 +4203,11 @@ function setupPaymentStep() {
         firma_data: firmaData,
         selectedArqId:   S.selectedArqId   || null,
         selectedArqData: S.selectedArqData || null,
+        project_number:  projectNumber,
       }));
 
+      /* 2 — Crear pago con project_number como external_reference */
+      btn.textContent = 'Preparando pago…';
       const res  = await fetch('/api/create-payment', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4190,7 +4215,7 @@ function setupPaymentStep() {
           amount:      e1,
           description: `APPARQ · ${svcName}${S.m2 ? ' ' + S.m2 + 'm²' : ''} · ${commune}`,
           email,
-          reference:   `apparq-${Date.now()}`,
+          reference:   projectNumber,
         }),
       });
 
@@ -4388,6 +4413,31 @@ async function loadArchitectForCommune(commune) {
 }
 
 function _sendTramiteConfirmation(commune, arq) {
+    /* Si el webhook ya procesó el proyecto (pre-create-project + mp-webhook),
+       solo mostramos la pantalla de éxito con el project_number ya conocido.
+       confirm-tramite se llama solo como fallback (cliente sin project_number). */
+    if (S.project_number) {
+      console.log('Webhook ya procesó el proyecto:', S.project_number, '— omitiendo confirm-tramite');
+      if (typeof window.showTramiteSuccess === 'function') {
+        window.showTramiteSuccess({
+          projectNumber: S.project_number,
+          arq,
+          svc:     S.svc,
+          commune: commune,
+          waitlist: false,
+        });
+      }
+      const infoBox = document.getElementById('wizArqInfo');
+      if (infoBox) {
+        const numBadge = document.createElement('div');
+        numBadge.style.cssText = 'background:#FFF7ED;border:2px solid #E8503A;border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.75rem;text-align:center;';
+        numBadge.innerHTML = `<div style="font-size:0.7rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Tu número de trámite</div><div style="font-size:1.3rem;font-weight:900;color:#E8503A;letter-spacing:2px;">${S.project_number}</div><div style="font-size:0.7rem;color:#78350F;margin-top:3px;">Guárdalo para revisar el avance en <strong>apparq.cl → Mi trámite</strong></div>`;
+        infoBox.parentNode.insertBefore(numBadge, infoBox);
+      }
+      return;
+    }
+
+    /* Fallback: llamar confirm-tramite (caso sin project_number — cliente antiguo o error pre-create) */
     const { clp } = calcTotal();
     const e1pct   = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
     /* Usar S (restaurado desde localStorage tras MP redirect) con fallback al DOM */
