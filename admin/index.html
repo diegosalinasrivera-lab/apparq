@@ -2178,6 +2178,9 @@ async function openTramiteDetail(projectNumber) {
   // Reset tabs
   document.querySelectorAll('.detail-tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('[data-dtab="avances"]').classList.add('active');
+  // Reset panels — ocultar todos y limpiar para evitar datos obsoletos
+  document.querySelectorAll('.detail-panel').forEach(p => { p.style.display = 'none'; p.innerHTML = ''; });
+  document.getElementById('detail-panel-avances').style.display = 'block';
   // Remove previous descarte banner if any
   const prevBanner = document.getElementById('detail-descarte-banner');
   if (prevBanner) prevBanner.remove();
