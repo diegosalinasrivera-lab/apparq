@@ -1175,6 +1175,7 @@
         <button class="detail-tab-btn active" data-dtab="avances" onclick="switchDetailTab('avances')">📋 Avances</button>
         <button class="detail-tab-btn" data-dtab="mensajes" onclick="switchDetailTab('mensajes')">💬 Mensajes</button>
         <button class="detail-tab-btn" data-dtab="archivos" onclick="switchDetailTab('archivos')">📎 Archivos</button>
+        <button class="detail-tab-btn" data-dtab="pagos" onclick="switchDetailTab('pagos')">💰 Pagos arq.</button>
         <button onclick="refreshTramiteDetail()" title="Recargar datos" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;padding:8px;color:var(--muted);transition:color 0.15s" onmouseover="this.style.color='var(--dark)'" onmouseout="this.style.color='var(--muted)'">🔄</button>
       </div>
       <div id="detail-loading" class="loading-state" style="padding:40px 24px"><div class="spinner spinner-dark"></div> Cargando…</div>
@@ -1182,6 +1183,7 @@
         <div id="detail-panel-avances"  class="detail-panel"></div>
         <div id="detail-panel-mensajes" class="detail-panel" style="display:none"></div>
         <div id="detail-panel-archivos" class="detail-panel" style="display:none"></div>
+        <div id="detail-panel-pagos"    class="detail-panel" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -2182,7 +2184,7 @@ async function openTramiteDetail(projectNumber) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al cargar');
-    detailData = data;
+    detailData = { ...data, _pnum: projectNumber };
     renderDetailTab('avances');
     document.getElementById('detail-loading').style.display = 'none';
     document.getElementById('detail-panels').style.display = 'block';
@@ -2285,6 +2287,102 @@ function renderDetailTab(tab) {
           ${f.downloadUrl ? `<a href="${f.downloadUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="margin-top:4px">⬇ Descargar</a>` : '<span style="font-size:11px;color:var(--light)">URL no disponible</span>'}
         </div>`;
     }).join('')}</div>`;
+  }
+
+  /* ── Pagos arq. ────────────────────────────── */
+  if (tab === 'pagos') {
+    const panel = document.getElementById('detail-panel-pagos');
+    panel.style.display = 'block';
+    const proj = projects.find(p => p.project_number === detailData._pnum);
+    if (!proj) {
+      panel.innerHTML = '<div class="empty-state"><div class="empty-icon">💰</div>Sin datos de proyecto.</div>';
+      return;
+    }
+    const arch      = architects.find(a => a.email === proj.architect_email);
+    const arqPct    = arch?.patente ? 0.80 : 0.70;
+    const clp       = proj.total_clp || 0;
+    const e1c       = proj.e1_clp   || 0;
+    const is2stages = proj.service_type === 'informe' || proj.service_type === 'declaracion-jurada';
+    const clpFmt    = n => '$' + Math.round(n||0).toLocaleString('es-CL');
+    const pagos     = is2stages ? [
+      { etapa:'e1', label:'E1 · Inicio',              monto: Math.round(clp * 0.50 * arqPct), pagado: proj.arq_pago_e1, at: proj.arq_pago_e1_at },
+      { etapa:'e2', label: proj.service_type === 'informe' ? 'E2 · Entrega informe' : 'E2 · Cierre DJ', monto: Math.round(clp * 0.50 * arqPct), pagado: proj.arq_pago_e2, at: proj.arq_pago_e2_at },
+    ] : [
+      { etapa:'e1', label:'E1 · Levantamiento',   monto: Math.round(e1c * arqPct),        pagado: proj.arq_pago_e1, at: proj.arq_pago_e1_at },
+      { etapa:'e2', label:'E2 · Elaboración',     monto: Math.round(clp * 0.30 * arqPct), pagado: proj.arq_pago_e2, at: proj.arq_pago_e2_at },
+      { etapa:'e3', label:'E3 · Ingreso DOM',     monto: Math.round(clp * 0.30 * arqPct), pagado: proj.arq_pago_e3, at: proj.arq_pago_e3_at },
+      { etapa:'e4', label:'E4 · Recepción final', monto: Math.round(clp * 0.20 * arqPct), pagado: proj.arq_pago_e4, at: proj.arq_pago_e4_at },
+    ];
+
+    const arqTotal  = pagos.reduce((s, g) => s + g.monto, 0);
+    const cobrado   = pagos.filter(g => g.pagado).reduce((s, g) => s + g.monto, 0);
+    const pendiente = arqTotal - cobrado;
+
+    function renderPagosAdmin() {
+      panel.innerHTML = `
+        <div style="margin-bottom:12px">
+          <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">
+            Arquitecto: ${proj.architect_nombre} ${proj.architect_apellido}
+            ${arch ? `· ${Math.round(arqPct*100)}% honorarios ${arch.patente?'(con patente)':'(sin patente)'}` : ''}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+            <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:6px;padding:8px 10px;text-align:center">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Total honorarios</div>
+              <div style="font-size:14px;font-weight:800;color:var(--dark)">${clpFmt(arqTotal)}</div>
+            </div>
+            <div style="background:#D1FAE5;border:1px solid #6EE7B7;border-radius:6px;padding:8px 10px;text-align:center">
+              <div style="font-size:11px;color:#065F46;margin-bottom:2px">Cobrado</div>
+              <div style="font-size:14px;font-weight:800;color:#059669">${clpFmt(cobrado)}</div>
+            </div>
+            <div style="background:${pendiente>0?'#FEF3C7':'var(--bg-soft)'};border:1px solid ${pendiente>0?'#FCD34D':'var(--border)'};border-radius:6px;padding:8px 10px;text-align:center">
+              <div style="font-size:11px;color:${pendiente>0?'#92400E':'var(--muted)'};margin-bottom:2px">Pendiente</div>
+              <div style="font-size:14px;font-weight:800;color:${pendiente>0?'#B45309':'var(--dark)'}">${clpFmt(pendiente)}</div>
+            </div>
+          </div>
+        </div>
+        ${pagos.map((g, i) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;${i<pagos.length-1?'border-bottom:1px solid var(--border)':''}">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:var(--dark)">${g.label}</div>
+              <div style="font-size:11px;color:${g.pagado?'#059669':'var(--muted)'};">${g.pagado?`✓ Pagado${g.at?' · '+new Date(g.at).toLocaleDateString('es-CL'):''}`:' Pendiente'}</div>
+            </div>
+            <div style="font-size:14px;font-weight:800;color:var(--dark);white-space:nowrap">${clpFmt(g.monto)}</div>
+            ${!g.pagado
+              ? `<button onclick="adminMarkPago('${proj.id}','${g.etapa}',${i})" style="background:#059669;color:#fff;border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Marcar pagado</button>`
+              : `<span style="font-size:16px">✅</span>`
+            }
+          </div>
+        `).join('')}`;
+    }
+    renderPagosAdmin();
+
+    window._adminPagosState = { proj, pagos, renderPagosAdmin };
+  }
+}
+
+async function adminMarkPago(projectId, etapa, idx) {
+  const state = window._adminPagosState;
+  if (!state) return;
+  const g = state.pagos[idx];
+  if (!confirm(`¿Confirmar pago "${g.label}" de ${g.monto > 0 ? '$' + Math.round(g.monto).toLocaleString('es-CL') : 'este monto'} al arquitecto?`)) return;
+  try {
+    const res  = await apiPost({ action: 'mark_arq_payment', project_id: projectId, etapa });
+    if (res.ok) {
+      state.pagos[idx].pagado = true;
+      state.pagos[idx].at     = new Date().toISOString();
+      /* Update projects array so card reflects change */
+      const pIdx = projects.findIndex(p => p.id == projectId);
+      if (pIdx >= 0) {
+        projects[pIdx][`arq_pago_${etapa}`]    = true;
+        projects[pIdx][`arq_pago_${etapa}_at`] = state.pagos[idx].at;
+      }
+      state.renderPagosAdmin();
+      showToast(`✅ Pago ${etapa.toUpperCase()} marcado`, 'success');
+    } else {
+      showToast(res.error || 'Error al marcar pago', 'error');
+    }
+  } catch(e) {
+    showToast('Error de conexión', 'error');
   }
 }
 

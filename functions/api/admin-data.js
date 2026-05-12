@@ -308,7 +308,7 @@ export async function onRequest(context) {
 
     if (section === 'projects') {
       const [projResult, descartesResult] = await Promise.all([
-        sb('/projects?select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,architect_email,architect_nombre,architect_apellido,service_type,address,commune,m2,total_clp,e1_clp,stage,created_at,cliente_contactado,descarte_estado,descarte_motivo,descarte_via_propuesta,descarte_fecha_visita,descarte_revisado_at,descarte_notas_admin&order=created_at.desc&limit=200'),
+        sb('/projects?select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,architect_email,architect_nombre,architect_apellido,service_type,address,commune,m2,total_clp,e1_clp,stage,created_at,cliente_contactado,descarte_estado,descarte_motivo,descarte_via_propuesta,descarte_fecha_visita,descarte_revisado_at,descarte_notas_admin,arq_pago_e1,arq_pago_e2,arq_pago_e3,arq_pago_e4,arq_pago_e1_at,arq_pago_e2_at,arq_pago_e3_at,arq_pago_e4_at&order=created_at.desc&limit=200'),
         sb('/projects?descarte_estado=eq.pendiente&select=id,project_number,architect_nombre,architect_apellido,architect_email,service_type,commune,descarte_motivo,descarte_via_propuesta,descarte_fecha_visita,created_at&order=created_at.desc'),
       ]);
       if (!projResult.ok) return json({ error: 'Error al obtener trámites' }, 500);
@@ -629,6 +629,24 @@ export async function onRequest(context) {
       });
       if (!ok) return json({ error: 'Error al actualizar etapa', detail: data }, 500);
       return json({ success: true, project: Array.isArray(data) ? data[0] : data });
+    }
+
+    /* mark_arq_payment */
+    if (action === 'mark_arq_payment') {
+      const { project_id, etapa } = body;
+      if (!project_id || !etapa) return json({ error: 'project_id y etapa requeridos' }, 400);
+      const validEtapas = ['e1', 'e2', 'e3', 'e4'];
+      if (!validEtapas.includes(etapa)) return json({ error: 'Etapa inválida' }, 400);
+
+      const field   = `arq_pago_${etapa}`;
+      const fieldAt = `arq_pago_${etapa}_at`;
+      const { ok, data } = await sb(`/projects?id=eq.${project_id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ [field]: true, [fieldAt]: new Date().toISOString() }),
+        prefer: 'return=minimal',
+      });
+      if (!ok) return json({ error: 'Error al marcar pago', detail: data }, 500);
+      return json({ ok: true });
     }
 
     return json({ error: 'Acción no reconocida' }, 400);

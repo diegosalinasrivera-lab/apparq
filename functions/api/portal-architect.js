@@ -135,7 +135,7 @@ export async function onRequest(context) {
 
     /* Verificar que el email existe en architects */
     const arqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}&select=id,nombre,apellido,foto_url,activo,tramites,comunas&limit=1`,
+      `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}&select=id,nombre,apellido,foto_url,activo,tramites,comunas,patente&limit=1`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     const arqData = await arqRes.json();
@@ -151,7 +151,22 @@ export async function onRequest(context) {
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
       );
       const projects = projRes.ok ? await projRes.json() : [];
-      const enriched = projects.map(p => ({ ...p, stage_label: STAGE_LABELS[p.stage] || p.stage }));
+      const arqPct  = architect.patente ? 0.80 : 0.70;
+      const enriched = projects.map(p => {
+        const is2stages = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+        const clp  = p.total_clp || 0;
+        const e1c  = p.e1_clp   || 0;
+        const pagos = is2stages ? [
+          { etapa: 'e1', label: 'E1 · Inicio',                                                      monto: Math.round(clp * 0.50 * arqPct), pagado: p.arq_pago_e1 || false, at: p.arq_pago_e1_at },
+          { etapa: 'e2', label: p.service_type === 'informe' ? 'E2 · Entrega informe' : 'E2 · Cierre DJ', monto: Math.round(clp * 0.50 * arqPct), pagado: p.arq_pago_e2 || false, at: p.arq_pago_e2_at },
+        ] : [
+          { etapa: 'e1', label: 'E1 · Levantamiento',   monto: Math.round(e1c  * arqPct),        pagado: p.arq_pago_e1 || false, at: p.arq_pago_e1_at },
+          { etapa: 'e2', label: 'E2 · Elaboración',     monto: Math.round(clp  * 0.30 * arqPct), pagado: p.arq_pago_e2 || false, at: p.arq_pago_e2_at },
+          { etapa: 'e3', label: 'E3 · Ingreso DOM',     monto: Math.round(clp  * 0.30 * arqPct), pagado: p.arq_pago_e3 || false, at: p.arq_pago_e3_at },
+          { etapa: 'e4', label: 'E4 · Recepción final', monto: Math.round(clp  * 0.20 * arqPct), pagado: p.arq_pago_e4 || false, at: p.arq_pago_e4_at },
+        ];
+        return { ...p, stage_label: STAGE_LABELS[p.stage] || p.stage, pagos };
+      });
 
       return corsResponse({ projects: enriched, architect });
     }
@@ -846,6 +861,40 @@ export async function onRequest(context) {
       if (!updRes.ok) {
         return corsResponse({ error: 'Error al guardar foto' }, 500);
       }
+      return corsResponse({ ok: true });
+    }
+
+    /* ── MARK-PAYMENT ────────────────────────── */
+    if (action === 'mark-payment') {
+      const { project_number, etapa } = rest;
+      if (!project_number || !etapa) return corsResponse({ error: 'Faltan datos' }, 400);
+      const validEtapas = ['e1', 'e2', 'e3', 'e4'];
+      if (!validEtapas.includes(etapa)) return corsResponse({ error: 'Etapa inválida' }, 400);
+
+      /* Verificar que el proyecto pertenece al arquitecto */
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=id&limit=1`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const checkData = checkRes.ok ? await checkRes.json() : [];
+      if (!checkData.length) return corsResponse({ error: 'Proyecto no encontrado' }, 403);
+
+      const field   = `arq_pago_${etapa}`;
+      const fieldAt = `arq_pago_${etapa}_at`;
+      const patchRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type':  'application/json',
+            'Prefer':        'return=minimal',
+          },
+          body: JSON.stringify({ [field]: true, [fieldAt]: new Date().toISOString() }),
+        }
+      );
+      if (!patchRes.ok) return corsResponse({ error: 'Error al marcar pago' }, 500);
       return corsResponse({ ok: true });
     }
 

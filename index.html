@@ -5288,12 +5288,16 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     projects.forEach(p => {
       const card = document.createElement('div');
       card.className = 'pa-card';
+      const pagos = p.pagos || [];
+      const pagosPagados = pagos.filter(g => g.pagado).length;
+      const pagosDots = pagos.map(g => `<span title="${g.label}: ${g.pagado?'✓ Cobrado':'Pendiente'}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${g.pagado?'#059669':'#D1D5DB'};border:1.5px solid ${g.pagado?'#059669':'#9CA3AF'};"></span>`).join('');
       card.innerHTML = `
         <div class="pa-card-num">${p.project_number}</div>
         <div class="pa-card-title">${SVC_LABELS[p.service_type]||p.service_type} · ${p.commune} · ${p.m2}m²</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">Cliente: ${p.client_nombre} ${p.client_apellido}</div>
         <span class="pa-card-stage">${p.stage_label}</span>
-        ${p.unread_messages > 0 ? `<span class="pa-card-unread">${p.unread_messages} nuevo${p.unread_messages>1?'s':''}</span>` : ''}`;
+        ${p.unread_messages > 0 ? `<span class="pa-card-unread">${p.unread_messages} nuevo${p.unread_messages>1?'s':''}</span>` : ''}
+        ${pagos.length ? `<div style="margin-top:0.45rem;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:0.68rem;color:var(--muted);font-weight:600;">Pagos:</span>${pagosDots}<span style="font-size:0.68rem;color:${pagosPagados===pagos.length?'#059669':'var(--muted)'};">${pagosPagados}/${pagos.length}</span></div>` : ''}`;
       card.onclick = () => openArqDetail(p, token);
       box.appendChild(card);
     });
@@ -5333,6 +5337,12 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         <textarea id="paStageNota" placeholder="Describe el avance o novedad para el cliente (opcional)…" maxlength="600" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 0.75rem;font-size:0.8rem;font-family:inherit;resize:vertical;min-height:64px;box-sizing:border-box;margin-bottom:0.5rem;"></textarea>
         <button id="paUpdateStage" style="width:100%;background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Notificar avance al cliente</button>
         <div id="paStageMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+      </div>
+
+      <!-- Pagos del arquitecto -->
+      <div id="paPagosSection" style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem;margin-bottom:1rem;">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:0.65rem;">💰 Mis pagos de honorarios</div>
+        <div id="paPagosList"></div>
       </div>
 
       <div style="margin-top:0.75rem;">
@@ -5527,6 +5537,55 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     }
     paLoadUpdates();
     document.getElementById('paRefreshUpdates').onclick = paLoadUpdates;
+
+    /* ── Pagos de honorarios ─────────────────── */
+    const clpFmt = n => '$' + Math.round(n||0).toLocaleString('es-CL');
+    function renderPagos(pagosArr) {
+      const list = document.getElementById('paPagosList');
+      if (!list) return;
+      if (!pagosArr || !pagosArr.length) {
+        list.innerHTML = '<em style="font-size:0.78rem;color:var(--muted);">Sin datos de pago disponibles.</em>';
+        return;
+      }
+      list.innerHTML = pagosArr.map((g, i) => `
+        <div id="paPagoRow_${i}" style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0;${i < pagosArr.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--dark);">${g.label}</div>
+            <div style="font-size:0.78rem;color:${g.pagado?'#059669':'var(--muted)'};">${g.pagado ? `✓ Cobrado${g.at ? ' · ' + new Date(g.at).toLocaleDateString('es-CL') : ''}` : 'Pendiente'}</div>
+          </div>
+          <div style="font-size:0.85rem;font-weight:800;color:var(--dark);white-space:nowrap;">${clpFmt(g.monto)}</div>
+          ${!g.pagado ? `<button data-etapa="${g.etapa}" data-idx="${i}" class="pa-mark-pago-btn" style="background:#059669;color:#fff;border:none;border-radius:var(--radius-pill);padding:0.25rem 0.6rem;font-size:0.7rem;font-weight:700;cursor:pointer;white-space:nowrap;">Marcar cobrado</button>` : `<span style="font-size:1rem;">✅</span>`}
+        </div>
+      `).join('');
+
+      /* Handlers for mark buttons */
+      list.querySelectorAll('.pa-mark-pago-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const etapa = btn.dataset.etapa;
+          const idx   = parseInt(btn.dataset.idx, 10);
+          if (!confirm(`¿Confirmar que recibiste el pago "${pagosArr[idx].label}" (${clpFmt(pagosArr[idx].monto)})?`)) return;
+          btn.disabled = true; btn.textContent = '…';
+          try {
+            const res  = await fetch('/api/portal-architect', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'mark-payment', token, project_number: p.project_number, etapa }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+              pagosArr[idx].pagado = true;
+              pagosArr[idx].at     = new Date().toISOString();
+              renderPagos(pagosArr);
+            } else {
+              btn.disabled = false; btn.textContent = 'Marcar cobrado';
+              alert(data.error || 'Error al marcar pago');
+            }
+          } catch(e) {
+            btn.disabled = false; btn.textContent = 'Marcar cobrado';
+          }
+        };
+      });
+    }
+    renderPagos(p.pagos || []);
 
     /* Update stage */
     document.getElementById('paUpdateStage').onclick = async () => {
