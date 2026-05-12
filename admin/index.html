@@ -1989,9 +1989,14 @@ async function loadTramites() {
   document.getElementById('tram-content').style.display = 'none';
   document.getElementById('descartes-section').style.display = 'none';
   try {
-    const d = await apiGet('projects');
+    /* Cargar proyectos y arquitectos en paralelo (patente necesaria para cálculo de pagos) */
+    const [d, archD] = await Promise.all([
+      apiGet('projects'),
+      architects.length ? Promise.resolve({ architects }) : apiGet('architects'),
+    ]);
     projects = d.projects || [];
     descartesPendientes = d.descartes_pendientes || [];
+    if (archD.architects) architects = archD.architects;
     renderTramitesTable();
     renderDescartesPendientes();
     document.getElementById('tram-loading').style.display = 'none';
