@@ -5956,6 +5956,43 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     }
   };
 
+  /* ── Detectar magic link en el hash de la URL ── */
+  (function checkMagicLinkHash() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const type = params.get('type');
+    if (type !== 'magiclink' && type !== 'signup') return;
+    const token        = params.get('access_token');
+    const refreshToken = params.get('refresh_token') || '';
+    if (!token) return;
+
+    window.history.replaceState({}, '', window.location.pathname);
+
+    /* Verificar token y obtener rol */
+    fetch('/api/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify', access_token: token }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error || !data.email) return;
+      if (data.role !== 'architect') return; /* solo portal arquitecto por ahora */
+
+      localStorage.setItem('arq_token',         token);
+      localStorage.setItem('arq_refresh_token',  refreshToken);
+      localStorage.setItem('arq_email',          data.email);
+      localStorage.setItem('arq_nombre',
+        data.architect ? `${data.architect.nombre} ${data.architect.apellido}` : data.email);
+
+      const modal = document.getElementById('portalArqModal');
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      loadArqDash();
+    })
+    .catch(console.error);
+  })();
+
   /* ── Detectar token de recuperación en el hash de la URL ── */
   (function checkRecoveryHash() {
     const hash = window.location.hash.substring(1);

@@ -56,6 +56,25 @@ export async function onRequest(context) {
 
     if (!action) return corsResponse({ error: 'Falta action' }, 400);
 
+    /* ── VERIFY TOKEN (magic link / recovery) ── */
+    if (action === 'verify') {
+      const { access_token } = body;
+      if (!access_token) return corsResponse({ error: 'access_token requerido' }, 400);
+
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': `Bearer ${access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) return corsResponse({ error: 'Token inválido o expirado' }, 401);
+
+      const emailLower = (data.email || '').toLowerCase();
+      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
+      return corsResponse({ email: emailLower, role, architect });
+    }
+
     /* ── REFRESH TOKEN ───────────────────────── */
     if (action === 'refresh') {
       const { refresh_token } = body;
