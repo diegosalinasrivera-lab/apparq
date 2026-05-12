@@ -693,6 +693,26 @@ export async function onRequest(context) {
       return json({ ok: true });
     }
 
+    /* send_custom_email — uso interno admin */
+    if (action === 'send_custom_email') {
+      const { to, cc, subject, html } = body;
+      if (!to || !subject || !html) return json({ error: 'to, subject y html requeridos' }, 400);
+      const RESEND_API_KEY = env.RESEND_API_KEY;
+      if (!RESEND_API_KEY) return json({ error: 'RESEND_API_KEY no configurada' }, 500);
+      const payload = { from: 'APPARQ <hola@apparq.cl>', to, subject, html };
+      if (cc) payload.cc = cc;
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const err = await r.text();
+        return json({ error: 'Error Resend', detail: err }, 500);
+      }
+      return json({ ok: true });
+    }
+
     return json({ error: 'Acción no reconocida' }, 400);
   }
 
