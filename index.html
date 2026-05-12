@@ -2453,6 +2453,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="paTramitesChips" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
         <div style="font-size:0.67rem;color:var(--muted);margin-top:0.45rem;">Activa solo los servicios que puedes realizar. Solo recibirás trámites de los seleccionados.</div>
       </div>
+      <div id="paNotifBanner" style="display:none;"></div>
       <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:380px;overflow-y:auto;"></div>
     </div>
 
@@ -5283,6 +5284,31 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
   function renderArqProjects(projects, token) {
     const box = document.getElementById('paProjects');
+
+    /* ── Banner de notificación: trámites sin contactar ─── */
+    const banner = document.getElementById('paNotifBanner');
+    if (banner) {
+      const nuevos = projects.filter(p => p.stage !== 'completado' && !p.cliente_contactado);
+      if (nuevos.length > 0) {
+        banner.style.display = 'block';
+        banner.innerHTML = `
+          <div style="background:linear-gradient(135deg,#E8503A,#C93E2A);color:#fff;border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.65rem;">
+            <span style="font-size:1.3rem;">🔔</span>
+            <div>
+              <div style="font-size:0.82rem;font-weight:800;">
+                ${nuevos.length === 1
+                  ? 'Tienes 1 trámite nuevo asignado'
+                  : `Tienes ${nuevos.length} trámites nuevos asignados`}
+              </div>
+              <div style="font-size:0.7rem;opacity:0.9;margin-top:1px;">Contacta al cliente dentro de las próximas 24 horas para coordinar la visita.</div>
+            </div>
+          </div>`;
+      } else {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+      }
+    }
+
     if (!projects.length) { box.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;">No tienes proyectos asignados aún.</div>'; return; }
     box.innerHTML = '';
     projects.forEach(p => {
