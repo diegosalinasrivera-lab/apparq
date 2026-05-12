@@ -480,22 +480,66 @@ export async function onRequest(context) {
       }
       const { ok, data } = await sb(`/projects?id=eq.${project_id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ architect_email, architect_nombre: architect_nombre || '', architect_apellido: architect_apellido || '' }),
+        body: JSON.stringify({ architect_email, architect_nombre: architect_nombre || '', architect_apellido: architect_apellido || '', cliente_contactado: false }),
         prefer: 'return=representation',
       });
       if (!ok) return json({ error: 'Error al asignar arquitecto', detail: data }, 500);
 
-      /* Enviar emails de pago al arquitecto + recordatorio a APPARQ */
+      /* Enviar emails de pago al arquitecto + recordatorio a APPARQ + notificación al cliente */
       const RESEND_API_KEY = env.RESEND_API_KEY;
       if (RESEND_API_KEY) {
         const [projRes, archRes] = await Promise.all([
-          sb(`/projects?id=eq.${project_id}&select=project_number,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp&limit=1`),
-          sb(`/architects?email=eq.${encodeURIComponent(architect_email)}&select=nombre,apellido,email,patente&limit=1`),
+          sb(`/projects?id=eq.${project_id}&select=project_number,client_email,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp&limit=1`),
+          sb(`/architects?email=eq.${encodeURIComponent(architect_email)}&select=nombre,apellido,email,patente,telefono&limit=1`),
         ]);
-        const project  = projRes.ok  && Array.isArray(projRes.data)  && projRes.data[0]  ? projRes.data[0]  : null;
-        const architect = archRes.ok && Array.isArray(archRes.data)  && archRes.data[0]  ? archRes.data[0]  : null;
+        const project   = projRes.ok && Array.isArray(projRes.data) && projRes.data[0] ? projRes.data[0] : null;
+        const architect = archRes.ok && Array.isArray(archRes.data) && archRes.data[0] ? archRes.data[0] : null;
         if (project && architect) {
+          /* Email arquitecto + recordatorio APPARQ */
           sendPaymentEmails({ project, architect, RESEND_API_KEY }).catch(e => console.error('sendPaymentEmails error:', e));
+
+          /* Email cliente — notificar nuevo/reasignado arquitecto */
+          if (project.client_email) {
+            const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+            const svcName   = svcLabels[project.service_type] || project.service_type;
+            const clientName = `${project.client_nombre || ''} ${project.client_apellido || ''}`.trim();
+            const pnum = project.project_number || '—';
+            sendEmail({
+              to: project.client_email,
+              subject: `👤 Tu arquitecto APPARQ — ${pnum}`,
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                  <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+                    <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+                    <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Actualización de tu trámite</p>
+                  </div>
+                  <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                    <h2 style="margin-top:0;color:#1a1a2e">Hola ${clientName || 'cliente'} 👋</h2>
+                    <p style="color:#4a5568;font-size:14px;line-height:1.7;">Queremos informarte que el arquitecto asignado a tu trámite ha sido actualizado. A partir de ahora, el profesional a cargo de tu proyecto es:</p>
+
+                    <div style="background:#F0FDF4;border:2px solid #86EFAC;border-radius:8px;padding:20px 24px;margin:20px 0;text-align:center">
+                      <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#15803D;text-transform:uppercase">Tu arquitecto</p>
+                      <p style="margin:0;font-size:22px;font-weight:900;color:#1a1a2e">${architect.nombre} ${architect.apellido}</p>
+                      ${architect.telefono ? `<p style="margin:8px 0 0;font-size:14px;color:#4a5568">📞 <a href="tel:${architect.telefono}" style="color:#E8503A;font-weight:700">${architect.telefono}</a></p>` : ''}
+                      <p style="margin:6px 0 0;font-size:13px;color:#4a5568">✉️ <a href="mailto:${architect.email}" style="color:#E8503A">${architect.email}</a></p>
+                    </div>
+
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+                      <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:42%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${pnum}</td></tr>
+                      <tr><td style="padding:7px 10px;color:#718096">Servicio</td><td style="padding:7px 10px">${svcName}</td></tr>
+                      <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Dirección</td><td style="padding:7px 10px">${project.address || '—'}, ${project.commune || '—'}</td></tr>
+                    </table>
+
+                    <p style="color:#4a5568;font-size:14px;line-height:1.7;">Tu arquitecto te contactará a la brevedad para coordinar los próximos pasos. Si tienes alguna consulta, escríbenos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a>.</p>
+
+                    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7<br>
+                    <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+                  </div>
+                </div>
+              `,
+            }, RESEND_API_KEY).catch(e => console.error('sendClientReassignEmail error:', e));
+          }
         }
       }
 
