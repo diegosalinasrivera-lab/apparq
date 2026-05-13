@@ -1052,6 +1052,7 @@
                     <tr>
                       <th>N° Trámite</th>
                       <th>Cliente</th>
+                      <th>Teléfono</th>
                       <th>Servicio</th>
                       <th>Dirección / Comuna</th>
                       <th>Arquitecto</th>
@@ -2127,7 +2128,7 @@ function renderTramitesTable() {
   if (tramiteFilter === 'completados') list = projects.filter(p => p.stage === 'completado');
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(p => `
@@ -2137,6 +2138,11 @@ function renderTramitesTable() {
         <div><strong>${p.client_nombre || ''} ${p.client_apellido || ''}</strong></div>
         <div style="font-size:11.5px;color:var(--muted)">${p.client_email || ''}</div>
       </td>
+      <td style="white-space:nowrap;font-size:12.5px;">${
+        p.client_telefono
+          ? `<a href="tel:${p.client_telefono}" style="color:var(--dark);text-decoration:none;font-weight:600;">${p.client_telefono}</a>`
+          : '<span style="color:#ef4444;font-size:11px;font-weight:700;">Sin tel.</span>'
+      }</td>
       <td>${p.service_type || '—'}</td>
       <td>
         <div style="font-size:12.5px">${p.address || '—'}</div>

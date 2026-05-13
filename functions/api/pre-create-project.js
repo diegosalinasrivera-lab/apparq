@@ -37,7 +37,8 @@ export async function onRequest(context) {
       firma_data,   /* base64 PNG de la firma del cliente */
     } = body;
 
-    if (!email) return corsResponse({ error: 'email requerido' }, 400);
+    if (!email)    return corsResponse({ error: 'email requerido' }, 400);
+    if (!telefono) return corsResponse({ error: 'telefono requerido — el cliente debe ingresar su número de contacto' }, 400);
 
     const emailLower = email.trim().toLowerCase();
 
