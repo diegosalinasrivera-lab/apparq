@@ -18,6 +18,9 @@ const WARN_HOURS    = 96;   /* 4 días → aviso al arquitecto         */
 const GRACE_HOURS   = 24;   /* 1 día adicional tras aviso           */
 const REASSIGN_HOURS = WARN_HOURS + GRACE_HOURS; /* 120h (5 días) → reasignar */
 
+/* ── Desactivar reasignación automática hasta nuevo aviso ── */
+const REASSIGN_ENABLED = false;
+
 function hoursElapsed(createdAt) {
   return (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
 }
@@ -125,8 +128,8 @@ export async function onRequest(context) {
     };
     const svcName = svcLabels[p.service_type] || p.service_type;
 
-    /* ── UMBRAL 2: 29h → reasignación automática ── */
-    if (hours >= REASSIGN_HOURS) {
+    /* ── UMBRAL 2: reasignación automática (desactivada con REASSIGN_ENABLED = false) ── */
+    if (REASSIGN_ENABLED && hours >= REASSIGN_HOURS) {
       const replacement = await findReplacementArchitect(
         SERVICE_KEY, p.commune, p.service_type, p.architect_email
       );
