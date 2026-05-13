@@ -95,10 +95,18 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
 
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
             <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:42%">Servicio</td><td style="padding:7px 10px;font-weight:700">${svcName}</td></tr>
-            <tr><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${clientName}</td></tr>
-            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Dirección</td><td style="padding:7px 10px">${project.address || '—'}, ${project.commune || '—'}</td></tr>
-            <tr><td style="padding:7px 10px;color:#718096">Superficie</td><td style="padding:7px 10px">${project.m2 ? project.m2 + ' m²' : '—'}</td></tr>
+            <tr><td style="padding:7px 10px;color:#718096">Dirección</td><td style="padding:7px 10px">${project.address || '—'}, ${project.commune || '—'}</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Superficie</td><td style="padding:7px 10px">${project.m2 ? project.m2 + ' m²' : '—'}</td></tr>
           </table>
+
+          <div style="background:#EFF6FF;border:2px solid #93C5FD;border-radius:8px;padding:18px 20px;margin:0 0 20px">
+            <p style="margin:0 0 10px;font-size:13px;font-weight:800;color:#1E40AF">📞 Datos de contacto del cliente</p>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <tr><td style="padding:5px 0;color:#3B82F6;width:36%">Nombre</td><td style="padding:5px 0;font-weight:700;color:#1E3A8A">${clientName}</td></tr>
+              ${project.client_email ? `<tr><td style="padding:5px 0;color:#3B82F6">Email</td><td style="padding:5px 0"><a href="mailto:${project.client_email}" style="color:#1E40AF;font-weight:700">${project.client_email}</a></td></tr>` : ''}
+              ${project.client_phone ? `<tr><td style="padding:5px 0;color:#3B82F6">Teléfono</td><td style="padding:5px 0;font-weight:700"><a href="tel:${project.client_phone}" style="color:#1E40AF">${project.client_phone}</a></td></tr>` : ''}
+            </table>
+          </div>
 
           <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:16px 20px;margin:20px 0">
             <p style="margin:0 0 10px;font-size:13px;font-weight:800;color:#15803d;">💰 Tus honorarios netos (${Math.round(ARQ_PCT*100)}%)</p>
@@ -489,7 +497,7 @@ export async function onRequest(context) {
       const RESEND_API_KEY = env.RESEND_API_KEY;
       if (RESEND_API_KEY) {
         const [projRes, archRes] = await Promise.all([
-          sb(`/projects?id=eq.${project_id}&select=project_number,client_email,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp&limit=1`),
+          sb(`/projects?id=eq.${project_id}&select=project_number,client_email,client_phone,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp&limit=1`),
           sb(`/architects?email=eq.${encodeURIComponent(architect_email)}&select=nombre,apellido,email,patente,telefono&limit=1`),
         ]);
         const project   = projRes.ok && Array.isArray(projRes.data) && projRes.data[0] ? projRes.data[0] : null;
@@ -701,7 +709,7 @@ export async function onRequest(context) {
       if (!RESEND_API_KEY) return json({ error: 'RESEND_API_KEY no configurada' }, 500);
 
       const [projRes, archRes_raw] = await Promise.all([
-        sb(`/projects?id=eq.${project_id}&select=project_number,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp,architect_email&limit=1`),
+        sb(`/projects?id=eq.${project_id}&select=project_number,client_nombre,client_apellido,client_email,client_phone,service_type,address,commune,m2,total_clp,e1_clp,architect_email&limit=1`),
         sb(`/projects?id=eq.${project_id}&select=architect_email&limit=1`),
       ]);
       const project = projRes.ok && Array.isArray(projRes.data) && projRes.data[0] ? projRes.data[0] : null;
