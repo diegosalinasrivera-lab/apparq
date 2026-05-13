@@ -2360,7 +2360,12 @@ function renderDetailTab(tab) {
               : `<span style="font-size:16px">✅</span>`
             }
           </div>
-        `).join('')}`;
+        `).join('')}
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);text-align:right">
+          <button onclick="adminResendArqEmail('${proj.id}','${proj.architect_email||''}')" style="background:var(--bg-soft);border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:var(--dark);">
+            📧 Reenviar email al arquitecto
+          </button>
+        </div>`;
     }
     renderPagosAdmin();
 
@@ -2388,6 +2393,20 @@ async function adminMarkPago(projectId, etapa, idx) {
       showToast(`✅ Pago ${etapa.toUpperCase()} marcado`, 'success');
     } else {
       showToast(res.error || 'Error al marcar pago', 'error');
+    }
+  } catch(e) {
+    showToast('Error de conexión', 'error');
+  }
+}
+
+async function adminResendArqEmail(projectId, archEmail) {
+  if (!confirm(`¿Reenviar email de asignación a ${archEmail}?`)) return;
+  try {
+    const res = await apiPost({ action: 'resend_arq_email', project_id: projectId });
+    if (res.ok) {
+      showToast('✅ Email reenviado al arquitecto', 'success');
+    } else {
+      showToast(res.error || 'Error al reenviar', 'error');
     }
   } catch(e) {
     showToast('Error de conexión', 'error');

@@ -693,6 +693,29 @@ export async function onRequest(context) {
       return json({ ok: true });
     }
 
+    /* resend_arq_email — reenvía email de asignación al arquitecto */
+    if (action === 'resend_arq_email') {
+      const { project_id } = body;
+      if (!project_id) return json({ error: 'project_id requerido' }, 400);
+      const RESEND_API_KEY = env.RESEND_API_KEY;
+      if (!RESEND_API_KEY) return json({ error: 'RESEND_API_KEY no configurada' }, 500);
+
+      const [projRes, archRes_raw] = await Promise.all([
+        sb(`/projects?id=eq.${project_id}&select=project_number,client_nombre,client_apellido,service_type,address,commune,m2,total_clp,e1_clp,architect_email&limit=1`),
+        sb(`/projects?id=eq.${project_id}&select=architect_email&limit=1`),
+      ]);
+      const project = projRes.ok && Array.isArray(projRes.data) && projRes.data[0] ? projRes.data[0] : null;
+      if (!project) return json({ error: 'Proyecto no encontrado' }, 404);
+      if (!project.architect_email) return json({ error: 'Proyecto sin arquitecto asignado' }, 400);
+
+      const archRes = await sb(`/architects?email=eq.${encodeURIComponent(project.architect_email)}&select=nombre,apellido,email,patente,telefono&limit=1`);
+      const architect = archRes.ok && Array.isArray(archRes.data) && archRes.data[0] ? archRes.data[0] : null;
+      if (!architect) return json({ error: 'Arquitecto no encontrado' }, 404);
+
+      await sendPaymentEmails({ project, architect, RESEND_API_KEY });
+      return json({ ok: true });
+    }
+
     /* send_custom_email — uso interno admin */
     if (action === 'send_custom_email') {
       const { to, cc, subject, html } = body;
