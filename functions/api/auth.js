@@ -92,6 +92,35 @@ export async function onRequest(context) {
       return corsResponse({ token: data.access_token, refresh_token: data.refresh_token });
     }
 
+    /* ── UPDATE PASSWORD (recovery flow) ────────── */
+    if (action === 'update-password') {
+      const { access_token, new_password } = body;
+      if (!access_token || !new_password) {
+        return corsResponse({ error: 'Faltan campos: access_token y new_password requeridos' }, 400);
+      }
+      if (new_password.length < 8) {
+        return corsResponse({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: 'PUT',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({ password: new_password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error || data.error_description) {
+        const msg = data.error_description || data.message || data.error || 'Error al actualizar contraseña';
+        return corsResponse({ error: msg }, 400);
+      }
+
+      return corsResponse({ ok: true });
+    }
+
     if (!email || !password) {
       return corsResponse({ error: 'Faltan campos obligatorios' }, 400);
     }
@@ -184,35 +213,6 @@ export async function onRequest(context) {
       const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
 
       return corsResponse({ token, refresh_token: refreshToken, role, email: emailLower, architect });
-    }
-
-    /* ── UPDATE PASSWORD (recovery flow) ────────── */
-    if (action === 'update-password') {
-      const { access_token, new_password } = body;
-      if (!access_token || !new_password) {
-        return corsResponse({ error: 'Faltan campos: access_token y new_password requeridos' }, 400);
-      }
-      if (new_password.length < 8) {
-        return corsResponse({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
-      }
-
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        method: 'PUT',
-        headers: {
-          'apikey':        SUPABASE_KEY,
-          'Authorization': `Bearer ${access_token}`,
-          'Content-Type':  'application/json',
-        },
-        body: JSON.stringify({ password: new_password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || data.error || data.error_description) {
-        const msg = data.error_description || data.message || data.error || 'Error al actualizar contraseña';
-        return corsResponse({ error: msg }, 400);
-      }
-
-      return corsResponse({ ok: true });
     }
 
     return corsResponse({ error: 'Acción no reconocida' }, 400);
