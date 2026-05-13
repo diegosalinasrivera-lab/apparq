@@ -2405,13 +2405,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- Reset password (recovery flow) -->
     <div id="portalArqReset" style="display:none;">
       <p style="font-size:0.82rem;color:var(--muted);margin:0 0 1.1rem;">Crea tu nueva contraseña para acceder al portal.</p>
-      <div class="mform-group">
+      <div class="mform-group" style="margin-bottom:0.4rem;">
         <label class="mform-label">Nueva contraseña</label>
-        <input class="mform-input" id="paNewPass" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+        <input class="mform-input" id="paNewPass" type="password" placeholder="Escribe tu nueva contraseña" autocomplete="new-password" oninput="updateResetPassReqs()" />
+        <!-- Requisitos en tiempo real -->
+        <div id="paPassReqs" style="margin-top:7px;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;">
+          <div id="preq-len"   style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><span id="preq-len-ic">○</span> Mínimo 8 caracteres</div>
+          <div id="preq-upper" style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><span id="preq-upper-ic">○</span> 1 mayúscula (A–Z)</div>
+          <div id="preq-num"   style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><span id="preq-num-ic">○</span> 1 número (0–9)</div>
+          <div id="preq-sym"   style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><span id="preq-sym-ic">○</span> 1 símbolo (!@#$...)</div>
+        </div>
       </div>
       <div class="mform-group">
         <label class="mform-label">Confirmar contraseña</label>
-        <input class="mform-input" id="paNewPassConfirm" type="password" placeholder="Repite la contraseña" autocomplete="new-password" />
+        <input class="mform-input" id="paNewPassConfirm" type="password" placeholder="Repite la contraseña" autocomplete="new-password" oninput="updateResetPassConfirm()" />
+        <div id="paPassConfirmHint" style="font-size:11px;margin-top:4px;"></div>
       </div>
       <button id="paResetBtn" class="btn-modal-submit" style="width:100%;margin-top:0.25rem;">Guardar nueva contraseña →</button>
       <div id="paResetError" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius);color:#DC2626;font-size:0.8rem;margin-top:0.6rem;padding:0.6rem 0.85rem;text-align:center;"></div>
@@ -3170,6 +3178,34 @@ document.getElementById('arqSinPatente').addEventListener('change', function() {
   inp.value    = sinPatente ? '' : inp.value;
   inp.style.opacity = sinPatente ? '0.4' : '1';
 });
+
+/* ── Validación en tiempo real — formulario reset contraseña ─── */
+function updateResetPassReqs() {
+  const p = document.getElementById('paNewPass').value;
+  const checks = [
+    { id: 'preq-len',   ok: p.length >= 8 },
+    { id: 'preq-upper', ok: /[A-Z]/.test(p) },
+    { id: 'preq-num',   ok: /[0-9]/.test(p) },
+    { id: 'preq-sym',   ok: /[^A-Za-z0-9]/.test(p) },
+  ];
+  checks.forEach(({ id, ok }) => {
+    const el = document.getElementById(id);
+    const ic = document.getElementById(id + '-ic');
+    if (!el || !ic) return;
+    el.style.color  = ok ? '#059669' : (p.length ? '#94a3b8' : '#94a3b8');
+    ic.textContent  = ok ? '✓' : '○';
+  });
+  updateResetPassConfirm();
+}
+function updateResetPassConfirm() {
+  const p = document.getElementById('paNewPass').value;
+  const c = document.getElementById('paNewPassConfirm').value;
+  const hint = document.getElementById('paPassConfirmHint');
+  if (!hint) return;
+  if (!c) { hint.textContent = ''; return; }
+  hint.textContent = c === p ? 'Las contraseñas coinciden ✓' : 'No coinciden';
+  hint.style.color = c === p ? '#059669' : '#ef4444';
+}
 
 /* ── Strength bar for arqPassword ─── */
 document.getElementById('arqPassword').addEventListener('input', () => {
@@ -5992,8 +6028,14 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     errEl.style.display = 'none';
     okEl.style.display  = 'none';
 
-    if (!newPass || newPass.length < 8) {
-      errEl.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+    /* Validar requisitos de contraseña */
+    let passScore = 0;
+    if (newPass.length >= 8)          passScore++;
+    if (/[A-Z]/.test(newPass))        passScore++;
+    if (/[0-9]/.test(newPass))        passScore++;
+    if (/[^A-Za-z0-9]/.test(newPass)) passScore++;
+    if (passScore < 3) {
+      errEl.textContent = 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.';
       errEl.style.display = 'block'; return;
     }
     if (newPass !== confirmPass) {
@@ -6003,7 +6045,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
     const accessToken = window._recoveryToken;
     if (!accessToken) {
-      errEl.textContent = 'Token inválido o expirado. Solicita un nuevo email de recuperación.';
+      errEl.textContent = 'El link de recuperación expiró. Pide a APPARQ que te envíe un nuevo acceso.';
       errEl.style.display = 'block'; return;
     }
 
@@ -6024,7 +6066,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       okEl.style.display = 'block';
       btn.style.display = 'none';
       window._recoveryToken = null;
-      /* Limpiar hash de la URL */
+      /* Limpiar localStorage de recovery */
+      localStorage.removeItem('arq_recovery_token');
+      localStorage.removeItem('arq_recovery_token_exp');
       window.history.replaceState({}, '', window.location.pathname);
       /* Volver al login tras 2 seg */
       setTimeout(() => {
@@ -6078,19 +6122,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     .catch(console.error);
   })();
 
-  /* ── Detectar token de recuperación en el hash de la URL ── */
-  (function checkRecoveryHash() {
-    const hash = window.location.hash.substring(1);
-    if (!hash) return;
-    const params = new URLSearchParams(hash);
-    if (params.get('type') !== 'recovery') return;
-    const token = params.get('access_token');
-    if (!token) return;
-
-    /* Guardar token y mostrar modal de reset */
+  /* ── Helper: abrir modal de reset con un token ── */
+  function showResetForm(token) {
     window._recoveryToken = token;
-    window.history.replaceState({}, '', window.location.pathname);
-
     const modal = document.getElementById('portalArqModal');
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -6103,6 +6137,49 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('paResetBtn').style.display     = '';
     document.getElementById('paNewPass').value = '';
     document.getElementById('paNewPassConfirm').value = '';
+    document.getElementById('paPassConfirmHint').textContent = '';
+    /* reiniciar checklist */
+    ['preq-len','preq-upper','preq-num','preq-sym'].forEach(id => {
+      const el = document.getElementById(id);
+      const ic = document.getElementById(id + '-ic');
+      if (el) el.style.color = '#94a3b8';
+      if (ic) ic.textContent = '○';
+    });
+  }
+
+  /* ── Detectar token de recuperación en el hash de la URL ── */
+  (function checkRecoveryHash() {
+    const hash = window.location.hash.substring(1);
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    if (params.get('type') !== 'recovery') return;
+    const token = params.get('access_token');
+    if (!token) return;
+
+    window.history.replaceState({}, '', window.location.pathname);
+
+    /* Persistir en localStorage para que el link funcione durante 1 hora
+       aunque el usuario cierre la pestaña o refresque la página */
+    const expiresIn = parseInt(params.get('expires_in') || '3600') * 1000;
+    localStorage.setItem('arq_recovery_token',    token);
+    localStorage.setItem('arq_recovery_token_exp', String(Date.now() + expiresIn));
+
+    showResetForm(token);
+  })();
+
+  /* ── Restaurar token de recuperación desde localStorage (si aún válido) ── */
+  (function restoreRecoveryFromStorage() {
+    if (window._recoveryToken) return; /* ya se cargó desde el hash */
+    const saved  = localStorage.getItem('arq_recovery_token');
+    const expStr = localStorage.getItem('arq_recovery_token_exp');
+    if (!saved || !expStr) return;
+    if (Date.now() > parseInt(expStr)) {
+      /* expiró — limpiar */
+      localStorage.removeItem('arq_recovery_token');
+      localStorage.removeItem('arq_recovery_token_exp');
+      return;
+    }
+    showResetForm(saved);
   })();
 
 })();
