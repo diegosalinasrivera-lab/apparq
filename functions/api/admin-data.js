@@ -716,6 +716,98 @@ export async function onRequest(context) {
       return json({ ok: true });
     }
 
+    /* invite_architect — genera link de acceso/recuperación vía Supabase admin API y lo envía por email */
+    if (action === 'invite_architect') {
+      const { email } = body;
+      if (!email) return json({ error: 'email requerido' }, 400);
+      const RESEND_API_KEY = env.RESEND_API_KEY;
+      if (!RESEND_API_KEY) return json({ error: 'RESEND_API_KEY no configurada' }, 500);
+      if (!SERVICE_KEY)    return json({ error: 'SUPABASE_SERVICE_KEY no configurada' }, 500);
+
+      const emailLow = email.toLowerCase().trim();
+
+      /* 1. Buscar datos del arquitecto */
+      const archRes = await sb(`/architects?email=eq.${encodeURIComponent(emailLow)}&select=nombre,apellido&limit=1`);
+      const arch    = archRes.ok && Array.isArray(archRes.data) && archRes.data[0] ? archRes.data[0] : null;
+      const nombre  = arch?.nombre || 'Arquitecta/o';
+
+      const adminHeaders = {
+        'apikey':        SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'Content-Type':  'application/json',
+      };
+
+      /* 2. Intentar recovery link (usuario ya existe) */
+      let actionLink = null;
+      let linkType   = 'recovery';
+
+      const recRes  = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+        method: 'POST', headers: adminHeaders,
+        body: JSON.stringify({ type: 'recovery', email: emailLow, options: { redirect_to: 'https://apparq.cl' } }),
+      });
+      const recData = await recRes.json();
+
+      if (recRes.ok && !recData.error) {
+        actionLink = recData.action_link || recData.properties?.action_link;
+      } else {
+        /* 3. Usuario no existe → crear cuenta con email confirmado */
+        const createRes  = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+          method: 'POST', headers: adminHeaders,
+          body: JSON.stringify({ email: emailLow, email_confirm: true }),
+        });
+        const createData = await createRes.json();
+        if (!createRes.ok || createData.error) {
+          return json({ error: 'Error al crear cuenta', detail: createData }, 500);
+        }
+
+        /* 4. Ahora sí generar recovery link */
+        const recRes2  = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+          method: 'POST', headers: adminHeaders,
+          body: JSON.stringify({ type: 'recovery', email: emailLow, options: { redirect_to: 'https://apparq.cl' } }),
+        });
+        const recData2 = await recRes2.json();
+        if (!recRes2.ok || recData2.error) {
+          return json({ error: 'Error al generar link', detail: recData2 }, 500);
+        }
+        actionLink = recData2.action_link || recData2.properties?.action_link;
+      }
+
+      if (!actionLink) return json({ error: 'No se pudo generar el link de acceso' }, 500);
+
+      /* 5. Enviar email con el link */
+      await sendEmail({
+        to:      emailLow,
+        subject: '🔑 Acceso a tu Portal Arquitecto — APPARQ',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:20px;letter-spacing:-0.5px">APPARQ</h1>
+              <p style="color:#94a3b8;margin:4px 0 0;font-size:13px">Portal Arquitecto</p>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <p style="font-size:15px;color:#1a1a2e;font-weight:700;margin:0 0 8px">Hola ${nombre},</p>
+              <p style="font-size:14px;color:#4a5568;line-height:1.7;margin:0 0 20px">
+                Usa el botón de abajo para acceder a tu Portal Arquitecto y crear o restablecer tu contraseña.
+                El link es de un solo uso y expira en <strong>1 hora</strong>.
+              </p>
+              <div style="text-align:center;margin:28px 0">
+                <a href="${actionLink}" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;letter-spacing:0.2px">
+                  Acceder al portal →
+                </a>
+              </div>
+              <p style="font-size:12px;color:#94a3b8;line-height:1.6;margin:0">
+                Si no solicitaste este acceso, ignora este mensaje.<br>
+                Al hacer clic serás llevado a <strong>apparq.cl</strong> donde podrás crear tu contraseña.
+              </p>
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 14px">
+              <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+            </div>
+          </div>`,
+      }, RESEND_API_KEY);
+
+      return json({ ok: true, type: linkType, email: emailLow });
+    }
+
     /* send_custom_email — uso interno admin */
     if (action === 'send_custom_email') {
       const { to, cc, subject, html } = body;

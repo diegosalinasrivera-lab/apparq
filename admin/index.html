@@ -1740,10 +1740,25 @@ function renderArchitectsTable() {
           <button class="btn btn-sm btn-danger" onclick="confirmDelete('${a.id}', '${(a.nombre||'').replace(/'/g,"\\'")} ${(a.apellido||'').replace(/'/g,"\\'")}')">
             🗑
           </button>
+          <button class="btn btn-sm" style="background:#F0FDF4;border:1.5px solid #6EE7B7;color:#065F46;" onclick="adminInviteArchitect('${(a.email||'').replace(/'/g,"\\'")}', '${(a.nombre||'').replace(/'/g,"\\'")}')">
+            🔑 Acceso portal
+          </button>
         </div>
       </td>
     </tr>`;
   }).join('');
+}
+
+async function adminInviteArchitect(email, nombre) {
+  if (!email) { showToast('Sin email para este arquitecto', 'error'); return; }
+  if (!confirm(`¿Enviar link de acceso al portal a ${nombre} (${email})?`)) return;
+  try {
+    const d = await apiPost({ action: 'invite_architect', email });
+    if (d.error) throw new Error(d.error);
+    showToast(`✅ Link de acceso enviado a ${email}`, 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
 }
 
 async function toggleArchitect(id, activo) {
