@@ -278,8 +278,11 @@ export async function onRequest(context) {
           const project  = projects[0] || null;
 
           if (project) {
-            /* Auto-asignar arquitecto */
-            const arq = await autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, project.commune, project.service_type);
+            /* Auto-asignar arquitecto (desactivada — asignación manual hasta nuevo aviso) */
+            const AUTO_ASSIGN_ENABLED = false;
+            const arq = AUTO_ASSIGN_ENABLED
+              ? await autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, project.commune, project.service_type)
+              : null;
 
             /* PATCH proyecto: arquitecto + stage + e1_clp real del pago */
             const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/projects?id=eq.${project.id}`, {

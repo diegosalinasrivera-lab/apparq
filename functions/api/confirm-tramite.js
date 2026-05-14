@@ -140,9 +140,10 @@ export async function onRequest(context) {
       }
     }
 
-    /* ── Auto-asignación de arquitecto ──────────── */
+    /* ── Auto-asignación de arquitecto (desactivada — asignación manual hasta nuevo aviso) ── */
+    const AUTO_ASSIGN_ENABLED = false;
     let arquitecto = body.arquitecto || null;
-    if (!arquitecto && SERVICE_KEY && commune && svc) {
+    if (AUTO_ASSIGN_ENABLED && !arquitecto && SERVICE_KEY && commune && svc) {
       arquitecto = await autoAssignArchitect(SUPABASE_URL, SERVICE_KEY, commune, svc);
     }
     console.log('Arquitecto asignado:', arquitecto ? `${arquitecto.nombre} ${arquitecto.apellido}` : 'Sin asignar');
