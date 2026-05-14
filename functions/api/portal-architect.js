@@ -392,6 +392,67 @@ export async function onRequest(context) {
       return corsResponse({ ok: true });
     }
 
+    /* ── MARK-VISITA-TERRENO ────────────────── */
+    if (action === 'mark-visita-terreno') {
+      const { project_number } = rest;
+      if (!project_number) return corsResponse({ error: 'Falta project_number' }, 400);
+
+      /* Verificar que el proyecto pertenece al arquitecto */
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${project_number}&architect_email=eq.${encodeURIComponent(email)}&select=id,client_nombre,client_apellido,service_type,commune,visita_terreno`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const checkData = checkRes.ok ? await checkRes.json() : [];
+      if (!checkData.length) return corsResponse({ error: 'Proyecto no encontrado' }, 404);
+      const proj = checkData[0];
+      if (proj.visita_terreno) return corsResponse({ ok: true, already: true });
+
+      /* Marcar visita a terreno */
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${project_number}`,
+        {
+          method: 'PATCH',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ visita_terreno: true, visita_terreno_at: new Date().toISOString() }),
+        }
+      );
+
+      /* Email a hola@apparq.cl */
+      const svcLabelsVT = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe', 'ley-del-mono':'Ley del Mono' };
+      const svcNameVT   = svcLabelsVT[proj.service_type] || proj.service_type;
+      const fechaHoraVT = new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago', day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'APPARQ <hola@apparq.cl>',
+            to: ['hola@apparq.cl'],
+            subject: `🏠 Visita a terreno realizada — ${project_number} · ${architect.nombre} ${architect.apellido}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                <h2 style="color:#fff;margin:0;font-size:18px">APPARQ — Visita a terreno realizada</h2>
+              </div>
+              <div style="background:#EDE9FE;border:2px solid #C4B5FD;padding:14px 32px">
+                <p style="margin:0;font-size:14px;font-weight:700;color:#5B21B6">🏠 El arquitecto realizó la visita a terreno</p>
+              </div>
+              <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:900;color:#E8503A">${project_number}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px;font-weight:700">${svcNameVT} · ${proj.commune}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${proj.client_nombre} ${proj.client_apellido}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${architect.nombre} ${architect.apellido} (${email})</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Realizada el</td><td style="padding:8px 10px">${fechaHoraVT}</td></tr>
+                </table>
+              </div>
+            </div>`,
+          }),
+        });
+      } catch(e) { console.warn('Error email mark-visita-terreno:', e); }
+
+      return corsResponse({ ok: true });
+    }
+
     /* ── SUBMIT-DESCARTE ─────────────────────── */
     if (action === 'submit-descarte') {
       const { project_number, fecha_visita, requisitos, via_propuesta, observaciones } = rest;

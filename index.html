@@ -5394,6 +5394,20 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         ${p.cliente_contactado_at ? `<span style="font-size:0.7rem;color:#6EE7B7;margin-left:auto;">${new Date(p.cliente_contactado_at).toLocaleDateString('es-CL')}</span>` : ''}
       </div>`}
 
+      ${!p.visita_terreno ? `
+      <div id="paVisitaBox" style="background:#F5F3FF;border:2px solid #C4B5FD;border-radius:var(--radius);padding:0.85rem 1rem;margin-bottom:1rem;text-align:center;">
+        <div style="font-size:0.8rem;font-weight:700;color:#5B21B6;margin-bottom:0.5rem;">¿Ya realizaste la visita a terreno?</div>
+        <button id="paMarkVisita" style="background:#7C3AED;color:#fff;border:none;border-radius:var(--radius);padding:0.5rem 1.2rem;font-size:0.82rem;font-weight:700;cursor:pointer;width:100%;">
+          🏠 Confirmar visita a terreno realizada
+        </button>
+        <div style="font-size:0.68rem;color:#A78BFA;margin-top:0.4rem;">Registra que inspeccionaste la propiedad del cliente</div>
+      </div>` : `
+      <div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--radius);padding:0.6rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+        <span style="font-size:1rem;">🏠</span>
+        <span style="font-size:0.8rem;font-weight:700;color:#5B21B6;">Visita a terreno realizada</span>
+        ${p.visita_terreno_at ? `<span style="font-size:0.7rem;color:#A78BFA;margin-left:auto;">${new Date(p.visita_terreno_at).toLocaleDateString('es-CL')}</span>` : ''}
+      </div>`}
+
       <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem;margin-bottom:1rem;">
         <label style="font-size:0.78rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.4rem;">Agregar avance del trámite</label>
         <select id="paStageSelect" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;font-size:0.82rem;margin-bottom:0.5rem;">${stageOptions}</select>
@@ -5699,6 +5713,36 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         } catch(e) {
           contactedBtn.disabled = false;
           contactedBtn.textContent = '✅ Confirmar que contacté al cliente';
+        }
+      };
+    }
+
+    /* Mark visita a terreno */
+    const visitaBtn = document.getElementById('paMarkVisita');
+    if (visitaBtn) {
+      visitaBtn.onclick = async () => {
+        visitaBtn.disabled = true;
+        visitaBtn.textContent = 'Confirmando…';
+        try {
+          const res = await fetch('/api/portal-architect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'mark-visita-terreno', token, project_number: p.project_number }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            document.getElementById('paVisitaBox').outerHTML =
+              `<div style="background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:var(--radius);padding:0.6rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:1rem;">🏠</span>
+                <span style="font-size:0.8rem;font-weight:700;color:#5B21B6;">Visita a terreno realizada — APPARQ fue notificado</span>
+              </div>`;
+          } else {
+            visitaBtn.disabled = false;
+            visitaBtn.textContent = '🏠 Confirmar visita a terreno realizada';
+          }
+        } catch(e) {
+          visitaBtn.disabled = false;
+          visitaBtn.textContent = '🏠 Confirmar visita a terreno realizada';
         }
       };
     }

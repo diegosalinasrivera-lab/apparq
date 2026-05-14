@@ -1057,6 +1057,7 @@
                       <th>Dirección / Comuna</th>
                       <th>Arquitecto</th>
                       <th title="¿Arquitecto contactó al cliente?">Contacto</th>
+                      <th title="¿Se realizó visita a terreno?">Visita</th>
                       <th>Etapa</th>
                       <th>Fecha</th>
                       <th>Acciones</th>
@@ -2158,6 +2159,13 @@ function renderTramitesTable() {
           : p.cliente_contactado
             ? '<span title="Cliente contactado" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px #d1fae5"></span>'
             : '<span title="Sin contacto aún" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 3px #fee2e2"></span>'
+      }</td>
+      <td style="text-align:center">${
+        !p.architect_email
+          ? '<span style="color:var(--muted);font-size:12px">—</span>'
+          : p.visita_terreno
+            ? `<span title="Visita realizada${p.visita_terreno_at ? ' · ' + new Date(p.visita_terreno_at).toLocaleDateString('es-CL') : ''}" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#7C3AED;box-shadow:0 0 0 3px #EDE9FE"></span>`
+            : '<span title="Sin visita aún" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#d1d5db;box-shadow:0 0 0 3px #f3f4f6"></span>'
       }</td>
       <td>
         ${stageBadge(p.stage)}
