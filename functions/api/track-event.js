@@ -17,7 +17,7 @@ const CORS = {
 export async function onRequest(context) {
   const { request, env } = context;
   const url  = env.SUPABASE_URL   || SUPABASE_URL;
-  const key  = env.SUPABASE_ANON_KEY || SUPABASE_KEY;
+  const key  = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC || env.SUPABASE_ANON_KEY || SUPABASE_KEY;
 
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 
