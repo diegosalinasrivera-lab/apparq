@@ -1408,6 +1408,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="chip" data-sub="obra-menor">Obra Menor</button>
             <button class="chip" data-sub="obra-nueva-reg">Obra Nueva</button>
           </div>
+          <div id="hint-obra-menor" style="display:none;margin-top:0.55rem;font-size:0.76rem;color:#92400E;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;padding:0.45rem 0.7rem;">
+            ⚠️ Obra Menor no aplica para superficies mayores a 100 m² — selecciona <strong>Obra Nueva</strong>.
+          </div>
         </div>
 
         <!-- Sub-tipo Informe -->
@@ -3569,6 +3572,7 @@ document.querySelectorAll('.sbtn').forEach(b => {
     document.getElementById('grp-sub-reg').classList.toggle('hidden', !isReg);
     document.getElementById('grp-sub-inf').classList.toggle('hidden', !isInf);
     document.getElementById('grp-sub-dj').classList.toggle('hidden',  !isDJ);
+    if (isReg) updateObraMenorChip();
 
     /* Ocultar descripción informe cuando se cambia de servicio */
     if (!isInf) { const d = document.getElementById('inf-sub-desc'); if (d) d.style.display = 'none'; }
@@ -3669,8 +3673,30 @@ function djDerivToService(targetSvc) {
 /* ── m² input ─────────────────────────────── */
 document.getElementById('m2Input').addEventListener('input', e => {
   const v = parseFloat(e.target.value);
-  S.m2 = v > 0 ? v : null; recalc();
+  S.m2 = v > 0 ? v : null;
+  updateObraMenorChip();
+  recalc();
 });
+
+/* Bloquea chip Obra Menor si m2 > 100 */
+function updateObraMenorChip() {
+  const chip    = document.querySelector('.chip[data-sub="obra-menor"]');
+  const hint    = document.getElementById('hint-obra-menor');
+  if (!chip || !hint) return;
+  const blocked = S.svc === 'regularizacion' && S.m2 > 100;
+  chip.disabled = blocked;
+  chip.style.opacity     = blocked ? '0.38' : '';
+  chip.style.cursor      = blocked ? 'not-allowed' : '';
+  chip.title             = blocked ? 'Solo aplica hasta 100 m²' : '';
+  hint.style.display     = blocked ? '' : 'none';
+  /* Si estaba seleccionado, deseleccionar y forzar obra-nueva */
+  if (blocked && S.svcSub === 'obra-menor') {
+    chip.classList.remove('on');
+    S.svcSub = null;
+    const obraNueva = document.querySelector('.chip[data-sub="obra-nueva-reg"]');
+    if (obraNueva) { obraNueva.classList.add('on'); S.svcSub = 'obra-nueva-reg'; }
+  }
+}
 
 /* ── Chips ────────────────────────────────── */
 document.querySelectorAll('.chip[data-mat]').forEach(c => {
