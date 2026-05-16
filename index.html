@@ -4124,9 +4124,10 @@ wizBack.onclick = () => {
 };
 
 /* ── validation per step ──────────────────────── */
-function showWizError(msg) {
+function showWizError(msg, asHtml = false) {
   const el = document.getElementById('wizStepError');
-  el.textContent = msg;
+  if (asHtml) el.innerHTML = msg;
+  else         el.textContent = msg;
   el.style.display = '';
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -4236,6 +4237,20 @@ function setupPaymentStep() {
     btn.disabled = true;
     btn.textContent = 'Preparando pago…';
 
+    const _btnReset = () => {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#fff" opacity=".15"/><path d="M13 27.5c0-6.351 4.925-11.5 11-11.5s11 5.149 11 11.5H13z" fill="#fff"/></svg> Pagar con Mercado Pago`;
+    };
+
+    /* Fetch con timeout configurable */
+    const fetchWithTimeout = (url, opts, ms = 25000) => {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), ms);
+      return fetch(url, { ...opts, signal: ctrl.signal })
+        .catch(e => { if (e.name === 'AbortError') throw new Error('timeout'); throw e; })
+        .finally(() => clearTimeout(tid));
+    };
+
     try {
       const { clp } = calcTotal();
       const e1pct   = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
@@ -4251,23 +4266,34 @@ function setupPaymentStep() {
 
       /* 1 — Pre-crear proyecto en Supabase antes del redirect a MP */
       btn.textContent = 'Creando trámite…';
-      const preRes = await fetch('/api/pre-create-project', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre:   document.getElementById('wizNombre')?.value,
-          apellido: document.getElementById('wizApellido')?.value,
-          email,
-          telefono: document.getElementById('wizTel')?.value,
-          rut:      document.getElementById('wizRut')?.value,
-          direccion: document.getElementById('wizAddr')?.value,
-          svc: S.svc, servicio_subtipo: S.svcSub || null,
-          m2: S.m2, commune, clp, e1,
-          firma_data: firmaData,
-        }),
-      });
-      const preData = await preRes.json();
-      if (!preRes.ok || !preData.project_number) throw new Error(preData.error || 'Error al pre-crear proyecto');
+      let preData;
+      try {
+        const preRes = await fetchWithTimeout('/api/pre-create-project', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre:   document.getElementById('wizNombre')?.value,
+            apellido: document.getElementById('wizApellido')?.value,
+            email,
+            telefono: document.getElementById('wizTel')?.value,
+            rut:      document.getElementById('wizRut')?.value,
+            direccion: document.getElementById('wizAddr')?.value,
+            svc: S.svc, servicio_subtipo: S.svcSub || null,
+            m2: S.m2, commune, clp, e1,
+            firma_data: firmaData,
+          }),
+        }, 28000);
+        preData = await preRes.json();
+        if (!preRes.ok || !preData.project_number) {
+          const msg = preData.error || `Error al registrar trámite (${preRes.status})`;
+          throw new Error('PRE:' + msg);
+        }
+      } catch (preErr) {
+        if (preErr.message === 'timeout' || preErr.message.includes('timeout')) {
+          throw new Error('PRE:La conexión tardó demasiado. Verifica tu señal e intenta de nuevo.');
+        }
+        throw preErr;
+      }
       const projectNumber = preData.project_number;
 
       /* Guardar estado en localStorage para recuperar tras redirect */
@@ -4287,34 +4313,49 @@ function setupPaymentStep() {
         project_number:  projectNumber,
       }));
 
-      /* 2 — Crear pago con project_number como external_reference */
-      btn.textContent = 'Preparando pago…';
-      const res  = await fetch('/api/create-payment', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount:      e1,
-          description: `APPARQ · ${svcName}${S.m2 ? ' ' + S.m2 + 'm²' : ''} · ${commune}`,
-          email,
-          reference:   projectNumber,
-        }),
-      });
+      /* 2 — Crear preferencia de pago en Mercado Pago (con 1 reintento automático) */
+      btn.textContent = 'Conectando con Mercado Pago…';
+      let data;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const res = await fetchWithTimeout('/api/create-payment', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount:      e1,
+              description: `APPARQ · ${svcName}${S.m2 ? ' ' + S.m2 + 'm²' : ''} · ${commune}`,
+              email,
+              reference:   projectNumber,
+            }),
+          }, 20000);
+          data = await res.json();
+          if (!res.ok || data.error) throw new Error(data.error || `Error Mercado Pago (${res.status})`);
+          break; /* éxito — salir del loop */
+        } catch (mpErr) {
+          if (attempt === 2) throw new Error('MP:' + (mpErr.message || 'No se pudo conectar con Mercado Pago'));
+          btn.textContent = 'Reintentando…';
+          await new Promise(r => setTimeout(r, 1500));
+          btn.textContent = 'Conectando con Mercado Pago…';
+        }
+      }
 
-      const data = await res.json();
-
-      if (!res.ok || data.error) throw new Error(data.error || 'Error MP');
-
-      /* Tracking silencioso — inscripción iniciada (antes de pagar) */
+      /* Tracking silencioso */
       try { fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'inscripcion_iniciada', email, svc: S.svc, commune, clp }) }); } catch(_) {}
 
       /* Redirigir al checkout de Mercado Pago */
       window.location.href = data.init_point;
 
     } catch (err) {
-      console.error(err);
-      showWizError('⚠️ No se pudo iniciar el pago. Verifica tu conexión e intenta de nuevo.');
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#fff" opacity=".15"/><path d="M13 27.5c0-6.351 4.925-11.5 11-11.5s11 5.149 11 11.5H13z" fill="#fff"/></svg> Pagar con Mercado Pago`;
+      console.error('[PAGO]', err);
+      const raw = err.message || '';
+      let msg;
+      if (raw.startsWith('PRE:'))      msg = '⚠️ ' + raw.slice(4);
+      else if (raw.startsWith('MP:')) msg = '⚠️ ' + raw.slice(3) + ' — si el problema persiste escríbenos a <a href="https://wa.me/56942054581" style="color:#E8503A;font-weight:700">WhatsApp</a>.';
+      else if (raw === 'timeout' || raw.includes('timeout')) msg = '⚠️ Tiempo de espera agotado. Verifica tu señal e intenta de nuevo.';
+      else if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) msg = '⚠️ Sin conexión. Verifica tu señal e intenta de nuevo.';
+      else msg = '⚠️ No se pudo iniciar el pago. Intenta de nuevo o escríbenos a <a href="https://wa.me/56942054581" style="color:#E8503A;font-weight:700">WhatsApp</a>.';
+      showWizError(msg, true);
+      _btnReset();
     }
   };
 }

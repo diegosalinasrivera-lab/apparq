@@ -474,7 +474,17 @@ export async function onRequest(context) {
                             <li>Tu arquitecto actualizará los avances directamente en <strong>apparq.cl</strong></li>
                             <li>Podrás coordinar y comunicarte con tu arquitecto a través de la plataforma</li>
                             ${esInforme
-                              ? '<li>Recibirás tu informe en <strong>aproximadamente 2 semanas</strong></li>'
+                              ? (p.servicio_subtipo === 'evaluacion'
+                                  ? `<li><strong>Etapa 1 · Análisis normativo:</strong> Envía a tu arquitecto el <strong>número de rol</strong> y dirección de la propiedad para comenzar. No se requiere visita ni documentos adicionales</li>
+                                     <li><strong>Etapa 2 · Entrega del informe:</strong> Recibirás el informe con todas las condicionantes normativas de tu predio. Plazo estimado: <strong>5 a 7 días hábiles</strong></li>
+                                     <li>APPARQ te notificará para completar el <strong>Pago E2 (50%)</strong> al momento de la entrega</li>`
+                                  : p.servicio_subtipo === 'factibilidad'
+                                    ? `<li><strong>Etapa 1 · Visita a terreno:</strong> Tu arquitecto te contactará para coordinar la visita. Reúne todos los <strong>documentos y planos existentes</strong> de la propiedad para entregárselos</li>
+                                       <li><strong>Etapa 2 · Elaboración y entrega del informe:</strong> El arquitecto evaluará si tus documentos sirven para regularizar o deben rehacerse, y te entregará el diagnóstico. Plazo estimado: <strong>aproximadamente 2 semanas desde la visita</strong></li>
+                                       <li>APPARQ te notificará para completar el <strong>Pago E2 (50%)</strong> al momento de la entrega</li>`
+                                    : `<li><strong>Etapa 1 · Visita a terreno:</strong> Tu arquitecto te contactará para coordinar la visita. Facilita el acceso a la propiedad para la inspección del estado físico</li>
+                                       <li><strong>Etapa 2 · Elaboración y entrega del informe:</strong> El arquitecto documentará superficies, terminaciones, ventanas, instalaciones y condiciones generales. Plazo estimado: <strong>aproximadamente 1 semana desde la visita</strong></li>
+                                       <li>APPARQ te notificará para completar el <strong>Pago E2 (50%)</strong> al momento de la entrega</li>`)
                               : esDJ
                                 ? `<li>Tu arquitecto elaborará y presentará la Declaración Jurada ante la DOM</li><li>Plazo DOM: <strong>3 días hábiles</strong> para emitir el giro de derechos</li>`
                                 : '<li>Una vez entregados los planos, recibirás el aviso del pago E2</li><li>El trámite completo toma entre <strong>3 y 6 meses</strong></li>'
@@ -511,9 +521,10 @@ export async function onRequest(context) {
                 const fecha      = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
                 const svcName    = ({ regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' })[p.service_type] || p.service_type;
 
+                const e1InfLabelWH = p.servicio_subtipo === 'evaluacion' ? 'Análisis normativo' : 'Visita a terreno';
                 const etapasBlock = esInforme
-                  ? `<tr><td style="padding:8px 10px;color:#718096">E1 · Visita + elaboración (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))} ✓</td></tr>
-                     <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Entrega de informe</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>`
+                  ? `<tr><td style="padding:8px 10px;color:#718096">E1 · ${e1InfLabelWH} (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))} ✓</td></tr>
+                     <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Entrega del informe</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>`
                   : esDJ
                     ? `<tr><td style="padding:8px 10px;color:#718096">E1 · Inicio (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
                        <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · ${e2DJLabel}</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.50*ARQ_PCT))}</td></tr>`
@@ -577,12 +588,26 @@ export async function onRequest(context) {
                         <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">⏱ Próximos pasos</h3>
                         <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0">
                           <li>Ingresa a <strong>apparq.cl → Soy Arquitecto</strong> con tu correo</li>
-                          <li>Coordina la visita a terreno con el cliente a través de la plataforma</li>
                           ${esInforme
-                            ? '<li>Elabora el informe y actualiza el avance en la plataforma</li><li>Entrega el informe antes de 2 semanas desde la visita</li>'
+                            ? (p.servicio_subtipo === 'evaluacion'
+                                ? `<li>Contacta al cliente para solicitarle el <strong>número de rol</strong> y la dirección de la propiedad</li>
+                                   <li>Analiza la normativa vigente: plan regulador comunal, OGUC, rasantes, distancias mínimas y coeficientes. <strong>No se requiere visita ni revisión de documentos existentes</strong></li>
+                                   <li>Al entregar el informe, actualiza la etapa a <strong>«Entrega del informe»</strong> — esto gatilla el cobro del <strong>Pago E2 (50%)</strong></li>
+                                   <li>Plazo estimado: <strong>5 a 7 días hábiles</strong></li>`
+                                : p.servicio_subtipo === 'factibilidad'
+                                  ? `<li>Contacta al cliente para coordinar la visita y solicitarle los <strong>documentos y planos existentes</strong> (escrituras, planos aprobados, permisos, recepciones)</li>
+                                     <li>Realiza la visita a terreno y <strong>márcala como realizada en la plataforma</strong></li>
+                                     <li>Evalúa si los documentos son suficientes para regularizar o deben rehacerse</li>
+                                     <li>Elabora el informe y actualiza la etapa a <strong>«Entrega del informe»</strong> — gatilla el <strong>Pago E2 (50%)</strong></li>
+                                     <li>Plazo estimado: <strong>aproximadamente 2 semanas desde la visita</strong></li>`
+                                  : `<li>Contacta al cliente para coordinar el acceso a la propiedad</li>
+                                     <li>Realiza la inspección física: superficies, terminaciones, permisos y recepciones municipales. <strong>No incluye revisión de escrituras</strong></li>
+                                     <li>Marca la visita como realizada en la plataforma</li>
+                                     <li>Elabora el informe y actualiza la etapa a <strong>«Entrega del informe»</strong> — gatilla el <strong>Pago E2 (50%)</strong></li>
+                                     <li>Plazo estimado: <strong>aproximadamente 1 semana desde la visita</strong></li>`)
                             : esDJ
-                              ? `<li>Elabora la Declaración Jurada según la DDU 542 y la Ley 21.718</li><li>Presenta la DJ ante la DOM (plazo DOM: <strong>3 días hábiles</strong> para emitir giro)</li>`
-                              : '<li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
+                              ? `<li>Coordina la visita a terreno con el cliente a través de la plataforma</li><li>Elabora la Declaración Jurada según la DDU 542 y la Ley 21.718</li><li>Presenta la DJ ante la DOM (plazo DOM: <strong>3 días hábiles</strong> para emitir giro)</li>`
+                              : '<li>Coordina la visita a terreno con el cliente a través de la plataforma</li><li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
                           }
                           <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ para recibir cada pago</li>
                         </ol>
