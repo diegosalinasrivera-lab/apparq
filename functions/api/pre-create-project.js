@@ -138,8 +138,8 @@ export async function onRequest(context) {
       e1_clp:             e1        || 0,
       stage:              'pendiente_pago',
     };
-    /* Solo añadir firma_url si la tenemos */
-    if (firmaUrl) insertBody.firma_url = firmaUrl;
+    /* firma_url: se omite del INSERT hasta que la columna exista en Supabase.
+       La firma ya fue subida a Storage en la ruta {project_number}/firma/firma-cliente.png */
 
     const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/projects`, {
       method: 'POST',
