@@ -455,6 +455,18 @@ export async function onRequest(context) {
       return json({ success: true, architect: Array.isArray(data) ? data[0] : data });
     }
 
+    /* delete_tramite */
+    if (action === 'delete_tramite') {
+      const { id } = body;
+      if (!id) return json({ error: 'id requerido' }, 400);
+      const { ok, data } = await sb(`/projects?id=eq.${id}`, {
+        method: 'DELETE',
+        prefer: 'return=minimal',
+      });
+      if (!ok) return json({ error: 'Error al eliminar trámite', detail: data }, 500);
+      return json({ success: true });
+    }
+
     /* delete_architect */
     if (action === 'delete_architect') {
       const { id } = body;

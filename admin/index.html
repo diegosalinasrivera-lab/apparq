@@ -1303,6 +1303,28 @@
   </div>
 </div>
 
+<!-- ── MODAL: Eliminar Trámite ────────────────── -->
+<div id="modal-confirm-delete-tramite" class="modal-overlay hidden">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">Eliminar Trámite</span>
+      <button class="modal-close" data-close="modal-confirm-delete-tramite">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--mid);margin:0 0 10px">
+        ¿Eliminar el trámite <strong id="delete-tramite-num">—</strong>?
+      </p>
+      <p style="font-size:13px;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:10px 12px;margin:0">
+        ⚠️ Esta acción es <strong>permanente e irreversible</strong>. Se eliminarán el proyecto y todos sus datos de Supabase.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-confirm-delete-tramite">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-delete-tramite">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL: Editar Comunas y Trámites ───────── -->
 <div id="modal-edit-arch" class="modal-overlay hidden">
   <div class="modal">
@@ -1424,6 +1446,8 @@ let leads      = [];
 let tramiteFilter = 'todos';
 let leadFilter    = 'todos';
 let pendingDeleteId = null;
+let pendingDeleteTramiteId = null;
+let pendingDeleteTramiteNum = null;
 let pendingAssignProjectId = null;
 let selectedCommunes = [];
 
@@ -1817,6 +1841,36 @@ async function doDelete() {
   }
 }
 
+/* ── ELIMINAR TRÁMITE ─────────────────────────── */
+function confirmDeleteTramite(id, projectNumber) {
+  pendingDeleteTramiteId  = id;
+  pendingDeleteTramiteNum = projectNumber;
+  document.getElementById('delete-tramite-num').textContent = projectNumber || id;
+  showModal('modal-confirm-delete-tramite');
+}
+
+async function doDeleteTramite() {
+  if (!pendingDeleteTramiteId) return;
+  const btn = document.getElementById('btn-confirm-delete-tramite');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await apiPost({ action: 'delete_tramite', id: pendingDeleteTramiteId });
+    if (d.error) throw new Error(d.error);
+    showToast(`Trámite ${pendingDeleteTramiteNum} eliminado`, 'success');
+    closeModal('modal-confirm-delete-tramite');
+    projects = projects.filter(p => p.id != pendingDeleteTramiteId);
+    renderTramitesTable();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sí, eliminar';
+    pendingDeleteTramiteId  = null;
+    pendingDeleteTramiteNum = null;
+  }
+}
+
 /* ── FINALIZAR TRÁMITE ────────────────────────── */
 let pendingFinalizeId = null;
 
@@ -2199,6 +2253,9 @@ function renderTramitesTable() {
           <button class="btn btn-sm btn-success" onclick="confirmFinalizarTramite('${p.id}', '${(p.project_number||'').replace(/'/g,"\\'")}')">
             ✓ Finalizar
           </button>` : `<span style="font-size:11px;color:#059669;font-weight:700;padding:4px 6px;">✓ Completado</span>`}
+          <button class="btn btn-sm btn-danger" onclick="confirmDeleteTramite('${p.id}', '${(p.project_number||'').replace(/'/g,"\\'")}')">
+            🗑 Eliminar
+          </button>
         </div>
       </td>
     </tr>
@@ -2954,6 +3011,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Delete confirm
   document.getElementById('btn-confirm-delete').addEventListener('click', doDelete);
+  document.getElementById('btn-confirm-delete-tramite').addEventListener('click', doDeleteTramite);
 
   // Finalizar confirm
   document.getElementById('btn-confirm-finalizar').addEventListener('click', doFinalizarTramite);
