@@ -1851,18 +1851,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
       </div>
 
-      <!-- ── STEP ARQ: Elige tu arquitecto ── -->
+      <!-- ── STEP ARQ: Asignación automática de arquitecto ── -->
       <div class="wiz-step" id="wiz-sarq">
         <div class="wiz-ico">👷</div>
-        <div class="wiz-title">Elige tu arquitecto</div>
-        <div class="wiz-sub" id="wizArqPickSub">Selecciona un arquitecto disponible en tu comuna, o continúa y te asignamos uno automáticamente.</div>
+        <div class="wiz-title">Tu arquitecto</div>
+        <div class="wiz-sub">Contamos con arquitectos habilitados en tu zona.</div>
 
-        <div id="wizArqPickLoading" style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem;">Buscando arquitectos disponibles…</div>
-        <div id="wizArqPickList" style="display:none;flex-direction:column;gap:0.6rem;max-height:300px;overflow-y:auto;"></div>
-
-        <div id="wizArqPickSelected" style="display:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#166534;margin-top:0.75rem;">
-          ✓ Arquitecto seleccionado: <strong id="wizArqPickName"></strong>
-          <button id="wizArqPickClear" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:0.75rem;margin-left:0.5rem;">Cambiar</button>
+        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:1.2rem 1.4rem;text-align:center;margin:1rem 0;">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">📍</div>
+          <div style="font-size:1rem;font-weight:700;color:#166534;margin-bottom:0.4rem;">Te asignaremos un arquitecto automáticamente según tu zona</div>
+          <div style="font-size:0.8rem;color:#15803d;line-height:1.55;">Una vez confirmado el pago, nuestro equipo te asignará el arquitecto disponible más adecuado para tu proyecto. Te avisaremos por email en las próximas 24 horas hábiles.</div>
         </div>
       </div>
 
@@ -4117,7 +4115,7 @@ function renderWizStep(idx, goBack) {
   clearWizError();
 
   /* step-specific setup */
-  if (idx === 1) loadArchitectPicker();
+  /* idx === 1: asignación automática — sin picker */
   if (idx === 2) setupSignaturePad();
   if (idx === 3) setupPaymentStep();
   if (idx === 4) loadArchitectForCommune(S.commune || 'Santiago');
