@@ -364,6 +364,7 @@
     .badge-green  { background: #F0FDF4; color: #15803D; }
     .badge-gray   { background: #F3F4F6; color: #4B5563; }
     .badge-red    { background: #FEF2F2; color: #B91C1C; }
+    .badge-purple { background: #F5F3FF; color: #6D28D9; }
 
     /* ── TAGS (communes) ────────────────────── */
     .tags { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -1392,11 +1393,24 @@ const API_BASE      = '/api/admin-data';
 const COMMUNES = ['Alhué','Buin','Calera de Tango','Cerrillos','Cerro Navia','Colina','Conchalí','El Bosque','El Monte','Estación Central','Huechuraba','Independencia','Isla de Maipo','La Cisterna','La Florida','La Granja','La Pintana','La Reina','Lampa','Las Condes','Lo Barnechea','Lo Espejo','Lo Prado','Macul','Maipú','María Pinto','Melipilla','Ñuñoa','Padre Hurtado','Paine','Pedro Aguirre Cerda','Peñaflor','Peñalolén','Pirque','Providencia','Pudahuel','Puente Alto','Quilicura','Quinta Normal','Recoleta','Renca','San Bernardo','San Joaquín','San José de Maipo','San Miguel','San Pedro','San Ramón','Santiago','Talagante','Tiltil','Vitacura'];
 
 const STAGE_LABELS = {
-  levantamiento: { label: 'Levantamiento', cls: 'badge-blue' },
-  planos:        { label: 'Planos',        cls: 'badge-yellow' },
-  ingreso_dom:   { label: 'Ingreso DOM',   cls: 'badge-orange' },
-  recepcion:     { label: 'Recepción',     cls: 'badge-green' },
-  completado:    { label: 'Completado',    cls: 'badge-gray' },
+  /* Trámites normales */
+  levantamiento:   { label: 'Levantamiento',  cls: 'badge-blue' },
+  elaboracion:     { label: 'Elaboración',    cls: 'badge-yellow' },
+  ingreso_dom:     { label: 'Ingreso DOM',    cls: 'badge-orange' },
+  tramitacion:     { label: 'Tramitación',    cls: 'badge-orange' },
+  completado:      { label: 'Completado',     cls: 'badge-gray' },
+  /* Informe factibilidad / compraventa */
+  visita:          { label: 'Visita terreno', cls: 'badge-purple' },
+  /* Informe evaluacion normativa */
+  elaboracion_inf: { label: 'Análisis norm.', cls: 'badge-purple' },
+  /* Informe (todas las variantes) */
+  entrega_informe: { label: 'Informe entregado', cls: 'badge-green' },
+  /* Declaración Jurada */
+  ingreso_dj:      { label: 'Ingreso DJ',     cls: 'badge-orange' },
+  /* Estados transversales */
+  en_espera:       { label: 'En espera',      cls: 'badge-yellow' },
+  pendiente_pago:  { label: 'Pend. pago',     cls: 'badge-yellow' },
+  no_viable:       { label: 'No viable',      cls: 'badge-red' },
 };
 
 /* ══════════════════════════════════════════════════

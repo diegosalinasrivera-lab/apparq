@@ -28,8 +28,9 @@ async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
   if (!res.ok) console.error('Resend error:', await res.text());
 }
 
-const STAGES_NORMAL  = ['levantamiento','elaboracion','ingreso_dom','tramitacion','completado'];
-const STAGES_INFORME = ['visita','elaboracion_inf','entrega_informe'];
+const STAGES_NORMAL              = ['levantamiento','elaboracion','ingreso_dom','tramitacion','completado'];
+const STAGES_INFORME             = ['visita','entrega_informe'];              /* factibilidad / compraventa */
+const STAGES_INFORME_EVALUACION  = ['elaboracion_inf','entrega_informe'];     /* evaluacion normativa */
 const STAGE_LABELS   = {
   levantamiento:    'Levantamiento en terreno',
   elaboracion:      'Elaboración de planos',
@@ -37,7 +38,7 @@ const STAGE_LABELS   = {
   tramitacion:      'Tramitación municipal',
   completado:       'Trámite completado',
   visita:           'Visita a terreno',
-  elaboracion_inf:  'Elaboración del informe',
+  elaboracion_inf:  'Análisis normativo',
   entrega_informe:  'Informe entregado',
   no_viable:        'Trámite no viable',
 };
@@ -181,7 +182,7 @@ export async function onRequest(context) {
 
       /* Verificar que el proyecto le pertenece */
       const checkRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=id,service_type,cliente_contactado&limit=1`,
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=id,service_type,servicio_subtipo,cliente_contactado&limit=1`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
       );
       const checkData = await checkRes.json();
@@ -189,9 +190,12 @@ export async function onRequest(context) {
         return corsResponse({ error: 'Proyecto no encontrado' }, 403);
       }
 
-      /* Validar que la etapa es válida para el tipo de servicio */
+      /* Validar que la etapa es válida para el tipo de servicio y subtipo */
       const svc      = checkData[0].service_type;
-      const validStages = svc === 'informe' ? STAGES_INFORME : STAGES_NORMAL;
+      const subtipo  = checkData[0].servicio_subtipo;
+      const validStages = svc === 'informe'
+        ? (subtipo === 'evaluacion' ? STAGES_INFORME_EVALUACION : STAGES_INFORME)
+        : STAGES_NORMAL;
       if (!validStages.includes(new_stage)) {
         return corsResponse({ error: 'Etapa inválida para este tipo de trámite' }, 400);
       }

@@ -5295,12 +5295,13 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     }
   }
 
-  const STAGES_NORMAL  = ['levantamiento','elaboracion','ingreso_dom','tramitacion','completado'];
-  const STAGES_INFORME = ['visita','elaboracion_inf','entrega_informe'];
+  const STAGES_NORMAL             = ['levantamiento','elaboracion','ingreso_dom','tramitacion','completado'];
+  const STAGES_INFORME            = ['visita','entrega_informe'];           /* factibilidad / compraventa */
+  const STAGES_INFORME_EVALUACION = ['elaboracion_inf','entrega_informe'];  /* evaluacion normativa */
   const STAGE_LABELS   = {
     levantamiento:'Levantamiento en terreno', elaboracion:'Elaboración de planos',
     ingreso_dom:'Ingreso a la DOM', tramitacion:'Tramitación municipal', completado:'Trámite completado',
-    visita:'Visita a terreno', elaboracion_inf:'Elaboración del informe', entrega_informe:'Informe entregado',
+    visita:'Visita a terreno', elaboracion_inf:'Análisis normativo', entrega_informe:'Informe entregado',
   };
   const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
 
@@ -5396,7 +5397,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   async function openArqDetail(p, token) {
     document.getElementById('portalArqDash').style.display = 'none';
     document.getElementById('portalArqDetail').style.display = '';
-    const stages = p.service_type === 'informe' ? STAGES_INFORME : STAGES_NORMAL;
+    const stages = p.service_type === 'informe'
+      ? (p.servicio_subtipo === 'evaluacion' ? STAGES_INFORME_EVALUACION : STAGES_INFORME)
+      : STAGES_NORMAL;
 
     const stageOptions = stages.map(s =>
       `<option value="${s}" ${p.stage===s?'selected':''}>${STAGE_LABELS[s]}</option>`
