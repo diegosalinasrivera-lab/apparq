@@ -1418,6 +1418,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="chip" data-sub="factibilidad">Factibilidad</button>
             <button class="chip" data-sub="compraventa">Compraventa</button>
           </div>
+          <div id="inf-sub-desc" style="display:none;margin-top:0.65rem;padding:0.75rem 0.9rem;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:0.8rem;color:#1e3a8a;line-height:1.6;"></div>
         </div>
 
         <!-- Sub-tipo Declaración Jurada -->
@@ -3560,6 +3561,9 @@ document.querySelectorAll('.sbtn').forEach(b => {
     document.getElementById('grp-sub-inf').classList.toggle('hidden', !isInf);
     document.getElementById('grp-sub-dj').classList.toggle('hidden',  !isDJ);
 
+    /* Ocultar descripción informe cuando se cambia de servicio */
+    if (!isInf) { const d = document.getElementById('inf-sub-desc'); if (d) d.style.display = 'none'; }
+
     /* Ocultar sub-grupos DJ cuando se cambia de servicio */
     if (!isDJ) {
       document.getElementById('grp-dj-piscina').classList.add('hidden');
@@ -3592,6 +3596,20 @@ document.querySelectorAll('.chip[data-sub]').forEach(c => {
     S.svcSub  = c.dataset.sub;
     S.djElig  = null;
     S.djObra  = null;
+
+    /* Descripción dinámica para sub-tipos de Informe */
+    if (S.svc === 'informe') {
+      const INF_DESC = {
+        evaluacion: 'Analiza la normativa urbana vigente aplicable a tu propiedad: plan regulador comunal, OGUC, rasantes, distancias mínimas, coeficiente de constructibilidad y ocupación de suelo. <strong>No incluye visita a terreno ni revisión de documentos existentes.</strong> Ideal si necesitas saber qué permite o restringe la norma en tu predio antes de proyectar, invertir o tomar decisiones.',
+        factibilidad: 'Incluye visita a terreno y revisión de documentos y planos existentes. El arquitecto evalúa si la documentación actual sirve para iniciar un trámite de regularización o si debe rehacerse, y determina el camino más eficiente para regularizar tu propiedad. <strong>Ideal si ya tienes planos o papeles y quieres saber por dónde partir antes de comprometerte con el trámite completo.</strong>',
+        compraventa: 'Informe técnico del estado real de la propiedad para operaciones de compra o venta. Documenta superficies construidas, permisos vigentes, recepciones municipales y posibles irregularidades. <strong>Esencial para que comprador y vendedor conozcan la situación legal del inmueble antes de cerrar el negocio.</strong>',
+      };
+      const descEl = document.getElementById('inf-sub-desc');
+      if (descEl && INF_DESC[S.svcSub]) {
+        descEl.innerHTML = INF_DESC[S.svcSub];
+        descEl.style.display = '';
+      }
+    }
 
     /* Visibilidad condicional para sub-grupos DJ */
     if (S.svc === 'declaracion-jurada') {
