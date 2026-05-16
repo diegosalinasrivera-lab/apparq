@@ -271,7 +271,7 @@ export async function onRequest(context) {
       if (extRef && extRef.startsWith('ARQ-') && SERVICE_KEY) {
         try {
           const projRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(extRef)}&stage=eq.pendiente_pago&select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,service_type,servicio_subtipo,commune,m2,total_clp,e1_clp,address`,
+            `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(extRef)}&stage=eq.pendiente_pago&select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,service_type,servicio_subtipo,commune,m2,total_clp,e1_clp,address,firma_url`,
             { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
           );
           const projects = projRes.ok ? await projRes.json() : [];
@@ -324,7 +324,7 @@ export async function onRequest(context) {
               const esWaitlist = !arqObj;
 
               /* Firma del cliente (URL ya guardada en el proyecto) */
-              const firmaUrl = null; /* TODO: restaurar p.firma_url tras agregar columna en Supabase */
+              const firmaUrl = p.firma_url || null;
               const firmaClienteBlock = firmaUrl
                 ? `<div style="margin-top:12px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
                      <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente</p>
