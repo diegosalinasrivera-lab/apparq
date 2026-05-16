@@ -283,6 +283,56 @@ export async function onRequest(context) {
     return new Response(null, { status: 204, headers: CORS });
   }
 
+  /* notify_assignment — pre-auth bypass con service key */
+  if (request.method === 'POST') {
+    let preBody;
+    try { preBody = await request.clone().json(); } catch(_) {}
+    if (preBody?.action === 'notify_assignment') {
+      const svcKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
+      if (!svcKey || preBody.svc_key !== svcKey) return json({ error: 'No autorizado' }, 403);
+      const { project_id } = preBody;
+      if (!project_id) return json({ error: 'project_id requerido' }, 400);
+      const RESEND_API_KEY = env.RESEND_API_KEY;
+      const projRes = await sb(`/projects?id=eq.${project_id}&select=project_number,client_email,client_nombre,client_apellido,client_telefono,service_type,servicio_subtipo,address,commune,m2,total_clp,e1_clp,architect_email&limit=1`);
+      const project = projRes.ok && Array.isArray(projRes.data) && projRes.data[0] ? projRes.data[0] : null;
+      if (!project) return json({ error: 'Proyecto no encontrado' }, 404);
+      const archEmail = project.architect_email;
+      const archRes = archEmail ? await sb(`/architects?email=eq.${encodeURIComponent(archEmail)}&select=nombre,apellido,email,patente,telefono&limit=1`) : null;
+      const architect = archRes?.ok && Array.isArray(archRes.data) && archRes.data[0] ? archRes.data[0] : null;
+      if (!architect) return json({ error: 'Arquitecto no encontrado' }, 404);
+      if (RESEND_API_KEY) {
+        const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+        const subtipo    = project.servicio_subtipo || '';
+        const clientName = `${project.client_nombre || ''} ${project.client_apellido || ''}`.trim();
+        const pnum       = project.project_number || '—';
+        const esFactib   = subtipo === 'factibilidad';
+        await sendPaymentEmails({ project, architect, RESEND_API_KEY });
+        await sendEmail({
+          to: project.client_email,
+          subject: `Tu arquitecta APPARQ — ${pnum} ✅`,
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e;">
+            <div style="background:#E8503A;padding:24px 32px;border-radius:12px 12px 0 0;"><h1 style="color:#fff;margin:0;font-size:1.4rem;">¡${clientName || 'Hola'}, tu trámite está en marcha!</h1></div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;padding:28px 32px;border-radius:0 0 12px 12px;">
+              <p style="margin-top:0;">Hola <strong>${clientName}</strong>, tu trámite ya tiene arquitecta asignada y todo está listo para comenzar.</p>
+              <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin:20px 0;">
+                <div style="font-size:0.8rem;color:#718096;">N° de trámite</div><div style="font-size:1.1rem;font-weight:700;color:#E8503A;">${pnum}</div>
+                <div style="font-size:0.8rem;color:#718096;margin-top:12px;">Servicio</div><div style="font-weight:600;">${svcLabels[project.service_type] || project.service_type}${subtipo ? ' · '+subtipo.charAt(0).toUpperCase()+subtipo.slice(1) : ''} · ${project.commune || ''}</div>
+                <div style="font-size:0.8rem;color:#718096;margin-top:12px;">Arquitecta asignada</div><div style="font-weight:700;font-size:1.05rem;">${architect.nombre} ${architect.apellido}${architect.patente ? ' · Patente '+architect.patente : ''}</div>
+              </div>
+              <p><strong>¿Qué sigue?</strong></p>
+              <ul style="padding-left:20px;line-height:1.9;">
+                <li>La arquitecta <strong>${architect.nombre} ${architect.apellido}</strong> te contactará para ${esFactib ? 'coordinar la visita a terreno' : 'los próximos pasos'}.</li>
+                <li>Plazo estimado: <strong>${esFactib ? 'aproximadamente 2 semanas desde la visita' : '5 a 7 días hábiles'}</strong>.</li>
+              </ul>
+              <p>Seguimiento en <a href="https://apparq.cl/portal" style="color:#E8503A;">apparq.cl/portal</a> con tu email.</p>
+              <p style="margin-bottom:0;font-size:0.85rem;color:#718096;">Consultas: <a href="mailto:hola@apparq.cl" style="color:#E8503A;">hola@apparq.cl</a></p>
+            </div></div>`,
+        }, RESEND_API_KEY);
+      }
+      return json({ success: true, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
+    }
+  }
+
   /* Auth check */
   const adminEmail = await verifyAdmin(request.headers.get('Authorization'));
   if (!adminEmail) {
