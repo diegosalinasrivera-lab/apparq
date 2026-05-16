@@ -189,8 +189,13 @@ export async function onRequest(context) {
       const path = `${numUpper}/${uploader}/${Date.now()}_${safeName}`;
 
       const signed = await createSignedUploadUrl(SUPABASE_URL, SERVICE_KEY, path);
-      // 'url' es la URL completa devuelta por Supabase
-      const uploadUrl = signed.url || `${SUPABASE_URL}/storage/v1${signed.signedURL}`;
+      /* Siempre construir URL absoluta con el dominio de Supabase.
+         signed.url puede ser relativa (/object/upload/sign/...) en algunas versiones,
+         lo que causaría que el browser intentara subir a apparq.cl en vez de Supabase. */
+      const signedPath = signed.signedURL || signed.url || '';
+      const uploadUrl  = signedPath.startsWith('http')
+        ? signedPath
+        : `${SUPABASE_URL}/storage/v1${signedPath}`;
       return json({ uploadUrl, path });
     }
 
