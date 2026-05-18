@@ -27,7 +27,7 @@
       --shadow:       0 4px 16px rgba(0,0,0,0.08);
       --radius-sm:    8px;
       --radius:       12px;
-      --sidebar-w:    240px;
+      --sidebar-w:    180px;
     }
 
     html, body { height: 100%; }
@@ -153,30 +153,30 @@
       z-index: 100;
     }
     .sidebar-header {
-      padding: 20px 20px 16px;
+      padding: 16px 14px 12px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .sidebar-header .brand {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.3px;
       color: #fff;
     }
     .sidebar-nav {
-      padding: 12px 10px;
+      padding: 10px 8px;
       flex: 1;
     }
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 9px 10px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: rgba(255,255,255,0.65);
       transition: background 0.15s, color 0.15s;
@@ -188,9 +188,9 @@
       background: var(--orange);
       color: #fff;
     }
-    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
     .sidebar-footer {
-      padding: 16px;
+      padding: 12px;
       border-top: 1px solid rgba(255,255,255,0.08);
     }
     .btn-logout {
@@ -2685,20 +2685,24 @@ function renderArqPagos() {
   }
 
   /* Resumen global */
-  let globalArqPagado = 0, globalArqPendiente = 0;
+  let globalArqPagado = 0, globalArqListo = 0, globalArqEspera = 0;
   for (const arq of arqPagosData) {
     for (const p of arq.projects) {
-      for (const e of p.etapas) {
-        if (e.pagado) globalArqPagado    += e.monto;
-        else          globalArqPendiente += e.monto;
-      }
+      const pctFrac = (p.pct || 80) / 100;
+      let cumClient = 0;
+      p.etapas.forEach((e, i) => {
+        cumClient += Math.round(e.monto / pctFrac);
+        if (e.pagado)                             globalArqPagado += e.monto;
+        else if (p.cliente_pagado >= cumClient)   globalArqListo  += e.monto;
+        else                                      globalArqEspera += e.monto;
+      });
     }
   }
   const clientePendiente = arqPagosTotales.cliente_pendiente || 0;
   const clienteCobrado   = arqPagosTotales.cliente_cobrado   || 0;
 
   let html = `
-    <div class="summary-row" style="margin-bottom:1.25rem;">
+    <div class="summary-row" style="margin-bottom:0.5rem;">
       <div class="summary-item">
         <div class="sum-label">Cobrado a clientes</div>
         <div class="sum-value" style="color:#059669">${fmtCLP(clienteCobrado)}</div>
@@ -2712,18 +2716,29 @@ function renderArqPagos() {
         <div class="sum-value" style="color:#059669">${fmtCLP(globalArqPagado)}</div>
       </div>
       <div class="summary-item">
-        <div class="sum-label">Pendiente pago arquitectos</div>
-        <div class="sum-value" style="color:#dc2626">${fmtCLP(globalArqPendiente)}</div>
+        <div class="sum-label">🟡 Listo para desembolsar</div>
+        <div class="sum-value" style="color:#d97706">${fmtCLP(globalArqListo)}</div>
       </div>
+      <div class="summary-item">
+        <div class="sum-label">⏳ Espera pago cliente</div>
+        <div class="sum-value" style="color:#94a3b8">${fmtCLP(globalArqEspera)}</div>
+      </div>
+    </div>
+    <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:1.25rem;padding:0 2px;">
+      ✅ Pagado al arquitecto &nbsp;·&nbsp; 🟡 Cliente ya pagó, pendiente desembolso &nbsp;·&nbsp; ⏳ Esperando pago del cliente
     </div>`;
 
   for (const arq of arqPagosData) {
-    let arqPagado = 0, arqPendiente = 0;
+    let arqPagado = 0, arqListo = 0, arqEspera = 0;
     for (const p of arq.projects) {
-      for (const e of p.etapas) {
-        if (e.pagado) arqPagado    += e.monto;
-        else          arqPendiente += e.monto;
-      }
+      const pctFrac = (p.pct || 80) / 100;
+      let cumClient = 0;
+      p.etapas.forEach(e => {
+        cumClient += Math.round(e.monto / pctFrac);
+        if (e.pagado)                             arqPagado += e.monto;
+        else if (p.cliente_pagado >= cumClient)   arqListo  += e.monto;
+        else                                      arqEspera += e.monto;
+      });
     }
 
     html += `
@@ -2737,7 +2752,8 @@ function renderArqPagos() {
           </div>
           <div style="display:flex;gap:1rem;text-align:right;">
             <div><div style="font-size:0.72rem;color:#718096;font-weight:600;">PAGADO</div><div style="font-size:1rem;font-weight:800;color:#059669;">${fmtCLP(arqPagado)}</div></div>
-            <div><div style="font-size:0.72rem;color:#718096;font-weight:600;">PENDIENTE</div><div style="font-size:1rem;font-weight:800;color:${arqPendiente > 0 ? '#E8503A' : '#718096'};">${fmtCLP(arqPendiente)}</div></div>
+            ${arqListo > 0 ? `<div><div style="font-size:0.72rem;color:#d97706;font-weight:600;">🟡 LISTO</div><div style="font-size:1rem;font-weight:800;color:#d97706;">${fmtCLP(arqListo)}</div></div>` : ''}
+            ${arqEspera > 0 ? `<div><div style="font-size:0.72rem;color:#94a3b8;font-weight:600;">⏳ ESPERA</div><div style="font-size:1rem;font-weight:800;color:#94a3b8;">${fmtCLP(arqEspera)}</div></div>` : ''}
           </div>
         </div>
 
@@ -2762,13 +2778,25 @@ function renderArqPagos() {
                 const sub = p.servicio_subtipo ? ` · ${p.servicio_subtipo.charAt(0).toUpperCase()+p.servicio_subtipo.slice(1)}` : '';
                 const rowBg = pi % 2 === 1 ? 'background:#f8fafc;' : '';
                 const maxEtapas = arq.projects.some(x => x.etapas.length === 4) ? 4 : 2;
+                /* Compute cumulative client thresholds to determine readiness */
+                const pctFracRow = (p.pct || 80) / 100;
+                let cumClientRow = 0;
+                const clientThresholds = p.etapas.map(e => {
+                  cumClientRow += Math.round(e.monto / pctFracRow);
+                  return cumClientRow;
+                });
                 const etapasCells = Array.from({length: maxEtapas}, (_, i) => {
                   const e = p.etapas[i];
                   if (!e) return `<td style="padding:7px 12px;text-align:right;color:#cbd5e0;">—</td>`;
-                  const color = e.pagado ? '#059669' : '#718096';
-                  const icon  = e.pagado ? '✓' : '•';
-                  const tip   = e.pagado && e.at ? ` title="Pagado ${fmtDate(e.at)}"` : '';
-                  return `<td style="padding:7px 12px;text-align:right;font-weight:${e.pagado ? '700' : '500'};color:${color};"${tip}>${icon} ${fmtCLP(e.monto)}</td>`;
+                  if (e.pagado) {
+                    const tip = e.at ? ` title="Pagado ${fmtDate(e.at)}"` : '';
+                    return `<td style="padding:7px 12px;text-align:right;font-weight:700;color:#059669;"${tip}>✅ ${fmtCLP(e.monto)}</td>`;
+                  }
+                  const listo = p.cliente_pagado >= clientThresholds[i];
+                  if (listo) {
+                    return `<td style="padding:7px 12px;text-align:right;font-weight:700;color:#d97706;" title="Cliente pagó — pendiente desembolso">🟡 ${fmtCLP(e.monto)}</td>`;
+                  }
+                  return `<td style="padding:7px 12px;text-align:right;font-weight:500;color:#cbd5e0;" title="Esperando pago del cliente">⏳ ${fmtCLP(e.monto)}</td>`;
                 }).join('');
                 const pendCliente = p.cliente_pendiente || 0;
                 const pendColor   = pendCliente > 0 ? '#E8503A' : '#059669';
