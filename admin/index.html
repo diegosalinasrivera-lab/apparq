@@ -1092,11 +1092,15 @@
             <div id="pago-content" style="display:none">
               <div class="summary-row">
                 <div class="summary-item">
-                  <div class="sum-label">Total recaudado</div>
+                  <div class="sum-label">Total recaudado clientes</div>
                   <div class="sum-value" id="pago-total">—</div>
                 </div>
                 <div class="summary-item">
-                  <div class="sum-label">Pagos este mes</div>
+                  <div class="sum-label">Pendiente de cobro clientes</div>
+                  <div class="sum-value" style="color:#E8503A;" id="pago-pendiente">—</div>
+                </div>
+                <div class="summary-item">
+                  <div class="sum-label">Pagos aprobados este mes</div>
                   <div class="sum-value" id="pago-mes">—</div>
                 </div>
               </div>
@@ -2631,12 +2635,15 @@ function switchPagoTab(tab) {
   if (tab === 'arquitectos') loadArqPagos();
 }
 
+let pagosPendienteClientes = 0;
+
 async function loadPagos() {
   document.getElementById('pago-loading').style.display = 'flex';
   document.getElementById('pago-content').style.display = 'none';
   try {
     const d = await apiGet('payments');
     payments = d.payments || [];
+    pagosPendienteClientes = d.pendiente_clientes || 0;
     renderPagosTable();
     document.getElementById('pago-loading').style.display = 'none';
     document.getElementById('pago-content').style.display = 'block';
@@ -2647,6 +2654,7 @@ async function loadPagos() {
 }
 
 let arqPagosData = [];
+let arqPagosTotales = {};
 let arqPagosLoaded = false;
 
 async function loadArqPagos() {
@@ -2656,6 +2664,7 @@ async function loadArqPagos() {
   try {
     const d = await apiGet('arq_payments');
     arqPagosData = d.arq_payments || [];
+    arqPagosTotales = d.totales || {};
     renderArqPagos();
     arqPagosLoaded = true;
     document.getElementById('arq-pago-loading').style.display = 'none';
@@ -2676,29 +2685,35 @@ function renderArqPagos() {
   }
 
   /* Resumen global */
-  let globalPagado = 0, globalPendiente = 0;
+  let globalArqPagado = 0, globalArqPendiente = 0;
   for (const arq of arqPagosData) {
     for (const p of arq.projects) {
       for (const e of p.etapas) {
-        if (e.pagado) globalPagado    += e.monto;
-        else          globalPendiente += e.monto;
+        if (e.pagado) globalArqPagado    += e.monto;
+        else          globalArqPendiente += e.monto;
       }
     }
   }
+  const clientePendiente = arqPagosTotales.cliente_pendiente || 0;
+  const clienteCobrado   = arqPagosTotales.cliente_cobrado   || 0;
 
   let html = `
     <div class="summary-row" style="margin-bottom:1.25rem;">
       <div class="summary-item">
-        <div class="sum-label">Total pagado a arquitectos</div>
-        <div class="sum-value" style="color:#059669">${fmtCLP(globalPagado)}</div>
+        <div class="sum-label">Cobrado a clientes</div>
+        <div class="sum-value" style="color:#059669">${fmtCLP(clienteCobrado)}</div>
       </div>
       <div class="summary-item">
-        <div class="sum-label">Total pendiente de pago</div>
-        <div class="sum-value" style="color:#E8503A">${fmtCLP(globalPendiente)}</div>
+        <div class="sum-label">Pendiente cobro clientes</div>
+        <div class="sum-value" style="color:#E8503A">${fmtCLP(clientePendiente)}</div>
       </div>
       <div class="summary-item">
-        <div class="sum-label">Arquitectos con trámites activos</div>
-        <div class="sum-value">${arqPagosData.length}</div>
+        <div class="sum-label">Pagado a arquitectos</div>
+        <div class="sum-value" style="color:#059669">${fmtCLP(globalArqPagado)}</div>
+      </div>
+      <div class="summary-item">
+        <div class="sum-label">Pendiente pago arquitectos</div>
+        <div class="sum-value" style="color:#dc2626">${fmtCLP(globalArqPendiente)}</div>
       </div>
     </div>`;
 
@@ -2735,9 +2750,10 @@ function renderArqPagos() {
                 <th style="padding:8px 12px;">Cliente</th>
                 <th style="padding:8px 12px;">Servicio</th>
                 <th style="padding:8px 12px;">Stage</th>
+                <th style="padding:8px 12px;text-align:right;color:#718096;">Pend. cliente</th>
                 ${arq.projects.some(p => p.etapas.length === 4)
-                  ? '<th style="padding:8px 12px;text-align:right;">E1</th><th style="padding:8px 12px;text-align:right;">E2</th><th style="padding:8px 12px;text-align:right;">E3</th><th style="padding:8px 12px;text-align:right;">E4</th>'
-                  : '<th style="padding:8px 12px;text-align:right;">E1</th><th style="padding:8px 12px;text-align:right;">E2</th>'}
+                  ? '<th style="padding:8px 12px;text-align:right;">E1 arq.</th><th style="padding:8px 12px;text-align:right;">E2 arq.</th><th style="padding:8px 12px;text-align:right;">E3 arq.</th><th style="padding:8px 12px;text-align:right;">E4 arq.</th>'
+                  : '<th style="padding:8px 12px;text-align:right;">E1 arq.</th><th style="padding:8px 12px;text-align:right;">E2 arq.</th>'}
               </tr>
             </thead>
             <tbody>
@@ -2749,16 +2765,20 @@ function renderArqPagos() {
                 const etapasCells = Array.from({length: maxEtapas}, (_, i) => {
                   const e = p.etapas[i];
                   if (!e) return `<td style="padding:7px 12px;text-align:right;color:#cbd5e0;">—</td>`;
-                  const color = e.pagado ? '#059669' : '#E8503A';
+                  const color = e.pagado ? '#059669' : '#718096';
                   const icon  = e.pagado ? '✓' : '•';
                   const tip   = e.pagado && e.at ? ` title="Pagado ${fmtDate(e.at)}"` : '';
-                  return `<td style="padding:7px 12px;text-align:right;font-weight:700;color:${color};"${tip}>${icon} ${fmtCLP(e.monto)}</td>`;
+                  return `<td style="padding:7px 12px;text-align:right;font-weight:${e.pagado ? '700' : '500'};color:${color};"${tip}>${icon} ${fmtCLP(e.monto)}</td>`;
                 }).join('');
+                const pendCliente = p.cliente_pendiente || 0;
+                const pendColor   = pendCliente > 0 ? '#E8503A' : '#059669';
+                const pendTxt     = pendCliente > 0 ? fmtCLP(pendCliente) : '✓ Cobrado';
                 return `<tr style="${rowBg}cursor:pointer;" onclick="openTramiteDetail('${p.id}')">
                   <td style="padding:7px 12px;font-weight:700;color:#E8503A;font-size:0.75rem;">${p.project_number}</td>
                   <td style="padding:7px 12px;">${p.client}</td>
                   <td style="padding:7px 12px;">${svc}${sub} · ${p.commune}</td>
                   <td style="padding:7px 12px;">${stageBadge(p.stage)}</td>
+                  <td style="padding:7px 12px;text-align:right;font-weight:700;color:${pendColor};">${pendTxt}</td>
                   ${etapasCells}
                 </tr>`;
               }).join('')}
@@ -2779,8 +2799,9 @@ function renderPagosTable() {
   const total = approved.reduce((s, p) => s + (p.amount || 0), 0);
   const mes   = approved.filter(p => p.created_at >= monthStart).length;
 
-  document.getElementById('pago-total').textContent = fmtCLP(total);
-  document.getElementById('pago-mes').textContent   = mes;
+  document.getElementById('pago-total').textContent    = fmtCLP(total);
+  document.getElementById('pago-mes').textContent      = mes;
+  document.getElementById('pago-pendiente').textContent = fmtCLP(pagosPendienteClientes);
 
   const tbody = document.getElementById('pago-table-body');
   if (!payments.length) {

@@ -403,24 +403,46 @@ export async function onRequest(context) {
     }
 
     if (section === 'payments') {
-      const { ok, data } = await sb(
-        '/payments?select=id,mp_payment_id,external_ref,status,amount,currency,payer_email,payment_method,created_at&order=created_at.desc&limit=200'
-      );
-      if (!ok) return json({ error: 'Error al obtener pagos' }, 500);
-      return json({ payments: data });
+      const [payRes, projRes] = await Promise.all([
+        sb('/payments?select=id,mp_payment_id,external_ref,status,amount,currency,payer_email,payment_method,created_at&order=created_at.desc&limit=200'),
+        sb('/projects?stage=neq.pendiente_pago&stage=neq.completado&select=total_clp'),
+      ]);
+      if (!payRes.ok) return json({ error: 'Error al obtener pagos' }, 500);
+      const payments  = Array.isArray(payRes.data)  ? payRes.data  : [];
+      const projs     = Array.isArray(projRes.data) ? projRes.data : [];
+      const cobrado   = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
+      const activo    = projs.reduce((s, p) => s + (p.total_clp || 0), 0);
+      const pendiente = Math.max(0, activo - cobrado);
+      return json({ payments, pendiente_clientes: Math.round(pendiente), total_activo: Math.round(activo) });
     }
 
     if (section === 'arq_payments') {
-      /* Proyectos con arquitecto asignado (excluye pendiente_pago y sin arq) */
-      const [projRes, archRes] = await Promise.all([
+      /* Proyectos con arquitecto asignado + pagos aprobados + todos los proyectos activos */
+      const [projRes, archRes, payRes, allProjRes] = await Promise.all([
         sb('/projects?architect_email=neq.&stage=neq.pendiente_pago&select=id,project_number,client_nombre,client_apellido,service_type,servicio_subtipo,commune,total_clp,e1_clp,stage,architect_email,arq_pago_e1,arq_pago_e2,arq_pago_e3,arq_pago_e4,arq_pago_e1_at,arq_pago_e2_at,arq_pago_e3_at,arq_pago_e4_at&order=created_at.desc&limit=500'),
         sb('/architects?select=nombre,apellido,email,patente&activo=eq.true'),
+        sb('/payments?status=eq.approved&select=external_ref,amount'),
+        sb('/projects?stage=neq.pendiente_pago&stage=neq.completado&select=project_number,total_clp'),
       ]);
       if (!projRes.ok) return json({ error: 'Error al obtener proyectos' }, 500);
-      const projects   = Array.isArray(projRes.data) ? projRes.data : [];
-      const architects = Array.isArray(archRes.data)  ? archRes.data  : [];
+      const projects   = Array.isArray(projRes.data)    ? projRes.data    : [];
+      const architects = Array.isArray(archRes.data)    ? archRes.data    : [];
+      const payments   = Array.isArray(payRes.data)     ? payRes.data     : [];
+      const allProjs   = Array.isArray(allProjRes.data) ? allProjRes.data : [];
       const archMap    = {};
       architects.forEach(a => { archMap[a.email] = a; });
+
+      /* Mapa de pagos por project_number (solo los que usan formato ARQ-*) */
+      const payByProj = {};
+      for (const pay of payments) {
+        const ref = pay.external_ref || '';
+        if (ref.startsWith('ARQ-')) payByProj[ref] = (payByProj[ref] || 0) + (pay.amount || 0);
+      }
+
+      /* Totales globales cliente */
+      const totalClienteActivo   = allProjs.reduce((s, p) => s + (p.total_clp || 0), 0);
+      const totalClienteCobrado  = payments.reduce((s, p) => s + (p.amount || 0), 0);
+      const totalClientePendiente = Math.max(0, totalClienteActivo - totalClienteCobrado);
 
       /* Agrupar por arquitecto y calcular montos */
       const byArq = {};
@@ -436,11 +458,11 @@ export async function onRequest(context) {
             projects: [],
           };
         }
-        const pct      = archMap[p.architect_email]?.patente ? 0.80 : 0.70;
-        const clp      = p.total_clp || 0;
-        const e1c      = p.e1_clp   || 0;
-        const is2      = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
-        const etapas   = is2
+        const pct    = archMap[p.architect_email]?.patente ? 0.80 : 0.70;
+        const clp    = p.total_clp || 0;
+        const e1c    = p.e1_clp   || 0;
+        const is2    = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+        const etapas = is2
           ? [
               { key:'e1', label:'E1 · Inicio',         monto: Math.round(clp*0.50*pct), pagado: p.arq_pago_e1, at: p.arq_pago_e1_at },
               { key:'e2', label:'E2 · Cierre',          monto: Math.round(clp*0.50*pct), pagado: p.arq_pago_e2, at: p.arq_pago_e2_at },
@@ -451,19 +473,31 @@ export async function onRequest(context) {
               { key:'e3', label:'E3 · Ingreso DOM',     monto: Math.round(clp*0.30*pct), pagado: p.arq_pago_e3, at: p.arq_pago_e3_at },
               { key:'e4', label:'E4 · Recepción final', monto: Math.round(clp*0.20*pct), pagado: p.arq_pago_e4, at: p.arq_pago_e4_at },
             ];
+        const clientePagado    = payByProj[p.project_number] || 0;
+        const clientePendiente = Math.max(0, clp - clientePagado);
         byArq[p.architect_email].projects.push({
-          id:           p.id,
-          project_number: p.project_number,
-          client:       `${p.client_nombre || ''} ${p.client_apellido || ''}`.trim(),
-          service_type: p.service_type,
+          id:               p.id,
+          project_number:   p.project_number,
+          client:           `${p.client_nombre || ''} ${p.client_apellido || ''}`.trim(),
+          service_type:     p.service_type,
           servicio_subtipo: p.servicio_subtipo,
-          commune:      p.commune,
-          stage:        p.stage,
-          pct:          Math.round(pct * 100),
+          commune:          p.commune,
+          stage:            p.stage,
+          pct:              Math.round(pct * 100),
+          total_clp:        Math.round(clp),
+          cliente_pagado:   clientePagado,
+          cliente_pendiente: clientePendiente,
           etapas,
         });
       }
-      return json({ arq_payments: Object.values(byArq) });
+      return json({
+        arq_payments: Object.values(byArq),
+        totales: {
+          cliente_activo:    Math.round(totalClienteActivo),
+          cliente_cobrado:   Math.round(totalClienteCobrado),
+          cliente_pendiente: Math.round(totalClientePendiente),
+        },
+      });
     }
 
     if (section === 'funnel') {
