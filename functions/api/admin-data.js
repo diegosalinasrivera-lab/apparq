@@ -591,10 +591,18 @@ export async function onRequest(context) {
     if (action === 'delete_tramite') {
       const { id } = body;
       if (!id) return json({ error: 'id requerido' }, 400);
-      const { ok, data } = await sb(`/projects?id=eq.${id}`, {
-        method: 'DELETE',
-        prefer: 'return=minimal',
-      });
+      /* Obtener project_number para limpiar tablas relacionadas */
+      const projCheck = await sb(`/projects?id=eq.${id}&select=project_number&limit=1`);
+      const pnum = projCheck.ok && Array.isArray(projCheck.data) && projCheck.data[0]?.project_number;
+      /* Eliminar registros relacionados primero (FK constraints) */
+      if (pnum) {
+        await Promise.all([
+          sb(`/messages?project_number=eq.${encodeURIComponent(pnum)}`,       { method: 'DELETE', prefer: 'return=minimal' }),
+          sb(`/project_updates?project_number=eq.${encodeURIComponent(pnum)}`,{ method: 'DELETE', prefer: 'return=minimal' }),
+          sb(`/payments?external_ref=eq.${encodeURIComponent(pnum)}`,         { method: 'DELETE', prefer: 'return=minimal' }),
+        ]);
+      }
+      const { ok, data } = await sb(`/projects?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' });
       if (!ok) return json({ error: 'Error al eliminar trámite', detail: data }, 500);
       return json({ success: true });
     }
