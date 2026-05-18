@@ -846,6 +846,9 @@
         <div class="nav-item" data-section="leads">
           <span class="nav-icon">🎯</span> Leads
         </div>
+        <div class="nav-item" data-section="finanzas">
+          <span class="nav-icon">📈</span> Finanzas
+        </div>
       </div>
       <div class="sidebar-footer">
         <div class="user-info-sidebar" id="sidebar-user-email"></div>
@@ -1177,6 +1180,131 @@
             </div>
           </div>
         </div>
+
+        <!-- ── FINANZAS ──────────────────────── -->
+        <div id="section-finanzas" class="section">
+          <div class="section-header">
+            <h2>Finanzas</h2>
+          </div>
+
+          <div id="fin-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+
+          <div id="fin-content" style="display:none;">
+
+            <!-- KPI año actual -->
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:0.06em;margin-bottom:0.6rem;" id="fin-year-label">AÑO ACTUAL</div>
+            <div class="stats-grid" style="margin-bottom:1.5rem;">
+              <div class="stat-card">
+                <div class="stat-label">💳 Ingresos</div>
+                <div class="stat-value" id="fin-kpi-ingresos">—</div>
+                <div class="stat-sub">Cobrado a clientes</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">💸 Egresos</div>
+                <div class="stat-value" id="fin-kpi-egresos">—</div>
+                <div class="stat-sub">Pagado a arquitectos</div>
+              </div>
+              <div class="stat-card" style="border-top:3px solid #059669;">
+                <div class="stat-label">📈 Utilidad bruta</div>
+                <div class="stat-value" id="fin-kpi-utilidad" style="color:#059669;">—</div>
+                <div class="stat-sub">Ingresos − Egresos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">% Margen</div>
+                <div class="stat-value" id="fin-kpi-margen">—</div>
+                <div class="stat-sub">Utilidad / Ingresos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">📋 Trámites</div>
+                <div class="stat-value" id="fin-kpi-tramites">—</div>
+                <div class="stat-sub">Nuevos este año</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">🎯 Ticket prom.</div>
+                <div class="stat-value" id="fin-kpi-ticket">—</div>
+                <div class="stat-sub">Ingreso por trámite</div>
+              </div>
+            </div>
+
+            <!-- Flujo mensual -->
+            <div class="card" style="margin-bottom:1.5rem;">
+              <div class="card-body" style="padding:0;">
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                  <div style="font-weight:700;color:#1a1a2e;">Flujo mensual — últimos 12 meses</div>
+                  <div style="font-size:0.72rem;color:#94a3b8;">
+                    <span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:2px;margin-right:4px;"></span>Ingresos &nbsp;
+                    <span style="display:inline-block;width:8px;height:8px;background:#f97316;border-radius:2px;margin-right:4px;"></span>Egresos
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <table style="font-size:0.8rem;">
+                    <thead>
+                      <tr style="background:#f8fafc;">
+                        <th style="padding:8px 12px;">Mes</th>
+                        <th style="padding:8px 12px;text-align:center;">Trámites</th>
+                        <th style="padding:8px 12px;text-align:right;">Ingresos</th>
+                        <th style="padding:8px 12px;text-align:right;">Egresos</th>
+                        <th style="padding:8px 12px;text-align:right;">Utilidad</th>
+                        <th style="padding:8px 12px;text-align:right;">Margen</th>
+                      </tr>
+                    </thead>
+                    <tbody id="fin-month-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resumen anual -->
+            <div class="card" style="margin-bottom:1.5rem;">
+              <div class="card-body" style="padding:0;">
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #e2e8f0;font-weight:700;color:#1a1a2e;">Resumen anual</div>
+                <div class="table-wrap">
+                  <table style="font-size:0.8rem;">
+                    <thead>
+                      <tr style="background:#f8fafc;">
+                        <th style="padding:8px 12px;">Año</th>
+                        <th style="padding:8px 12px;text-align:right;">Trámites</th>
+                        <th style="padding:8px 12px;text-align:right;">Ingresos</th>
+                        <th style="padding:8px 12px;text-align:right;">Egresos</th>
+                        <th style="padding:8px 12px;text-align:right;">Utilidad</th>
+                        <th style="padding:8px 12px;text-align:right;">Margen</th>
+                      </tr>
+                    </thead>
+                    <tbody id="fin-annual-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Totales históricos -->
+            <div class="card">
+              <div class="card-body" style="padding:0;">
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #e2e8f0;font-weight:700;color:#1a1a2e;">Totales históricos</div>
+                <div class="summary-row" style="padding:1rem 1.25rem;">
+                  <div class="summary-item">
+                    <div class="sum-label">Total cobrado</div>
+                    <div class="sum-value" id="fin-total-ingresos">—</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="sum-label">Total egresos</div>
+                    <div class="sum-value" id="fin-total-egresos">—</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="sum-label">Utilidad acumulada</div>
+                    <div class="sum-value" id="fin-total-utilidad" style="color:#059669;">—</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="sum-label">Margen global</div>
+                    <div class="sum-value" id="fin-total-margen">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /fin-content -->
+        </div><!-- /section-finanzas -->
 
       </div><!-- /content -->
     </div><!-- /main-area -->
@@ -1613,6 +1741,7 @@ const SECTION_TITLES = {
   tramites:    'Trámites',
   pagos:       'Pagos',
   leads:       'Leads del Cotizador',
+  finanzas:    'Finanzas',
 };
 
 function navigateTo(section) {
@@ -1635,6 +1764,7 @@ function navigateTo(section) {
   if (section === 'tramites')     loadTramites();
   if (section === 'pagos')        { arqPagosLoaded = false; loadPagos(); }
   if (section === 'leads')        loadLeads();
+  if (section === 'finanzas')     loadFinanzas();
 }
 
 /* ══════════════════════════════════════════════════
@@ -3024,6 +3154,105 @@ function exportLeadsCSV() {
   const today = new Date().toISOString().slice(0,10);
   downloadCSV(rows, `leads_apparq_${today}.csv`);
   showToast('CSV descargado', 'success');
+}
+
+/* ══════════════════════════════════════════════════
+   FINANZAS
+══════════════════════════════════════════════════ */
+let finanzasData = null;
+
+async function loadFinanzas() {
+  if (finanzasData) { renderFinanzas(); return; }
+  document.getElementById('fin-loading').style.display = 'flex';
+  document.getElementById('fin-content').style.display = 'none';
+  try {
+    finanzasData = await apiGet('finanzas');
+    renderFinanzas();
+    document.getElementById('fin-loading').style.display = 'none';
+    document.getElementById('fin-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar finanzas', 'error');
+    document.getElementById('fin-loading').style.display = 'none';
+  }
+}
+
+function renderFinanzas() {
+  const d = finanzasData;
+  const now = new Date();
+  const curYear = String(now.getFullYear());
+  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  /* KPI año actual */
+  const curA = d.annual.find(a => a.year === curYear) || { ingresos: 0, egresos: 0, utilidad: 0, n_tramites: 0 };
+  const margenA = curA.ingresos > 0 ? Math.round(curA.utilidad / curA.ingresos * 100) : 0;
+  const ticket  = curA.n_tramites > 0 ? Math.round(curA.ingresos / curA.n_tramites) : 0;
+
+  document.getElementById('fin-year-label').textContent = `AÑO ${curYear}`;
+  document.getElementById('fin-kpi-ingresos').textContent = fmtCLP(curA.ingresos);
+  document.getElementById('fin-kpi-egresos').textContent  = fmtCLP(curA.egresos);
+  document.getElementById('fin-kpi-utilidad').textContent = fmtCLP(curA.utilidad);
+  document.getElementById('fin-kpi-margen').textContent   = `${margenA}%`;
+  document.getElementById('fin-kpi-tramites').textContent = curA.n_tramites;
+  document.getElementById('fin-kpi-ticket').textContent   = ticket > 0 ? fmtCLP(ticket) : '—';
+
+  /* Tabla mensual — últimos 12 meses, más reciente primero */
+  const last12 = d.months.slice(-12).reverse();
+  const maxIng  = Math.max(...last12.map(m => m.ingresos), 1);
+
+  const monthHtml = last12.map((m, idx) => {
+    const [yr, mo] = m.month.split('-');
+    const label    = `${MONTHS[+mo - 1]} ${yr}`;
+    const ingPct   = Math.round(m.ingresos / maxIng * 100);
+    const egrPct   = Math.round(m.egresos  / maxIng * 100);
+    const margenM  = m.ingresos > 0 ? Math.round(m.utilidad / m.ingresos * 100) : null;
+    const utColor  = m.utilidad > 0 ? '#059669' : m.utilidad < 0 ? '#dc2626' : '#94a3b8';
+    const rowBg    = idx % 2 === 1 ? 'background:#f8fafc;' : '';
+    const isCurM   = m.month === `${curYear}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    return `
+      <tr style="${rowBg}${isCurM ? 'font-weight:600;' : ''}">
+        <td style="padding:8px 12px;white-space:nowrap;${isCurM ? 'color:#1e40af;' : ''}">${label}${isCurM ? ' <span style="font-size:10px;background:#3b82f6;color:#fff;border-radius:3px;padding:1px 4px;">hoy</span>' : ''}</td>
+        <td style="padding:8px 12px;text-align:center;color:#64748b;">${m.n_tramites || '—'}</td>
+        <td style="padding:8px 12px;text-align:right;">
+          <div style="color:#1e40af;font-weight:700;">${m.ingresos > 0 ? fmtCLP(m.ingresos) : '<span style="color:#cbd5e1">$0</span>'}</div>
+          <div style="background:#e2e8f0;border-radius:3px;height:4px;margin-top:3px;"><div style="background:#3b82f6;width:${ingPct}%;height:4px;border-radius:3px;"></div></div>
+        </td>
+        <td style="padding:8px 12px;text-align:right;">
+          <div style="color:#64748b;">${m.egresos > 0 ? fmtCLP(m.egresos) : '<span style="color:#cbd5e1">$0</span>'}</div>
+          <div style="background:#e2e8f0;border-radius:3px;height:4px;margin-top:3px;"><div style="background:#f97316;width:${egrPct}%;height:4px;border-radius:3px;"></div></div>
+        </td>
+        <td style="padding:8px 12px;text-align:right;font-weight:700;color:${utColor};">${fmtCLP(m.utilidad)}</td>
+        <td style="padding:8px 12px;text-align:right;color:${margenM !== null && margenM >= 20 ? '#059669' : margenM !== null && margenM >= 10 ? '#d97706' : '#94a3b8'};">${margenM !== null ? margenM + '%' : '—'}</td>
+      </tr>`;
+  }).join('');
+  document.getElementById('fin-month-tbody').innerHTML = monthHtml ||
+    '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#94a3b8;">Sin datos</td></tr>';
+
+  /* Tabla anual — más reciente primero */
+  const annualHtml = [...d.annual].reverse().map(a => {
+    const mar = a.ingresos > 0 ? Math.round(a.utilidad / a.ingresos * 100) : null;
+    const isCur = a.year === curYear;
+    const utColor = a.utilidad > 0 ? '#059669' : a.utilidad < 0 ? '#dc2626' : '#94a3b8';
+    return `
+      <tr style="${isCur ? 'background:#eff6ff;' : ''}">
+        <td style="padding:8px 12px;font-weight:${isCur ? '700' : '500'};">
+          ${a.year}${isCur ? ' <span style="font-size:10px;background:#3b82f6;color:#fff;border-radius:3px;padding:1px 5px;">actual</span>' : ''}
+        </td>
+        <td style="padding:8px 12px;text-align:right;color:#64748b;">${a.n_tramites}</td>
+        <td style="padding:8px 12px;text-align:right;font-weight:${isCur?'700':'500'};color:#1e40af;">${fmtCLP(a.ingresos)}</td>
+        <td style="padding:8px 12px;text-align:right;color:#64748b;">${fmtCLP(a.egresos)}</td>
+        <td style="padding:8px 12px;text-align:right;font-weight:700;color:${utColor};">${fmtCLP(a.utilidad)}</td>
+        <td style="padding:8px 12px;text-align:right;color:${mar !== null && mar >= 20 ? '#059669' : mar !== null && mar >= 10 ? '#d97706' : '#94a3b8'};">${mar !== null ? mar + '%' : '—'}</td>
+      </tr>`;
+  }).join('');
+  document.getElementById('fin-annual-tbody').innerHTML = annualHtml ||
+    '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#94a3b8;">Sin datos</td></tr>';
+
+  /* Totales históricos */
+  const totalMargen = d.totals.ingresos > 0 ? Math.round(d.totals.utilidad / d.totals.ingresos * 100) : 0;
+  document.getElementById('fin-total-ingresos').textContent = fmtCLP(d.totals.ingresos);
+  document.getElementById('fin-total-egresos').textContent  = fmtCLP(d.totals.egresos);
+  document.getElementById('fin-total-utilidad').textContent = fmtCLP(d.totals.utilidad);
+  document.getElementById('fin-total-margen').textContent   = `${totalMargen}%`;
 }
 
 /* ══════════════════════════════════════════════════

@@ -516,6 +516,101 @@ export async function onRequest(context) {
       return json({ leads: data });
     }
 
+    if (section === 'finanzas') {
+      const [payRes, projRes, archRes] = await Promise.all([
+        sb('/payments?status=eq.approved&select=amount,created_at&order=created_at.asc&limit=5000'),
+        sb('/projects?select=id,total_clp,e1_clp,service_type,architect_email,created_at,arq_pago_e1,arq_pago_e2,arq_pago_e3,arq_pago_e4,arq_pago_e1_at,arq_pago_e2_at,arq_pago_e3_at,arq_pago_e4_at&limit=2000'),
+        sb('/architects?select=email,patente&activo=eq.true'),
+      ]);
+      const payments   = Array.isArray(payRes.data)  ? payRes.data  : [];
+      const projects   = Array.isArray(projRes.data) ? projRes.data : [];
+      const architects = Array.isArray(archRes.data) ? archRes.data : [];
+
+      const archMap = {};
+      architects.forEach(a => { archMap[a.email] = a; });
+
+      const ym = d => d ? d.slice(0, 7) : null; // "YYYY-MM"
+
+      /* Ingresos por mes */
+      const ingByM = {};
+      for (const pay of payments) {
+        const k = ym(pay.created_at);
+        if (k) ingByM[k] = (ingByM[k] || 0) + (pay.amount || 0);
+      }
+
+      /* Egresos (desembolsos a arquitectos) por mes */
+      const egrByM = {};
+      for (const p of projects) {
+        const pct = archMap[p.architect_email]?.patente ? 0.80 : 0.70;
+        const clp = p.total_clp || 0;
+        const e1c = p.e1_clp   || 0;
+        const is2 = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+        const etapas = is2
+          ? [
+              { pagado: p.arq_pago_e1, at: p.arq_pago_e1_at, monto: Math.round(clp * 0.50 * pct) },
+              { pagado: p.arq_pago_e2, at: p.arq_pago_e2_at, monto: Math.round(clp * 0.50 * pct) },
+            ]
+          : [
+              { pagado: p.arq_pago_e1, at: p.arq_pago_e1_at, monto: Math.round(e1c * pct) },
+              { pagado: p.arq_pago_e2, at: p.arq_pago_e2_at, monto: Math.round(clp * 0.30 * pct) },
+              { pagado: p.arq_pago_e3, at: p.arq_pago_e3_at, monto: Math.round(clp * 0.30 * pct) },
+              { pagado: p.arq_pago_e4, at: p.arq_pago_e4_at, monto: Math.round(clp * 0.20 * pct) },
+            ];
+        for (const e of etapas) {
+          if (e.pagado && e.at) {
+            const k = ym(e.at);
+            if (k) egrByM[k] = (egrByM[k] || 0) + e.monto;
+          }
+        }
+      }
+
+      /* Trámites creados por mes */
+      const tramByM = {};
+      for (const p of projects) {
+        const k = ym(p.created_at);
+        if (k) tramByM[k] = (tramByM[k] || 0) + 1;
+      }
+
+      /* Serie mensual — últimos 24 meses */
+      const now2 = new Date();
+      const months = [];
+      for (let i = 23; i >= 0; i--) {
+        const d = new Date(now2.getFullYear(), now2.getMonth() - i, 1);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const ing = Math.round(ingByM[k] || 0);
+        const egr = Math.round(egrByM[k] || 0);
+        months.push({ month: k, ingresos: ing, egresos: egr, utilidad: ing - egr, n_tramites: tramByM[k] || 0 });
+      }
+
+      /* Totales anuales (histórico completo) */
+      const annualMap = {};
+      const allKeys = new Set([...Object.keys(ingByM), ...Object.keys(egrByM), ...Object.keys(tramByM)]);
+      for (const k of allKeys) {
+        const yr = k.slice(0, 4);
+        if (!annualMap[yr]) annualMap[yr] = { year: yr, ingresos: 0, egresos: 0, n_tramites: 0 };
+        annualMap[yr].ingresos   += Math.round(ingByM[k]  || 0);
+        annualMap[yr].egresos    += Math.round(egrByM[k]  || 0);
+        annualMap[yr].n_tramites += tramByM[k] || 0;
+      }
+      const annual = Object.values(annualMap)
+        .map(a => ({ ...a, utilidad: a.ingresos - a.egresos }))
+        .sort((a, b) => a.year.localeCompare(b.year));
+
+      /* Totales históricos globales */
+      const totalIngresos = payments.reduce((s, p) => s + (p.amount || 0), 0);
+      const totalEgresos  = Object.values(egrByM).reduce((s, v) => s + v, 0);
+
+      return json({
+        months,
+        annual,
+        totals: {
+          ingresos: Math.round(totalIngresos),
+          egresos:  Math.round(totalEgresos),
+          utilidad: Math.round(totalIngresos - totalEgresos),
+        },
+      });
+    }
+
     if (section === 'dashboard') {
       /* Fetch all in parallel */
       const [archRes, projRes, payRes, leadRes, funnelRes] = await Promise.all([
