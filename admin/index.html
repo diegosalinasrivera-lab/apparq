@@ -1075,39 +1075,52 @@
         <div id="section-pagos" class="section">
           <div class="section-header">
             <h2>Pagos</h2>
-            <button class="btn btn-outline" onclick="exportPagosCSV()">⬇ Exportar CSV</button>
+            <button class="btn btn-outline" id="btn-export-pagos" onclick="exportPagosCSV()">⬇ Exportar CSV</button>
           </div>
-          <div id="pago-loading" class="loading-state">
-            <div class="spinner spinner-dark"></div> Cargando…
+
+          <!-- Sub-tabs -->
+          <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.25rem;">
+            <button id="ptab-clientes" onclick="switchPagoTab('clientes')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid #E8503A;color:#E8503A;margin-bottom:-2px;">💳 Pagos clientes</button>
+            <button id="ptab-arquitectos" onclick="switchPagoTab('arquitectos')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">👷 Pagos arquitectos</button>
           </div>
-          <div id="pago-content" style="display:none">
-            <div class="summary-row">
-              <div class="summary-item">
-                <div class="sum-label">Total recaudado</div>
-                <div class="sum-value" id="pago-total">—</div>
+
+          <!-- TAB: Pagos clientes -->
+          <div id="ptab-content-clientes">
+            <div id="pago-loading" class="loading-state">
+              <div class="spinner spinner-dark"></div> Cargando…
+            </div>
+            <div id="pago-content" style="display:none">
+              <div class="summary-row">
+                <div class="summary-item">
+                  <div class="sum-label">Total recaudado</div>
+                  <div class="sum-value" id="pago-total">—</div>
+                </div>
+                <div class="summary-item">
+                  <div class="sum-label">Pagos este mes</div>
+                  <div class="sum-value" id="pago-mes">—</div>
+                </div>
               </div>
-              <div class="summary-item">
-                <div class="sum-label">Pagos este mes</div>
-                <div class="sum-value" id="pago-mes">—</div>
+              <div class="card">
+                <div class="card-body table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th><th>Cliente</th><th>Monto</th><th>Método</th><th>Estado</th><th>Referencia MP</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pago-table-body"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
-            <div class="card">
-              <div class="card-body table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Cliente</th>
-                      <th>Monto</th>
-                      <th>Método</th>
-                      <th>Estado</th>
-                      <th>Referencia MP</th>
-                    </tr>
-                  </thead>
-                  <tbody id="pago-table-body"></tbody>
-                </table>
-              </div>
+          </div>
+
+          <!-- TAB: Pagos arquitectos -->
+          <div id="ptab-content-arquitectos" style="display:none">
+            <div id="arq-pago-loading" class="loading-state">
+              <div class="spinner spinner-dark"></div> Cargando…
             </div>
+            <div id="arq-pago-content" style="display:none"></div>
           </div>
         </div>
 
@@ -1616,7 +1629,7 @@ function navigateTo(section) {
   if (section === 'dashboard')    loadDashboard();
   if (section === 'arquitectos')  loadArchitects();
   if (section === 'tramites')     loadTramites();
-  if (section === 'pagos')        loadPagos();
+  if (section === 'pagos')        { arqPagosLoaded = false; loadPagos(); }
   if (section === 'leads')        loadLeads();
 }
 
@@ -2600,6 +2613,24 @@ async function doAssign() {
 /* ══════════════════════════════════════════════════
    PAGOS
 ══════════════════════════════════════════════════ */
+/* ── Sub-tabs Pagos ── */
+let currentPagoTab = 'clientes';
+
+function switchPagoTab(tab) {
+  currentPagoTab = tab;
+  ['clientes','arquitectos'].forEach(t => {
+    const btn = document.getElementById(`ptab-${t}`);
+    const cnt = document.getElementById(`ptab-content-${t}`);
+    const active = t === tab;
+    btn.style.borderBottomColor = active ? '#E8503A' : 'transparent';
+    btn.style.color = active ? '#E8503A' : '#718096';
+    cnt.style.display = active ? '' : 'none';
+  });
+  const exportBtn = document.getElementById('btn-export-pagos');
+  if (exportBtn) exportBtn.style.display = tab === 'clientes' ? '' : 'none';
+  if (tab === 'arquitectos') loadArqPagos();
+}
+
 async function loadPagos() {
   document.getElementById('pago-loading').style.display = 'flex';
   document.getElementById('pago-content').style.display = 'none';
@@ -2613,6 +2644,132 @@ async function loadPagos() {
     showToast('Error al cargar pagos', 'error');
     document.getElementById('pago-loading').style.display = 'none';
   }
+}
+
+let arqPagosData = [];
+let arqPagosLoaded = false;
+
+async function loadArqPagos() {
+  if (arqPagosLoaded) return;
+  document.getElementById('arq-pago-loading').style.display = 'flex';
+  document.getElementById('arq-pago-content').style.display = 'none';
+  try {
+    const d = await apiGet('arq_payments');
+    arqPagosData = d.arq_payments || [];
+    renderArqPagos();
+    arqPagosLoaded = true;
+    document.getElementById('arq-pago-loading').style.display = 'none';
+    document.getElementById('arq-pago-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar pagos arquitectos', 'error');
+    document.getElementById('arq-pago-loading').style.display = 'none';
+  }
+}
+
+function renderArqPagos() {
+  const container = document.getElementById('arq-pago-content');
+  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe', 'ley-del-mono':'Ley del Mono' };
+
+  if (!arqPagosData.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">👷</div>Sin pagos de arquitectos registrados</div>';
+    return;
+  }
+
+  /* Resumen global */
+  let globalPagado = 0, globalPendiente = 0;
+  for (const arq of arqPagosData) {
+    for (const p of arq.projects) {
+      for (const e of p.etapas) {
+        if (e.pagado) globalPagado    += e.monto;
+        else          globalPendiente += e.monto;
+      }
+    }
+  }
+
+  let html = `
+    <div class="summary-row" style="margin-bottom:1.25rem;">
+      <div class="summary-item">
+        <div class="sum-label">Total pagado a arquitectos</div>
+        <div class="sum-value" style="color:#059669">${fmtCLP(globalPagado)}</div>
+      </div>
+      <div class="summary-item">
+        <div class="sum-label">Total pendiente de pago</div>
+        <div class="sum-value" style="color:#E8503A">${fmtCLP(globalPendiente)}</div>
+      </div>
+      <div class="summary-item">
+        <div class="sum-label">Arquitectos con trámites activos</div>
+        <div class="sum-value">${arqPagosData.length}</div>
+      </div>
+    </div>`;
+
+  for (const arq of arqPagosData) {
+    let arqPagado = 0, arqPendiente = 0;
+    for (const p of arq.projects) {
+      for (const e of p.etapas) {
+        if (e.pagado) arqPagado    += e.monto;
+        else          arqPendiente += e.monto;
+      }
+    }
+
+    html += `
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-body" style="padding:0;">
+        <!-- Cabecera arquitecto -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:0.5rem;">
+          <div>
+            <div style="font-size:1rem;font-weight:800;color:#1a1a2e;">${arq.nombre} ${arq.apellido}</div>
+            <div style="font-size:0.78rem;color:#718096;">${arq.email}${arq.patente ? ` · Patente ${arq.patente}` : ' · Sin patente'} · ${arq.pct || ''}% honorarios</div>
+          </div>
+          <div style="display:flex;gap:1rem;text-align:right;">
+            <div><div style="font-size:0.72rem;color:#718096;font-weight:600;">PAGADO</div><div style="font-size:1rem;font-weight:800;color:#059669;">${fmtCLP(arqPagado)}</div></div>
+            <div><div style="font-size:0.72rem;color:#718096;font-weight:600;">PENDIENTE</div><div style="font-size:1rem;font-weight:800;color:${arqPendiente > 0 ? '#E8503A' : '#718096'};">${fmtCLP(arqPendiente)}</div></div>
+          </div>
+        </div>
+
+        <!-- Tabla de trámites -->
+        <div class="table-wrap">
+          <table style="font-size:0.8rem;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px 12px;">Trámite</th>
+                <th style="padding:8px 12px;">Cliente</th>
+                <th style="padding:8px 12px;">Servicio</th>
+                <th style="padding:8px 12px;">Stage</th>
+                ${arq.projects.some(p => p.etapas.length === 4)
+                  ? '<th style="padding:8px 12px;text-align:right;">E1</th><th style="padding:8px 12px;text-align:right;">E2</th><th style="padding:8px 12px;text-align:right;">E3</th><th style="padding:8px 12px;text-align:right;">E4</th>'
+                  : '<th style="padding:8px 12px;text-align:right;">E1</th><th style="padding:8px 12px;text-align:right;">E2</th>'}
+              </tr>
+            </thead>
+            <tbody>
+              ${arq.projects.map((p, pi) => {
+                const svc = SVC_LABELS[p.service_type] || p.service_type;
+                const sub = p.servicio_subtipo ? ` · ${p.servicio_subtipo.charAt(0).toUpperCase()+p.servicio_subtipo.slice(1)}` : '';
+                const rowBg = pi % 2 === 1 ? 'background:#f8fafc;' : '';
+                const maxEtapas = arq.projects.some(x => x.etapas.length === 4) ? 4 : 2;
+                const etapasCells = Array.from({length: maxEtapas}, (_, i) => {
+                  const e = p.etapas[i];
+                  if (!e) return `<td style="padding:7px 12px;text-align:right;color:#cbd5e0;">—</td>`;
+                  const color = e.pagado ? '#059669' : '#E8503A';
+                  const icon  = e.pagado ? '✓' : '•';
+                  const tip   = e.pagado && e.at ? ` title="Pagado ${fmtDate(e.at)}"` : '';
+                  return `<td style="padding:7px 12px;text-align:right;font-weight:700;color:${color};"${tip}>${icon} ${fmtCLP(e.monto)}</td>`;
+                }).join('');
+                return `<tr style="${rowBg}cursor:pointer;" onclick="openTramiteDetail('${p.id}')">
+                  <td style="padding:7px 12px;font-weight:700;color:#E8503A;font-size:0.75rem;">${p.project_number}</td>
+                  <td style="padding:7px 12px;">${p.client}</td>
+                  <td style="padding:7px 12px;">${svc}${sub} · ${p.commune}</td>
+                  <td style="padding:7px 12px;">${stageBadge(p.stage)}</td>
+                  ${etapasCells}
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
 }
 
 function renderPagosTable() {

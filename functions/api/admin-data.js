@@ -410,6 +410,62 @@ export async function onRequest(context) {
       return json({ payments: data });
     }
 
+    if (section === 'arq_payments') {
+      /* Proyectos con arquitecto asignado (excluye pendiente_pago y sin arq) */
+      const [projRes, archRes] = await Promise.all([
+        sb('/projects?architect_email=neq.&stage=neq.pendiente_pago&select=id,project_number,client_nombre,client_apellido,service_type,servicio_subtipo,commune,total_clp,e1_clp,stage,architect_email,arq_pago_e1,arq_pago_e2,arq_pago_e3,arq_pago_e4,arq_pago_e1_at,arq_pago_e2_at,arq_pago_e3_at,arq_pago_e4_at&order=created_at.desc&limit=500'),
+        sb('/architects?select=nombre,apellido,email,patente&activo=eq.true'),
+      ]);
+      if (!projRes.ok) return json({ error: 'Error al obtener proyectos' }, 500);
+      const projects   = Array.isArray(projRes.data) ? projRes.data : [];
+      const architects = Array.isArray(archRes.data)  ? archRes.data  : [];
+      const archMap    = {};
+      architects.forEach(a => { archMap[a.email] = a; });
+
+      /* Agrupar por arquitecto y calcular montos */
+      const byArq = {};
+      for (const p of projects) {
+        if (!p.architect_email) continue;
+        if (!byArq[p.architect_email]) {
+          const a = archMap[p.architect_email] || {};
+          byArq[p.architect_email] = {
+            email:    p.architect_email,
+            nombre:   a.nombre   || p.architect_email,
+            apellido: a.apellido || '',
+            patente:  a.patente  || null,
+            projects: [],
+          };
+        }
+        const pct      = archMap[p.architect_email]?.patente ? 0.80 : 0.70;
+        const clp      = p.total_clp || 0;
+        const e1c      = p.e1_clp   || 0;
+        const is2      = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+        const etapas   = is2
+          ? [
+              { key:'e1', label:'E1 · Inicio',         monto: Math.round(clp*0.50*pct), pagado: p.arq_pago_e1, at: p.arq_pago_e1_at },
+              { key:'e2', label:'E2 · Cierre',          monto: Math.round(clp*0.50*pct), pagado: p.arq_pago_e2, at: p.arq_pago_e2_at },
+            ]
+          : [
+              { key:'e1', label:'E1 · Levantamiento',   monto: Math.round(e1c*pct),      pagado: p.arq_pago_e1, at: p.arq_pago_e1_at },
+              { key:'e2', label:'E2 · Elaboración',     monto: Math.round(clp*0.30*pct), pagado: p.arq_pago_e2, at: p.arq_pago_e2_at },
+              { key:'e3', label:'E3 · Ingreso DOM',     monto: Math.round(clp*0.30*pct), pagado: p.arq_pago_e3, at: p.arq_pago_e3_at },
+              { key:'e4', label:'E4 · Recepción final', monto: Math.round(clp*0.20*pct), pagado: p.arq_pago_e4, at: p.arq_pago_e4_at },
+            ];
+        byArq[p.architect_email].projects.push({
+          id:           p.id,
+          project_number: p.project_number,
+          client:       `${p.client_nombre || ''} ${p.client_apellido || ''}`.trim(),
+          service_type: p.service_type,
+          servicio_subtipo: p.servicio_subtipo,
+          commune:      p.commune,
+          stage:        p.stage,
+          pct:          Math.round(pct * 100),
+          etapas,
+        });
+      }
+      return json({ arq_payments: Object.values(byArq) });
+    }
+
     if (section === 'funnel') {
       const { ok, data } = await sb(
         '/funnel_events?select=id,event_type,svc,commune,clp,email,created_at&order=created_at.desc&limit=500'
