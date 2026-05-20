@@ -865,6 +865,40 @@ export async function onRequest(context) {
       return json({ success: true, architect: Array.isArray(data) ? data[0] : data });
     }
 
+    /* change_service_type — cambia tipo de trámite y recalcula precios */
+    if (action === 'change_service_type') {
+      const { project_id, new_service_type, new_subtipo, new_total_clp, new_e1_clp, motivo } = body;
+      if (!project_id || !new_service_type || !new_total_clp) {
+        return json({ error: 'project_id, new_service_type y new_total_clp requeridos' }, 400);
+      }
+      const projRes = await sb(`/projects?id=eq.${project_id}&select=id,project_number,service_type,servicio_subtipo&limit=1`);
+      const proj = projRes.ok && Array.isArray(projRes.data) ? projRes.data[0] : null;
+      if (!proj) return json({ error: 'Proyecto no encontrado' }, 404);
+      const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+      const is2 = new_service_type === 'informe' || new_service_type === 'declaracion-jurada';
+      const patchBody = {
+        service_type:     new_service_type,
+        servicio_subtipo: new_subtipo || null,
+        total_clp:        Math.round(new_total_clp),
+        e1_clp:           Math.round(new_e1_clp || (is2 ? new_total_clp * 0.50 : new_total_clp * 0.20)),
+      };
+      const { ok, data } = await sb(`/projects?id=eq.${proj.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patchBody),
+        prefer: 'return=minimal',
+      });
+      if (!ok) return json({ error: 'Error al actualizar proyecto', detail: data }, 500);
+      const oldName = SVC_LABELS[proj.service_type] || proj.service_type;
+      const newName = SVC_LABELS[new_service_type] || new_service_type;
+      const nota = `Cambio de tipo: ${oldName} → ${newName}. Nuevo total: $${Math.round(new_total_clp).toLocaleString('es-CL')}${motivo ? '. Motivo: ' + motivo : ''}`;
+      await sb('/project_updates', {
+        method: 'POST',
+        body: JSON.stringify({ project_number: proj.project_number, stage: 'cambio_tipo', stage_label: '🔄 Cambio de tipo de trámite', nota }),
+        prefer: 'return=minimal',
+      }).catch(() => {});
+      return json({ success: true });
+    }
+
     /* mark_lead_converted */
     if (action === 'mark_lead_converted') {
       const { id, converted } = body;

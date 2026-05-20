@@ -1324,7 +1324,8 @@
         <button class="detail-tab-btn" data-dtab="mensajes" onclick="switchDetailTab('mensajes')">💬 Mensajes</button>
         <button class="detail-tab-btn" data-dtab="archivos" onclick="switchDetailTab('archivos')">📎 Archivos</button>
         <button class="detail-tab-btn" data-dtab="pagos" onclick="switchDetailTab('pagos')">💰 Pagos arq.</button>
-        <button onclick="refreshTramiteDetail()" title="Recargar datos" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;padding:8px;color:var(--muted);transition:color 0.15s" onmouseover="this.style.color='var(--dark)'" onmouseout="this.style.color='var(--muted)'">🔄</button>
+        <button onclick="openChangeSvcModal()" title="Cambiar tipo de trámite" style="margin-left:auto;background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;padding:5px 10px;color:var(--mid);font-weight:600;transition:all 0.15s;font-family:inherit;" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--mid)'">🔄 Cambiar tipo</button>
+        <button onclick="refreshTramiteDetail()" title="Recargar datos" style="background:none;border:none;cursor:pointer;font-size:16px;padding:8px;color:var(--muted);transition:color 0.15s" onmouseover="this.style.color='var(--dark)'" onmouseout="this.style.color='var(--muted)'">↻</button>
       </div>
       <div id="detail-loading" class="loading-state" style="padding:40px 24px"><div class="spinner spinner-dark"></div> Cargando…</div>
       <div id="detail-panels" style="display:none;padding:20px 24px;max-height:62vh;overflow-y:auto">
@@ -1399,6 +1400,53 @@
       <button class="btn btn-accent" id="btn-save-arch">
         Guardar Arquitecto
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Cambiar tipo de trámite ────────── -->
+<div id="modal-change-svc" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px;width:95vw">
+    <div class="modal-header">
+      <span class="modal-title">Cambiar tipo de trámite</span>
+      <button class="modal-close" data-close="modal-change-svc">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="csvc-info" style="background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#374151;line-height:1.6;"></div>
+
+      <div class="form-group">
+        <label>Nuevo tipo de trámite</label>
+        <select id="csvc-svc" class="form-control" onchange="csvcOnSvcChange()">
+          <option value="">— Selecciona —</option>
+          <option value="ley-del-mono">⚖️ Ley del Mono</option>
+          <option value="regularizacion">📐 Regularización</option>
+          <option value="ampliacion">➕ Ampliación</option>
+          <option value="obra-nueva">🏠 Obra Nueva</option>
+          <option value="informe">📋 Informe de Propiedad</option>
+          <option value="declaracion-jurada">📝 Declaración Jurada</option>
+        </select>
+      </div>
+
+      <div id="csvc-subtipo-wrap" class="form-group" style="display:none">
+        <label id="csvc-subtipo-label">Sub-tipo</label>
+        <select id="csvc-subtipo" class="form-control" onchange="csvcCalcPrice()"></select>
+      </div>
+
+      <div id="csvc-price-panel" style="display:none;margin-top:4px;">
+        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:16px;">
+          <div style="font-weight:700;font-size:12px;color:#1e40af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">💰 Nuevo precio calculado</div>
+          <div id="csvc-price-detail"></div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px;">
+        <label>Motivo del cambio (opcional)</label>
+        <input id="csvc-motivo" class="form-control" placeholder="ej. Arquitecto confirmó que aplica Obra Nueva">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="modal-change-svc">Cancelar</button>
+      <button id="csvc-confirm-btn" class="btn btn-primary" disabled onclick="confirmChangeSvc()">Confirmar cambio</button>
     </div>
   </div>
 </div>
@@ -3253,6 +3301,181 @@ function renderFinanzas() {
   document.getElementById('fin-total-egresos').textContent  = fmtCLP(d.totals.egresos);
   document.getElementById('fin-total-utilidad').textContent = fmtCLP(d.totals.utilidad);
   document.getElementById('fin-total-margen').textContent   = `${totalMargen}%`;
+}
+
+/* ══════════════════════════════════════════════════
+   CAMBIAR TIPO DE TRÁMITE
+══════════════════════════════════════════════════ */
+let csvcProjectId = null;
+let csvcM2 = 0;
+let csvcCurrentSvc = '';
+let csvcOldTotal = 0;
+let csvcYaPagado = 0;
+let csvcUF = 39800;
+
+const SVC_NAMES_CSVC = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+
+function openChangeSvcModal() {
+  if (!detailData) return;
+  const proj = projects.find(p => p.project_number === detailData._pnum);
+  if (!proj) { showToast('Proyecto no encontrado en lista', 'error'); return; }
+
+  csvcProjectId = proj.id;
+  csvcM2        = proj.m2 || 0;
+  csvcCurrentSvc = proj.service_type;
+  csvcOldTotal  = proj.total_clp || 0;
+  csvcYaPagado  = payments
+    .filter(p => p.external_ref === proj.project_number && p.status === 'approved')
+    .reduce((s, p) => s + (p.amount || 0), 0);
+
+  document.getElementById('csvc-info').innerHTML =
+    `<strong style="color:var(--orange)">${proj.project_number}</strong> &nbsp;·&nbsp;
+     <strong>${csvcM2} m²</strong> &nbsp;·&nbsp;
+     Tipo actual: <strong>${SVC_NAMES_CSVC[csvcCurrentSvc] || csvcCurrentSvc}</strong> &nbsp;·&nbsp;
+     Total actual: <strong>${fmtCLP(csvcOldTotal)}</strong>
+     ${csvcYaPagado > 0 ? `&nbsp;·&nbsp; Ya pagado: <strong style="color:#059669">${fmtCLP(csvcYaPagado)}</strong>` : ''}`;
+
+  document.getElementById('csvc-svc').value = '';
+  document.getElementById('csvc-subtipo-wrap').style.display = 'none';
+  document.getElementById('csvc-price-panel').style.display = 'none';
+  document.getElementById('csvc-motivo').value = '';
+  document.getElementById('csvc-confirm-btn').disabled = true;
+
+  fetch('/api/get-uf').then(r => r.json()).then(d => { if (d.uf) csvcUF = d.uf; });
+  showModal('modal-change-svc');
+}
+
+function csvcOnSvcChange() {
+  const svc = document.getElementById('csvc-svc').value;
+  const wrap = document.getElementById('csvc-subtipo-wrap');
+  const sel  = document.getElementById('csvc-subtipo');
+  const lbl  = document.getElementById('csvc-subtipo-label');
+  document.getElementById('csvc-price-panel').style.display = 'none';
+  document.getElementById('csvc-confirm-btn').disabled = true;
+  wrap.style.display = 'none';
+
+  if (svc === 'regularizacion') {
+    lbl.textContent = 'Sub-tipo de regularización';
+    sel.innerHTML = `<option value="obra-menor">Obra menor / permisos menores</option>
+                     <option value="obra-nueva-reg">Obra nueva / Ampliación no autorizada</option>`;
+    wrap.style.display = '';
+  } else if (svc === 'informe') {
+    lbl.textContent = 'Tipo de informe';
+    sel.innerHTML = `<option value="evaluacion">Evaluación de estado</option>
+                     <option value="factibilidad">Factibilidad</option>
+                     <option value="compraventa">Compraventa</option>`;
+    wrap.style.display = '';
+  } else if (svc === 'declaracion-jurada') {
+    lbl.textContent = 'Tipo de declaración';
+    sel.innerHTML = `<option value="piscina_privada">Piscina privada</option>
+                     <option value="pergola_sombreadero">Pérgola / Sombreadero / Baño</option>
+                     <option value="demolicion">Demolición</option>`;
+    wrap.style.display = '';
+  }
+  if (svc) csvcCalcPrice();
+}
+
+function csvcGetNewPrice() {
+  const svc = document.getElementById('csvc-svc').value;
+  const sub = document.getElementById('csvc-subtipo').value;
+  const m2  = csvcM2;
+  const uf  = csvcUF;
+  const PRECIO_LEY_MONO = { hasta90: 14, hasta140: 19 };
+  const PRECIO_REG      = { 'obra-menor': 28, 'obra-nueva-reg-hasta140': 38, 'obra-nueva-reg-por-m2': 0.39 };
+  const PRECIO_AMP      = { hasta50: 20, hasta100: 28 };
+  const PRECIO_DJ       = { piscina: 10, pergola: 6, demolicion_base: 8, demolicion_umbral: 100, demolicion_por_m2: 0.05 };
+  const PRECIO_ON       = { tarifa: 0.80, minimo: 35 };
+  const PRECIO_INF      = { evaluacion: 3, factibilidad: 6, compraventa: 8 };
+  let ufAmt = 0;
+  if      (svc === 'ley-del-mono')        ufAmt = m2 <= 90 ? PRECIO_LEY_MONO.hasta90 : PRECIO_LEY_MONO.hasta140;
+  else if (svc === 'regularizacion')      ufAmt = sub === 'obra-menor' ? PRECIO_REG['obra-menor'] : (m2 <= 140 ? PRECIO_REG['obra-nueva-reg-hasta140'] : PRECIO_REG['obra-nueva-reg-por-m2'] * m2);
+  else if (svc === 'ampliacion')          ufAmt = m2 <= 50 ? PRECIO_AMP.hasta50 : PRECIO_AMP.hasta100;
+  else if (svc === 'declaracion-jurada') {
+    if      (sub === 'piscina_privada')     ufAmt = PRECIO_DJ.piscina;
+    else if (sub === 'pergola_sombreadero') ufAmt = PRECIO_DJ.pergola;
+    else if (sub === 'demolicion')          ufAmt = PRECIO_DJ.demolicion_base + Math.max(0, (m2 - PRECIO_DJ.demolicion_umbral)) * PRECIO_DJ.demolicion_por_m2;
+  }
+  else if (svc === 'obra-nueva')          ufAmt = Math.max(PRECIO_ON.tarifa * m2, PRECIO_ON.minimo);
+  else if (svc === 'informe')             ufAmt = PRECIO_INF[sub] || PRECIO_INF.evaluacion;
+  const is2  = svc === 'informe' || svc === 'declaracion-jurada';
+  const clp  = Math.round(ufAmt * uf);
+  const e1clp = is2 ? Math.round(clp * 0.50) : Math.round(clp * 0.20);
+  return { ufAmt, clp, e1clp, is2 };
+}
+
+function csvcCalcPrice() {
+  const svc = document.getElementById('csvc-svc').value;
+  if (!svc) return;
+  const { ufAmt, clp, e1clp, is2 } = csvcGetNewPrice();
+  const credito       = Math.min(csvcYaPagado, e1clp);
+  const pendienteE1   = Math.max(0, e1clp - credito);
+  const pendienteTotal = Math.max(0, clp - csvcYaPagado);
+
+  let html = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:${csvcYaPagado > 0 ? '12' : '0'}px;">
+      <div style="background:#fff;border-radius:6px;padding:10px 12px;">
+        <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;margin-bottom:3px;">Nuevo total</div>
+        <div style="font-size:1.2rem;font-weight:800;color:#1e40af;">${fmtCLP(clp)}</div>
+        <div style="font-size:11px;color:#94a3b8;">${ufAmt % 1 === 0 ? ufAmt : ufAmt.toFixed(2)} UF · $${Math.round(csvcUF).toLocaleString('es-CL')}/UF</div>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:10px 12px;">
+        <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;margin-bottom:3px;">Primer pago (${is2 ? '50' : '20'}%)</div>
+        <div style="font-size:1.2rem;font-weight:800;color:#374151;">${fmtCLP(e1clp)}</div>
+        <div style="font-size:11px;color:#94a3b8;">${is2 ? '2 etapas (50/50)' : '4 etapas (20/30/30/20)'}</div>
+      </div>
+    </div>`;
+
+  if (csvcYaPagado > 0) {
+    html += `
+    <div style="background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e2e8f0;font-size:13px;">
+      <div style="font-weight:700;color:#374151;margin-bottom:8px;">💳 Reconciliación de pago</div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;">
+        <span style="color:#64748b;">Ya pagado por el cliente</span>
+        <span style="font-weight:700;color:#059669;">${fmtCLP(csvcYaPagado)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;">
+        <span style="color:#64748b;">Primer pago del nuevo trámite</span>
+        <span style="font-weight:600;">${fmtCLP(e1clp)}</span>
+      </div>
+      <div style="border-top:1px solid #e2e8f0;margin:8px 0;"></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;">
+        <span style="color:#64748b;font-weight:600;">Pendiente al cliente (E1)</span>
+        <span style="font-weight:700;color:${pendienteE1 > 0 ? 'var(--orange)' : '#059669'};">${pendienteE1 > 0 ? fmtCLP(pendienteE1) : '✓ Cubierto'}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;">
+        <span style="color:#64748b;font-weight:600;">Total pendiente nuevo trámite</span>
+        <span style="font-weight:800;color:#1e40af;">${fmtCLP(pendienteTotal)}</span>
+      </div>
+    </div>`;
+  }
+  document.getElementById('csvc-price-detail').innerHTML = html;
+  document.getElementById('csvc-price-panel').style.display = '';
+  document.getElementById('csvc-confirm-btn').disabled = false;
+}
+
+async function confirmChangeSvc() {
+  const svc = document.getElementById('csvc-svc').value;
+  if (!svc || !csvcProjectId) return;
+  const sub    = document.getElementById('csvc-subtipo').value || null;
+  const motivo = document.getElementById('csvc-motivo').value.trim();
+  const { clp, e1clp } = csvcGetNewPrice();
+  const btn = document.getElementById('csvc-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const d = await apiPost({ action:'change_service_type', project_id:csvcProjectId, new_service_type:svc, new_subtipo:sub, new_total_clp:clp, new_e1_clp:e1clp, motivo });
+    if (d.error) throw new Error(d.error);
+    const idx = projects.findIndex(p => p.id === csvcProjectId);
+    if (idx >= 0) Object.assign(projects[idx], { service_type:svc, servicio_subtipo:sub, total_clp:clp, e1_clp:e1clp });
+    closeModal('modal-change-svc');
+    showToast('Tipo de trámite actualizado', 'success');
+    arqPagosLoaded = false;
+    finanzasData = null;
+    renderTramitesTable();
+    if (detailData?._pnum) openTramiteDetail(detailData._pnum);
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    btn.disabled = false; btn.textContent = 'Confirmar cambio';
+  }
 }
 
 /* ══════════════════════════════════════════════════
