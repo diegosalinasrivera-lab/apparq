@@ -1058,7 +1058,7 @@
           <!-- Descartes pendientes -->
           <div id="descartes-section" style="display:none;margin-bottom:1.5rem;">
             <h3 style="font-size:14px;font-weight:800;color:#DC2626;margin:0 0 10px;display:flex;align-items:center;gap:8px;">
-              ⚠️ Descartes pendientes de revisión
+              <span id="descartes-title">⚠️ Descartes pendientes de revisión</span>
               <span id="descartes-count" style="background:#DC2626;color:#fff;border-radius:9999px;font-size:11px;padding:2px 8px;"></span>
             </h3>
             <div id="descartes-cards" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -2330,6 +2330,20 @@ function renderDescartesPendientes() {
   badge.textContent   = descartesPendientes.length;
   badge.style.display = '';
   section.style.display = 'block';
+
+  /* Detect if there are tipo_incorrecto items to adjust colors and title */
+  const hayTipoInc = descartesPendientes.some(d => {
+    try { return JSON.parse(d.descarte_motivo || '[]').some(r => r.tipo === 'tipo_incorrecto'); } catch(_) { return false; }
+  });
+  const hayDescarte = descartesPendientes.some(d => {
+    try { return !JSON.parse(d.descarte_motivo || '[]').some(r => r.tipo === 'tipo_incorrecto'); } catch(_) { return true; }
+  });
+  const secTitleEl = document.getElementById('descartes-title');
+  if (secTitleEl) {
+    if (hayTipoInc && !hayDescarte)      { secTitleEl.textContent = '🔄 Cambios de tipo pendientes'; secTitleEl.style.color = '#D97706'; countEl.style.background = '#D97706'; badge.style.background = '#D97706'; }
+    else if (hayTipoInc && hayDescarte)  { secTitleEl.textContent = '⚠️ Revisiones pendientes';      secTitleEl.style.color = '#D97706'; countEl.style.background = '#D97706'; badge.style.background = '#D97706'; }
+    else                                  { secTitleEl.textContent = '⚠️ Descartes pendientes de revisión'; secTitleEl.style.color = '#DC2626'; countEl.style.background = '#DC2626'; badge.style.background = '#DC2626'; }
+  }
 
   const VIA_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', no_regularizable:'No regularizable' };
   const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'declaracion-jurada':'DJ', 'ley-del-mono':'Ley del Mono' };
