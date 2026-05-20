@@ -861,6 +861,22 @@ export async function onRequest(context) {
       return json({ success: true });
     }
 
+    /* send_admin_email — envía un correo desde hola@apparq.cl vía Resend */
+    if (action === 'send_admin_email') {
+      const { to, subject, html } = body;
+      if (!to || !subject || !html) return json({ error: 'to, subject y html requeridos' }, 400);
+      const resendKey = env.RESEND_API_KEY;
+      if (!resendKey) return json({ error: 'RESEND_API_KEY no configurada' }, 500);
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: 'APPARQ <hola@apparq.cl>', to: [to], subject, html }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) return json({ error: 'Error al enviar email', detail: resData }, 500);
+      return json({ success: true, id: resData.id });
+    }
+
     /* review-descarte */
     if (action === 'review-descarte') {
       const { project_id, decision, notas } = body;
