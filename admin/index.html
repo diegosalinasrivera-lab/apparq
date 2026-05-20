@@ -989,6 +989,25 @@
               <span>+</span> Agregar Arquitecto
             </button>
           </div>
+
+          <!-- KPIs arquitectos -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;">
+            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.8rem;line-height:1;">👷</div>
+              <div>
+                <div id="kpi-arq-total" style="font-size:2.4rem;font-weight:900;color:#1a1a2e;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Inscritos</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #D1FAE5;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.8rem;line-height:1;">✅</div>
+              <div>
+                <div id="kpi-arq-activos" style="font-size:2.4rem;font-weight:900;color:#059669;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Activos / disponibles</div>
+              </div>
+            </div>
+          </div>
+
           <div style="margin-bottom:1rem;">
             <div style="position:relative;max-width:360px;">
               <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
@@ -1905,6 +1924,14 @@ async function loadArchitects() {
 }
 
 function renderArchitectsTable() {
+  /* Update KPIs */
+  const totalArq   = architects.length;
+  const activosArq = architects.filter(a => a.activo).length;
+  const kpiTotal   = document.getElementById('kpi-arq-total');
+  const kpiActivos = document.getElementById('kpi-arq-activos');
+  if (kpiTotal)   kpiTotal.textContent   = totalArq;
+  if (kpiActivos) kpiActivos.textContent = activosArq;
+
   const tbody = document.getElementById('arch-table-body');
   const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
   const list = q
