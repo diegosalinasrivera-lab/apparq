@@ -5552,6 +5552,39 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           </div>
         </div>
 
+        <!-- Tipo de trámite incorrecto -->
+        <div id="paTipoIncorrectoSection" style="margin-bottom:1rem;border:1.5px solid #FED7AA;border-radius:var(--radius);overflow:hidden;">
+          <div style="background:#FFF7ED;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#92400E;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="document.getElementById('paTipoIncorrectoForm').style.display=document.getElementById('paTipoIncorrectoForm').style.display==='none'?'block':'none'">
+            <span>🔄 El tipo de trámite contratado no corresponde</span>
+            <span style="font-weight:400;font-size:0.72rem;" id="paTipoIncorrectoIcon">▼</span>
+          </div>
+          <div id="paTipoIncorrectoForm" style="display:none;padding:0.9rem 1rem;background:#fff;">
+            <div id="paTipoIncorrectoStatus" style="display:none;"></div>
+            <p style="font-size:0.78rem;color:#78350F;margin:0 0 0.8rem;line-height:1.5;">Si después de revisar la propiedad determinas que el tipo de trámite contratado <strong>no corresponde</strong>, notifica a APPARQ para que pueda gestionar el cambio con el cliente.</p>
+
+            <div style="margin-bottom:0.75rem;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.3rem;">¿Cuál sería el tipo correcto? <span style="color:#D97706">*</span></label>
+              <select id="paTipoCorrectoSel" style="width:100%;border:1px solid #FED7AA;border-radius:var(--radius);padding:0.45rem 0.6rem;font-size:0.82rem;background:#fff;box-sizing:border-box;">
+                <option value="">— Selecciona el tipo correcto —</option>
+                <option value="ley-del-mono">Ley del Mono</option>
+                <option value="regularizacion">Regularización</option>
+                <option value="ampliacion">Ampliación</option>
+                <option value="obra-nueva">Obra Nueva</option>
+                <option value="informe">Informe de Propiedad</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:0.85rem;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.3rem;">¿Por qué no aplica el tipo contratado? <span style="color:#D97706">*</span></label>
+              <textarea id="paTipoIncorrectoDesc" placeholder="Explica brevemente por qué el tipo contratado no corresponde a esta propiedad…" maxlength="500" style="width:100%;min-height:72px;border:1px solid #FED7AA;border-radius:var(--radius);padding:0.45rem 0.65rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+
+            <button id="paTipoIncorrectoSubmit" style="width:100%;background:#D97706;color:#fff;border:none;border-radius:var(--radius);padding:0.6rem 1rem;font-size:0.85rem;font-weight:700;cursor:pointer;">Notificar a APPARQ</button>
+            <div id="paTipoIncorrectoMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+            <p style="font-size:0.7rem;color:var(--muted);margin:0.5rem 0 0;line-height:1.5;">APPARQ revisará la información y gestionará el cambio con el cliente. No se notifica al cliente directamente.</p>
+          </div>
+        </div>
+
         <!-- Protocolo de Control de Calidad de Descartes -->
         <div id="paDescarteSection" style="margin-bottom:1rem;border:1.5px solid #FECACA;border-radius:var(--radius);overflow:hidden;">
           <div style="background:#FEF2F2;padding:0.7rem 1rem;font-size:0.8rem;font-weight:700;color:#991B1B;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="document.getElementById('paDescarteForm').style.display=document.getElementById('paDescarteForm').style.display==='none'?'block':'none'">
@@ -5992,6 +6025,82 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       } catch(e) {
         msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent = 'Error de conexión';
         btn.disabled = false; btn.textContent = 'Enviar para revisión APPARQ';
+      }
+    });
+
+    /* Tipo de trámite incorrecto — estado inicial */
+    (() => {
+      const statusEl = document.getElementById('paTipoIncorrectoStatus');
+      if (!statusEl) return;
+      const descarteEstado = p.descarte_estado;
+      if (!descarteEstado) return;
+      let requisitos = [];
+      try { requisitos = JSON.parse(p.descarte_motivo || '[]'); } catch(_) {}
+      const esTipoIncorrecto = requisitos.some(r => r.tipo === 'tipo_incorrecto');
+      if (!esTipoIncorrecto) return;
+      const configs = {
+        pendiente: { bg:'#FEF3C7', border:'#FCD34D', color:'#92400E', icon:'⏳', text:'Notificación enviada — pendiente revisión APPARQ. No se ha notificado al cliente.' },
+        aprobado:  { bg:'#D1FAE5', border:'#6EE7B7', color:'#065F46', icon:'✅', text:'Cambio de tipo gestionado por APPARQ.' },
+        rechazado: { bg:'#FEF2F2', border:'#FECACA', color:'#991B1B', icon:'❌', text:`Notificación rechazada. ${p.descarte_notas_admin ? 'Motivo: ' + p.descarte_notas_admin : 'El trámite continúa con el tipo original.'}` },
+      };
+      const cfg = configs[descarteEstado];
+      if (!cfg) return;
+      statusEl.style.cssText = `display:block;background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.75rem;`;
+      statusEl.innerHTML = `<p style="margin:0;font-size:0.8rem;font-weight:700;color:${cfg.color};">${cfg.icon} ${cfg.text}</p>`;
+      if (descarteEstado === 'pendiente' || descarteEstado === 'aprobado') {
+        const btn = document.getElementById('paTipoIncorrectoSubmit');
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
+      }
+    })();
+
+    /* Tipo de trámite incorrecto — submit */
+    document.getElementById('paTipoIncorrectoSubmit') && (document.getElementById('paTipoIncorrectoSubmit').onclick = async () => {
+      const msgEl = document.getElementById('paTipoIncorrectoMsg');
+      const btn   = document.getElementById('paTipoIncorrectoSubmit');
+
+      const tipoCorrecto = document.getElementById('paTipoCorrectoSel').value;
+      if (!tipoCorrecto) {
+        msgEl.style.display=''; msgEl.style.color='#D97706'; msgEl.textContent='Selecciona el tipo de trámite correcto.'; return;
+      }
+      const desc = document.getElementById('paTipoIncorrectoDesc').value.trim();
+      if (desc.length < 20) {
+        msgEl.style.display=''; msgEl.style.color='#D97706'; msgEl.textContent='Explica brevemente el motivo (mínimo 20 caracteres).'; return;
+      }
+
+      if (!confirm('¿Confirmas notificar a APPARQ que el tipo de trámite contratado no corresponde? APPARQ gestionará el cambio.')) return;
+
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const res   = await fetch('/api/portal-architect', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action:         'submit-descarte',
+            token,
+            project_number: p.project_number,
+            fecha_visita:   today,
+            requisitos:     [{ tipo: 'tipo_incorrecto', descripcion: desc, tipo_correcto: tipoCorrecto }],
+            via_propuesta:  tipoCorrecto,
+          }),
+        });
+        const data = await res.json();
+        msgEl.style.display = '';
+        if (data.ok) {
+          msgEl.style.color = '#059669';
+          msgEl.textContent = '✓ Notificación enviada a APPARQ. Te contactaremos para gestionar el cambio.';
+          btn.style.display = 'none';
+          const statusEl = document.getElementById('paTipoIncorrectoStatus');
+          if (statusEl) {
+            statusEl.style.cssText = 'display:block;background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.75rem;';
+            statusEl.innerHTML = '<p style="margin:0;font-size:0.8rem;font-weight:700;color:#92400E;">⏳ Notificación enviada — pendiente revisión APPARQ. No se ha notificado al cliente.</p>';
+          }
+        } else {
+          msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al enviar notificación';
+          btn.disabled = false; btn.textContent = 'Notificar a APPARQ';
+        }
+      } catch(e) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent = 'Error de conexión';
+        btn.disabled = false; btn.textContent = 'Notificar a APPARQ';
       }
     });
 

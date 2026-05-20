@@ -2304,25 +2304,57 @@ function renderDescartesPendientes() {
   badge.style.display = '';
   section.style.display = 'block';
 
-  const VIA_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', no_regularizable:'No regularizable' };
+  const VIA_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', no_regularizable:'No regularizable' };
   const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'declaracion-jurada':'DJ', 'ley-del-mono':'Ley del Mono' };
+  const REQ_LABELS = { sup_excede:'Superficie excede límite', avaluo_excede:'Avalúo fiscal excede UF', fecha_construccion:'Fecha construcción fuera período', permisos_previos:'Problemas permisos previos', otro_motivo:'Otro motivo', tipo_incorrecto:'Tipo de trámite incorrecto' };
 
   cards.innerHTML = descartesPendientes.map(d => {
     let requisitos = [];
     try { requisitos = JSON.parse(d.descarte_motivo || '[]'); } catch(_) {}
-    const REQ_LABELS = { sup_excede:'Superficie excede límite', avaluo_excede:'Avalúo fiscal excede UF', fecha_construccion:'Fecha construcción fuera período', permisos_previos:'Problemas permisos previos', otro_motivo:'Otro motivo' };
-    const reqList = requisitos.map(r => `<li style="font-size:12px;color:#7F1D1D;">${REQ_LABELS[r.tipo]||r.tipo}${r.valor?' — '+r.valor:r.descripcion?' — '+r.descripcion.slice(0,60):''}</li>`).join('');
+    const esTipoIncorrecto = requisitos.some(r => r.tipo === 'tipo_incorrecto');
+    const tipoCorrectoReq  = requisitos.find(r => r.tipo === 'tipo_incorrecto');
+    const tipoCorrecto     = tipoCorrectoReq?.tipo_correcto;
+
     const viaProp = VIA_LABELS[d.descarte_via_propuesta] || d.descarte_via_propuesta || '—';
     const svcName = SVC_LABELS[d.service_type] || d.service_type;
 
+    /* Colors based on type */
+    const borderColor = esTipoIncorrecto ? '#FED7AA' : '#FECACA';
+    const headerBg    = esTipoIncorrecto ? '#FFF7ED' : '#FEF2F2';
+    const accentColor = esTipoIncorrecto ? '#D97706' : '#DC2626';
+    const reqBg       = esTipoIncorrecto ? '#FFF7ED' : '#FEF2F2';
+    const reqTitleColor = esTipoIncorrecto ? '#92400E' : '#991B1B';
+    const reqItemColor  = esTipoIncorrecto ? '#78350F' : '#7F1D1D';
+
+    const reqList = requisitos.map(r => {
+      let detail = r.valor ? r.valor : (r.descripcion ? r.descripcion.slice(0,80) : '');
+      if (r.tipo === 'tipo_incorrecto' && r.tipo_correcto) detail = `Tipo correcto: ${VIA_LABELS[r.tipo_correcto] || r.tipo_correcto}${detail ? '. ' + detail : ''}`;
+      return `<li style="font-size:12px;color:${reqItemColor};">${REQ_LABELS[r.tipo]||r.tipo}${detail?' — '+detail:''}</li>`;
+    }).join('');
+
+    /* "Cambiar tipo ahora" button for tipo_incorrecto */
+    const changeSvcBtn = esTipoIncorrecto && tipoCorrecto
+      ? `<button onclick="openChangeSvcFromDescarte('${d.project_number}', '${tipoCorrecto}')" style="background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🔄 Cambiar tipo</button>`
+      : '';
+
+    const headerBadge = esTipoIncorrecto
+      ? `<span style="background:#FED7AA;color:#92400E;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;border:1px solid #D97706;">🔄 TIPO INCORRECTO</span>`
+      : `<span style="background:#FECACA;color:#991B1B;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;border:1px solid #DC2626;">⚠️ DESCARTE</span>`;
+
+    const viaLabel = esTipoIncorrecto ? 'Tipo correcto propuesto' : 'Vía propuesta';
+    const extraRow = !esTipoIncorrecto
+      ? `<div style="font-size:11px;color:#718096;">Visita: ${d.descarte_fecha_visita || '—'}</div>`
+      : `<div style="font-size:11px;color:#718096;">Tipo actual: ${svcName}</div>`;
+
     return `
-      <div style="border:1.5px solid #FECACA;border-radius:8px;overflow:hidden;background:#fff;">
-        <div style="background:#FEF2F2;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <div>
-            <span style="font-size:13px;font-weight:800;color:#DC2626;">${d.project_number}</span>
-            <span style="font-size:12px;color:#718096;margin-left:8px;">${svcName} · ${d.commune}</span>
+      <div style="border:1.5px solid ${borderColor};border-radius:8px;overflow:hidden;background:#fff;">
+        <div style="background:${headerBg};padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${headerBadge}
+            <span style="font-size:13px;font-weight:800;color:${accentColor};">${d.project_number}</span>
+            <span style="font-size:12px;color:#718096;">${svcName} · ${d.commune}</span>
           </div>
-          <div style="font-size:11px;color:#718096;">Recibido: ${fmtDate(d.created_at)}</div>
+          <div style="font-size:11px;color:#718096;">Recibido: ${fmtDate(d.updated_at || d.created_at)}</div>
         </div>
         <div style="padding:12px 14px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -2332,18 +2364,19 @@ function renderDescartesPendientes() {
               <div style="font-size:11px;color:#718096;">${d.architect_email}</div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.04em;">Vía propuesta</div>
+              <div style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:.04em;">${viaLabel}</div>
               <div style="font-size:13px;font-weight:700;color:#7C3AED;">${viaProp}</div>
-              <div style="font-size:11px;color:#718096;">Visita: ${d.descarte_fecha_visita || '—'}</div>
+              ${extraRow}
             </div>
           </div>
-          ${reqList ? `<div style="background:#FEF2F2;border-radius:6px;padding:8px 10px;margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:#991B1B;margin-bottom:4px;">REQUISITOS INCUMPLIDOS</div><ul style="margin:0;padding-left:16px;">${reqList}</ul></div>` : ''}
+          ${reqList ? `<div style="background:${reqBg};border-radius:6px;padding:8px 10px;margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:${reqTitleColor};margin-bottom:4px;">${esTipoIncorrecto ? 'DECLARACIÓN DEL ARQUITECTO' : 'REQUISITOS INCUMPLIDOS'}</div><ul style="margin:0;padding-left:16px;">${reqList}</ul></div>` : ''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <div style="flex:1;min-width:120px;">
               <label style="display:block;font-size:11px;font-weight:700;color:#718096;margin-bottom:4px;">Notas para el arquitecto</label>
               <textarea id="dcNotas_${d.id}" placeholder="Opcional — motivo del rechazo o instrucciones…" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;resize:vertical;min-height:52px;box-sizing:border-box;"></textarea>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;justify-content:flex-end;">
+              ${changeSvcBtn}
               <button onclick="reviewDescarte('${d.id}', 'aprobado')" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Aprobar</button>
               <button onclick="reviewDescarte('${d.id}', 'rechazado')" style="background:#DC2626;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">❌ Rechazar</button>
             </div>
@@ -3343,6 +3376,25 @@ function openChangeSvcModal() {
 
   fetch('/api/get-uf').then(r => r.json()).then(d => { if (d.uf) csvcUF = d.uf; });
   showModal('modal-change-svc');
+}
+
+/* Open "Cambiar tipo" modal directly from a descarte card (tipo_incorrecto flow) */
+function openChangeSvcFromDescarte(projectNumber, tipoCorrecto) {
+  const proj = projects.find(p => p.project_number === projectNumber);
+  if (!proj) { showToast('Proyecto no encontrado', 'error'); return; }
+
+  /* Simulate detailData so openChangeSvcModal works */
+  detailData = { _pnum: projectNumber };
+  openChangeSvcModal();
+
+  /* Pre-select the suggested type after modal opens */
+  setTimeout(() => {
+    const sel = document.getElementById('csvc-svc');
+    if (sel) {
+      sel.value = tipoCorrecto;
+      csvcOnSvcChange();
+    }
+  }, 50);
 }
 
 function csvcOnSvcChange() {
