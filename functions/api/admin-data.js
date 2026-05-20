@@ -283,11 +283,28 @@ export async function onRequest(context) {
     return new Response(null, { status: 204, headers: CORS });
   }
 
-  /* notify_assignment — pre-auth bypass con service key.
-     Solo envía 2 correos: asignación al cliente + nuevo trámite al arquitecto. */
+  /* send_admin_email + notify_assignment — pre-auth bypass con service key */
   if (request.method === 'POST') {
     let preBody;
     try { preBody = await request.clone().json(); } catch(_) {}
+
+    if (preBody?.action === 'send_admin_email') {
+      const svcKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
+      if (!svcKey || preBody.svc_key !== svcKey) return json({ error: 'No autorizado' }, 403);
+      const { to, subject, html } = preBody;
+      if (!to || !subject || !html) return json({ error: 'to, subject y html requeridos' }, 400);
+      const resendKey = env.RESEND_API_KEY;
+      if (!resendKey) return json({ error: 'RESEND_API_KEY no configurada' }, 500);
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: 'APPARQ <hola@apparq.cl>', to: [to], subject, html }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) return json({ error: 'Error al enviar email', detail: resData }, 500);
+      return json({ success: true, id: resData.id });
+    }
+
     if (preBody?.action === 'notify_assignment') {
       const svcKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
       if (!svcKey || preBody.svc_key !== svcKey) return json({ error: 'No autorizado' }, 403);
