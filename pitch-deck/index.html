@@ -213,11 +213,13 @@
 
   /* ── PRINT ── */
   @media print {
+    @page { size: 25.40cm 14.29cm; margin: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     #nav { display: none !important; }
+    #hint { display: none !important; }
     #deck { padding-top: 0; }
-    .slide { display: flex !important; min-height: 100vh; page-break-after: always; }
-    .slide:last-child { page-break-after: auto; }
-    body { background: #fff; }
+    .slide { display: flex !important; min-height: 100vh; page-break-after: always; break-after: page; }
+    .slide:last-child { page-break-after: auto; break-after: auto; }
   }
 
   /* ── KEYBOARD HINT ── */
