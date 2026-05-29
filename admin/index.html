@@ -846,6 +846,9 @@
         <div class="nav-item" data-section="leads">
           <span class="nav-icon">🎯</span> Leads
         </div>
+        <div class="nav-item" data-section="cobros">
+          <span class="nav-icon">💳</span> Cobros adicionales
+        </div>
         <div class="nav-item" data-section="finanzas">
           <span class="nav-icon">📈</span> Finanzas
         </div>
@@ -1324,6 +1327,71 @@
 
           </div><!-- /fin-content -->
         </div><!-- /section-finanzas -->
+
+        <!-- ── COBROS ADICIONALES ───────────────── -->
+        <div id="section-cobros" class="section">
+          <div class="section-header">
+            <h2>Cobros Adicionales</h2>
+            <button class="btn btn-outline" onclick="exportCobrosCSV()">⬇ Exportar CSV</button>
+          </div>
+
+          <div id="cobros-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+
+          <div id="cobros-content" style="display:none;">
+
+            <!-- KPIs -->
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem;">
+              <div class="stat-card">
+                <div class="stat-label">📋 Total generados</div>
+                <div class="stat-value" id="cobros-kpi-total">—</div>
+                <div class="stat-sub" id="cobros-kpi-sub">— pagados · — pendientes</div>
+              </div>
+              <div class="stat-card" style="border-top:3px solid #059669;">
+                <div class="stat-label">💰 Recaudación</div>
+                <div class="stat-value" id="cobros-kpi-recaudacion" style="color:#059669;">—</div>
+                <div class="stat-sub">Total cobrado a clientes</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">🏢 Comisión APPARQ</div>
+                <div class="stat-value" id="cobros-kpi-comision">—</div>
+                <div class="stat-sub" id="cobros-kpi-neto-sub">Neto arquitectos: —</div>
+              </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filter-row" style="margin-bottom:1rem;">
+              <button class="filter-btn active" data-cobros-filter="todos">Todos</button>
+              <button class="filter-btn" data-cobros-filter="pendiente_pago">Pendientes</button>
+              <button class="filter-btn" data-cobros-filter="pagado">Pagados</button>
+              <button class="filter-btn" data-cobros-filter="cancelado">Cancelados</button>
+            </div>
+
+            <!-- Tabla -->
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table style="font-size:0.8rem;">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Trámite</th>
+                      <th>Cliente</th>
+                      <th>Arquitecto</th>
+                      <th>Servicio</th>
+                      <th style="text-align:right;">Monto cliente</th>
+                      <th style="text-align:right;">Comisión APPARQ</th>
+                      <th style="text-align:right;">Neto arq.</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cobros-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div><!-- /cobros-content -->
+        </div><!-- /section-cobros -->
 
       </div><!-- /content -->
     </div><!-- /main-area -->
@@ -1808,6 +1876,7 @@ const SECTION_TITLES = {
   tramites:    'Trámites',
   pagos:       'Pagos',
   leads:       'Leads del Cotizador',
+  cobros:      'Cobros Adicionales',
   finanzas:    'Finanzas',
 };
 
@@ -1831,6 +1900,7 @@ function navigateTo(section) {
   if (section === 'tramites')     loadTramites();
   if (section === 'pagos')        { arqPagosLoaded = false; loadPagos(); }
   if (section === 'leads')        loadLeads();
+  if (section === 'cobros')       loadCobros();
   if (section === 'finanzas')     loadFinanzas();
 }
 
@@ -3279,6 +3349,115 @@ function exportLeadsCSV() {
 }
 
 /* ══════════════════════════════════════════════════
+   COBROS ADICIONALES
+══════════════════════════════════════════════════ */
+let cobrosData     = null;
+let cobrosFilter   = 'todos';
+
+async function loadCobros() {
+  if (cobrosData) { renderCobros(); return; }
+  document.getElementById('cobros-loading').style.display = 'flex';
+  document.getElementById('cobros-content').style.display = 'none';
+  try {
+    cobrosData = await apiGet('cobros');
+    renderCobros();
+    document.getElementById('cobros-loading').style.display = 'none';
+    document.getElementById('cobros-content').style.display = 'block';
+  } catch(e) {
+    showToast('Error al cargar cobros adicionales', 'error');
+    document.getElementById('cobros-loading').style.display = 'none';
+  }
+}
+
+function renderCobros() {
+  const { cobros = [], kpis = {} } = cobrosData;
+
+  /* KPIs */
+  document.getElementById('cobros-kpi-total').textContent       = kpis.total ?? '—';
+  document.getElementById('cobros-kpi-sub').textContent         = `${kpis.pagados ?? 0} pagados · ${kpis.pendientes ?? 0} pendientes`;
+  document.getElementById('cobros-kpi-recaudacion').textContent = fmtCLP(kpis.total_recaudacion || 0);
+  document.getElementById('cobros-kpi-comision').textContent    = fmtCLP(kpis.total_comision || 0);
+  document.getElementById('cobros-kpi-neto-sub').textContent    = `Neto arquitectos: ${fmtCLP(kpis.total_neto || 0)}`;
+
+  /* Filtrar */
+  const filtered = cobrosFilter === 'todos' ? cobros : cobros.filter(c => c.estado === cobrosFilter);
+
+  const tbody = document.getElementById('cobros-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">💳</div>Sin cobros adicionales${cobrosFilter !== 'todos' ? ' en esta categoría' : ''}</div></td></tr>`;
+    return;
+  }
+
+  const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'ley-del-mono':'Ley del Mono', 'declaracion-jurada':'DJ' };
+  const estadoLabel = { pendiente_pago:'⏳ Pendiente', pagado:'✅ Pagado', cancelado:'❌ Cancelado' };
+  const estadoColor = { pendiente_pago:'#D97706', pagado:'#059669', cancelado:'#6B7280' };
+
+  tbody.innerHTML = filtered.map((c, idx) => {
+    const fecha      = c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-CL') : '—';
+    const fechaPago  = c.fecha_pago     ? new Date(c.fecha_pago).toLocaleDateString('es-CL')     : '';
+    const svc        = svcLabels[c.service_type] || c.service_type || '—';
+    const arqName    = `${c.architect_nombre || ''} ${c.architect_apellido || ''}`.trim() || c.arquitecto_email || '—';
+    const clientName = `${c.client_nombre || ''} ${c.client_apellido || ''}`.trim() || c.client_email || '—';
+    const isPagado   = c.estado === 'pagado';
+    const comisionPctStr = isPagado && c.comision_pct != null ? `${c.comision_pct}%` : '—';
+    const rowBg = idx % 2 === 1 ? 'background:#f8fafc;' : '';
+    return `
+      <tr style="${rowBg}">
+        <td style="white-space:nowrap;padding:8px 10px;">
+          ${fecha}
+          ${fechaPago ? `<div style="font-size:0.7rem;color:#059669;">pagado ${fechaPago}</div>` : ''}
+        </td>
+        <td style="padding:8px 10px;font-weight:700;color:#E8503A;">${c.tramite_id || '—'}</td>
+        <td style="padding:8px 10px;">
+          <div>${clientName}</div>
+          <div style="font-size:0.7rem;color:#6B7280;">${c.client_email || ''}</div>
+        </td>
+        <td style="padding:8px 10px;">
+          <div>${arqName}</div>
+          <div style="font-size:0.7rem;color:#6B7280;">${c.arquitecto_email || ''}</div>
+        </td>
+        <td style="padding:8px 10px;">
+          <div style="font-weight:600;">${c.descripcion || c.tipo_servicio || '—'}</div>
+          <div style="font-size:0.7rem;color:#6B7280;">${svc}</div>
+        </td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;">${c.valor_clp ? fmtCLP(c.valor_clp) : '—'}</td>
+        <td style="padding:8px 10px;text-align:right;color:#E8503A;">
+          ${isPagado && c.comision_monto != null ? `<div>${fmtCLP(c.comision_monto)}</div><div style="font-size:0.7rem;color:#6B7280;">${comisionPctStr}</div>` : '—'}
+        </td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;color:#059669;">
+          ${isPagado && c.pago_neto_arquitecto != null ? fmtCLP(c.pago_neto_arquitecto) : '—'}
+        </td>
+        <td style="padding:8px 10px;">
+          <span style="font-size:0.72rem;font-weight:700;color:${estadoColor[c.estado] || '#6B7280'};">${estadoLabel[c.estado] || c.estado}</span>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function exportCobrosCSV() {
+  if (!cobrosData?.cobros?.length) { showToast('Sin datos para exportar', 'info'); return; }
+  const headers = ['Fecha','Trámite','Cliente','Email cliente','Arquitecto','Email arq.','Servicio','Descripción','Monto cliente','Comisión %','Comisión monto','Neto arquitecto','Estado','Fecha pago'];
+  const rows = cobrosData.cobros.map(c => [
+    c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-CL') : '',
+    c.tramite_id || '',
+    `${c.client_nombre || ''} ${c.client_apellido || ''}`.trim(),
+    c.client_email || '',
+    `${c.architect_nombre || ''} ${c.architect_apellido || ''}`.trim(),
+    c.arquitecto_email || '',
+    c.service_type || '',
+    c.descripcion || c.tipo_servicio || '',
+    c.valor_clp || 0,
+    c.comision_pct != null ? c.comision_pct : '',
+    c.comision_monto != null ? c.comision_monto : '',
+    c.pago_neto_arquitecto != null ? c.pago_neto_arquitecto : '',
+    c.estado || '',
+    c.fecha_pago ? new Date(c.fecha_pago).toLocaleDateString('es-CL') : '',
+  ]);
+  const today = new Date().toISOString().slice(0,10);
+  downloadCSV([headers, ...rows], `cobros_adicionales_${today}.csv`);
+}
+
+/* ══════════════════════════════════════════════════
    FINANZAS
 ══════════════════════════════════════════════════ */
 let finanzasData = null;
@@ -3778,6 +3957,16 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       tramiteFilter = btn.dataset.filter;
       renderTramitesTable();
+    });
+  });
+
+  // Cobros filters
+  document.querySelectorAll('[data-cobros-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-cobros-filter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cobrosFilter = btn.dataset.cobrosFilter;
+      if (cobrosData) renderCobros();
     });
   });
 

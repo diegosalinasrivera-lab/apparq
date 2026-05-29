@@ -167,18 +167,18 @@ export async function onRequest(context) {
     /* ── GET-PROJECT (default) ──────────────────── */
     const stageInfo = STAGE_LABELS[project.stage] || { label: project.stage, pct: 0, desc: '' };
 
-    /* Obtener cobro adicional pendiente si existe */
+    /* Obtener todos los cobros del trámite (historial + pendiente) */
     let cobro_pendiente = null;
-    if (project.cobro_adicional_pendiente) {
-      try {
-        const cobroRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/cobros_adicionales?tramite_id=eq.${encodeURIComponent(numUpper)}&estado=eq.pendiente_pago&order=fecha_creacion.desc&limit=1`,
-          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-        );
-        const cobroArr = cobroRes.ok ? await cobroRes.json() : [];
-        cobro_pendiente = cobroArr[0] || null;
-      } catch(_) {}
-    }
+    let cobros_historial = [];
+    try {
+      const cobrosRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/cobros_adicionales?tramite_id=eq.${encodeURIComponent(numUpper)}&order=fecha_creacion.asc`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const cobrosArr = cobrosRes.ok ? await cobrosRes.json() : [];
+      cobros_historial = cobrosArr;
+      cobro_pendiente  = cobrosArr.find(c => c.estado === 'pendiente_pago') || null;
+    } catch(_) {}
 
     return corsResponse({
       project: {
@@ -188,6 +188,7 @@ export async function onRequest(context) {
         stage_desc:  stageInfo.desc,
       },
       cobro_pendiente,
+      cobros_historial,
     });
 
   } catch (err) {

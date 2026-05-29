@@ -283,14 +283,32 @@ export async function onRequest(context) {
           const cobro    = cobroArr[0] || null;
 
           if (cobro) {
-            /* Marcar cobro como pagado */
+            /* Calcular comisión según patente del arquitecto */
+            let comisionPct = 30;  /* default: sin patente → 30% APPARQ */
+            if (cobro.arquitecto_email) {
+              try {
+                const arqPatRes = await fetch(
+                  `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(cobro.arquitecto_email)}&select=patente&limit=1`,
+                  { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+                );
+                const arqPatArr = arqPatRes.ok ? await arqPatRes.json() : [];
+                if (arqPatArr[0]?.patente === true) comisionPct = 20;
+              } catch(_) {}
+            }
+            const comisionMonto      = Math.round((cobro.valor_clp || 0) * comisionPct / 100);
+            const pagoNetoArquitecto = (cobro.valor_clp || 0) - comisionMonto;
+
+            /* Marcar cobro como pagado + guardar comisión */
             await fetch(`${SUPABASE_URL}/rest/v1/cobros_adicionales?id=eq.${encodeURIComponent(cobroId)}`, {
               method: 'PATCH',
               headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
               body: JSON.stringify({
-                estado:         'pagado',
-                mp_payment_id:  String(payment.id),
-                fecha_pago:     new Date().toISOString(),
+                estado:                'pagado',
+                mp_payment_id:         String(payment.id),
+                fecha_pago:            new Date().toISOString(),
+                comision_pct:          comisionPct,
+                comision_monto:        comisionMonto,
+                pago_neto_arquitecto:  pagoNetoArquitecto,
               }),
             });
 

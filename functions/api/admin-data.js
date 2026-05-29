@@ -668,6 +668,48 @@ export async function onRequest(context) {
       return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, inscripIniciadas, inscripCompletadas, abandonos, recentProjects, recentPayments });
     }
 
+    if (section === 'cobros') {
+      const [cobrosRes, projRes, archRes] = await Promise.all([
+        sb('/cobros_adicionales?select=id,tramite_id,arquitecto_email,tipo_servicio,descripcion,valor_uf,valor_clp,valor_uf_fecha,estado,mp_payment_id,fecha_creacion,fecha_pago,comision_pct,comision_monto,pago_neto_arquitecto&order=fecha_creacion.desc&limit=500'),
+        sb('/projects?select=project_number,client_nombre,client_apellido,client_email,service_type,commune&limit=2000'),
+        sb('/architects?select=email,nombre,apellido,patente'),
+      ]);
+      const cobros    = Array.isArray(cobrosRes.data) ? cobrosRes.data : [];
+      const projsMap  = {};
+      (Array.isArray(projRes.data) ? projRes.data : []).forEach(p => { projsMap[p.project_number] = p; });
+      const archMap2  = {};
+      (Array.isArray(archRes.data) ? archRes.data : []).forEach(a => { archMap2[a.email] = a; });
+
+      const enriched = cobros.map(c => {
+        const proj = projsMap[c.tramite_id] || {};
+        const arq  = archMap2[c.arquitecto_email] || {};
+        return {
+          ...c,
+          client_nombre:      proj.client_nombre    || '',
+          client_apellido:    proj.client_apellido  || '',
+          client_email:       proj.client_email     || '',
+          service_type:       proj.service_type     || '',
+          commune:            proj.commune          || '',
+          architect_nombre:   arq.nombre            || '',
+          architect_apellido: arq.apellido          || '',
+        };
+      });
+
+      const pagados   = enriched.filter(c => c.estado === 'pagado');
+      const pendientes = enriched.filter(c => c.estado === 'pendiente_pago');
+      return json({
+        cobros: enriched,
+        kpis: {
+          total:              enriched.length,
+          pagados:            pagados.length,
+          pendientes:         pendientes.length,
+          total_recaudacion:  Math.round(pagados.reduce((s, c) => s + (c.valor_clp    || 0), 0)),
+          total_comision:     Math.round(pagados.reduce((s, c) => s + (c.comision_monto       || 0), 0)),
+          total_neto:         Math.round(pagados.reduce((s, c) => s + (c.pago_neto_arquitecto || 0), 0)),
+        },
+      });
+    }
+
     if (section === 'project-detail') {
       const pnum = new URL(request.url).searchParams.get('project_number');
       if (!pnum) return json({ error: 'project_number requerido' }, 400);
