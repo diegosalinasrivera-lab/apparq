@@ -368,6 +368,10 @@ export async function onRequest(context) {
                           <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Sigue el avance de tu trámite en:</p>
                           <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
                         </div>
+                        <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:14px;text-align:center;">
+                          <p style="margin:0;font-size:13px;font-weight:700;color:#15803D;">💡 Recuerda: puedes pagar en cuotas con Mercado Pago</p>
+                          <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5;">En tus próximos pagos del trámite puedes seleccionar la opción de <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+                        </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
                         <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
                       </div>
@@ -596,6 +600,10 @@ export async function onRequest(context) {
                             <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Sigue el avance de tu trámite en:</p>
                             <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
                           </div>
+                          <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:12px;text-align:center">
+                            <p style="margin:0;font-size:13px;font-weight:700;color:#15803D;">💡 Recuerda: puedes pagar en cuotas con Mercado Pago</p>
+                            <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5;">En tus próximos pagos del trámite puedes seleccionar <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+                          </div>
                           <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
                           <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a> o <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a></p>
                         </div>
@@ -663,7 +671,11 @@ export async function onRequest(context) {
                             <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Sigue el avance de tu trámite en:</p>
                             <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
                           </div>
-                          <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
+                          <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:14px;text-align:center">
+                            <p style="margin:0;font-size:13px;font-weight:700;color:#15803D">💡 Recuerda: puedes pagar en cuotas con Mercado Pago</p>
+                            <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">En tus próximos pagos del trámite (E2, E3…) puedes seleccionar <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+                          </div>
+                          <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:14px">
                             <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
                             <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>. Nunca pagues directamente al arquitecto ni coordines por canales externos.</p>
                           </div>

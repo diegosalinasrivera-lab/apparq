@@ -275,7 +275,12 @@ export async function onRequest(context) {
                     </a>
                   </div>
 
-                  <p style="font-size:12px;color:#a0aec0;margin-top:20px;text-align:center;">
+                  <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:16px;text-align:center;">
+                    <p style="margin:0;font-size:13px;font-weight:700;color:#15803D;">💡 Puedes pagar en cuotas con Mercado Pago</p>
+                    <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5;">Al hacer clic en el botón de pago, selecciona la opción de <strong>cuotas con tu tarjeta de crédito</strong> para distribuir el pago cómodamente.</p>
+                  </div>
+
+                  <p style="font-size:12px;color:#a0aec0;margin-top:16px;text-align:center;">
                     ¿Tienes dudas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a> o por
                     <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a>
                   </p>

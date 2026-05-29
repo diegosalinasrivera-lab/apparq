@@ -384,7 +384,12 @@ export async function onRequest(context) {
                 <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
               </div>
 
-              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
+              <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:14px;text-align:center">
+                <p style="margin:0;font-size:13px;font-weight:700;color:#15803D">💡 Recuerda: puedes pagar en cuotas con Mercado Pago</p>
+                <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">En tus próximos pagos del trámite puedes seleccionar <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+              </div>
+
+              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:14px">
                 <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
                 <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
                   Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>.
@@ -472,7 +477,12 @@ export async function onRequest(context) {
                 <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
               </div>
 
-              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px">
+              <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:14px;text-align:center">
+                <p style="margin:0;font-size:13px;font-weight:700;color:#15803D">💡 Recuerda: puedes pagar en cuotas con Mercado Pago</p>
+                <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">En tus próximos pagos del trámite (E2, E3…) puedes seleccionar <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+              </div>
+
+              <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:14px">
                 <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
                 <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
                   Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>.

@@ -182,6 +182,16 @@ export async function onRequest(context) {
               ${etapasHTML}
             </table>
 
+            <!-- Cuotas reminder -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+              <tr>
+                <td style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;padding:14px 24px;text-align:center;">
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#15803D;">💡 Puedes pagar en cuotas con Mercado Pago</p>
+                  <p style="margin:5px 0 0;font-size:12px;color:#166534;line-height:1.5;">Al iniciar el trámite, selecciona la opción de <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+                </td>
+              </tr>
+            </table>
+
             <!-- CTA -->
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
