@@ -170,7 +170,26 @@ export async function onRequest(context) {
         return { ...p, stage_label: STAGE_LABELS[p.stage] || p.stage, pagos };
       });
 
-      return corsResponse({ projects: enriched, architect });
+      /* Obtener cobros adicionales de todos los proyectos del arquitecto */
+      let cobrosByProject = {};
+      try {
+        const cobrosRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/cobros_adicionales?arquitecto_email=eq.${encodeURIComponent(email)}&order=fecha_creacion.desc`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        const cobrosAll = cobrosRes.ok ? await cobrosRes.json() : [];
+        for (const c of cobrosAll) {
+          if (!cobrosByProject[c.tramite_id]) cobrosByProject[c.tramite_id] = [];
+          cobrosByProject[c.tramite_id].push(c);
+        }
+      } catch(_) {}
+
+      const withCobros = enriched.map(p => ({
+        ...p,
+        cobros: cobrosByProject[p.project_number] || [],
+      }));
+
+      return corsResponse({ projects: withCobros, architect });
     }
 
     /* ── UPDATE-STAGE ─────────────────────────── */

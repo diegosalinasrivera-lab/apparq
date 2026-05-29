@@ -268,7 +268,158 @@ export async function onRequest(context) {
       let projectActivated = false;
       let projectData = null;
 
-      if (extRef && extRef.startsWith('ARQ-') && SERVICE_KEY) {
+      /* ── Cobro adicional ────────────────────────────────── */
+      if (extRef && extRef.startsWith('COBRO-') && SERVICE_KEY) {
+        try {
+          const cobroId = extRef.replace('COBRO-', '');
+          console.log('Procesando cobro adicional:', cobroId);
+
+          /* Obtener el cobro */
+          const cobroRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/cobros_adicionales?id=eq.${encodeURIComponent(cobroId)}&estado=eq.pendiente_pago&select=*&limit=1`,
+            { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+          );
+          const cobroArr = cobroRes.ok ? await cobroRes.json() : [];
+          const cobro    = cobroArr[0] || null;
+
+          if (cobro) {
+            /* Marcar cobro como pagado */
+            await fetch(`${SUPABASE_URL}/rest/v1/cobros_adicionales?id=eq.${encodeURIComponent(cobroId)}`, {
+              method: 'PATCH',
+              headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+              body: JSON.stringify({
+                estado:         'pagado',
+                mp_payment_id:  String(payment.id),
+                fecha_pago:     new Date().toISOString(),
+              }),
+            });
+
+            /* Desbloquear el proyecto */
+            await fetch(`${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(cobro.tramite_id)}`, {
+              method: 'PATCH',
+              headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+              body: JSON.stringify({ cobro_adicional_pendiente: false, updated_at: new Date().toISOString() }),
+            });
+
+            /* Obtener datos del proyecto para los emails */
+            const projRes2 = await fetch(
+              `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(cobro.tramite_id)}&select=*&limit=1`,
+              { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+            );
+            const projArr = projRes2.ok ? await projRes2.json() : [];
+            const proj    = projArr[0] || null;
+
+            if (proj) {
+              const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono', 'declaracion-jurada':'Declaración Jurada' };
+              const svcName  = svcLabels[proj.service_type] || proj.service_type;
+              const fecha    = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+
+              const tableBase = `
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${cobro.tramite_id}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Servicio</td><td style="padding:8px 10px">${svcName}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Cobro adicional</td><td style="padding:8px 10px;font-weight:700">${cobro.descripcion}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Monto pagado</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(cobro.valor_clp)} ✓</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">ID Pago MP</td><td style="padding:8px 10px;font-family:monospace;font-size:11px">${payment.id}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Fecha</td><td style="padding:8px 10px">${fecha}</td></tr>
+                </table>`;
+
+              /* Email al cliente */
+              if (proj.client_email) {
+                await sendEmail({
+                  to:      proj.client_email,
+                  subject: `✅ Pago confirmado — Servicio adicional trámite ${cobro.tramite_id} — APPARQ`,
+                  html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                      <div style="background:#1a1a2e;padding:28px 32px;text-align:center;border-radius:8px 8px 0 0">
+                        <h1 style="color:#fff;margin:0;font-size:22px">APPARQ</h1>
+                        <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Pago confirmado</p>
+                      </div>
+                      <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                        <h2 style="margin-top:0;color:#1a1a2e;">¡Hola ${proj.client_nombre}! Tu pago fue confirmado ✅</h2>
+                        <p style="color:#4a5568;font-size:14px;line-height:1.7;">
+                          Hemos recibido el pago del servicio adicional para tu trámite. Tu trámite continuará con normalidad.
+                        </p>
+                        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin:16px 0;text-align:center;">
+                          <p style="margin:0 0 4px;font-size:12px;color:#718096;font-weight:700;">PAGO CONFIRMADO</p>
+                          <p style="margin:0;font-size:22px;font-weight:900;color:#059669;">${clpFmt(cobro.valor_clp)} ✓</p>
+                          <p style="margin:4px 0 0;font-size:12px;color:#6EE7B7;">ID: ${payment.id}</p>
+                        </div>
+                        ${tableBase}
+                        <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:20px;text-align:center;">
+                          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Sigue el avance de tu trámite en:</p>
+                          <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
+                        </div>
+                        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                      </div>
+                    </div>`,
+                }, RESEND_API_KEY);
+              }
+
+              /* Email al arquitecto */
+              if (proj.architect_email) {
+                await sendEmail({
+                  to:      proj.architect_email,
+                  subject: `💰 Cobro adicional pagado — ${cobro.tramite_id} · ${cobro.descripcion}`,
+                  html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                      <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                        <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Cobro adicional pagado</h1>
+                      </div>
+                      <div style="background:#D1FAE5;border:2px solid #6EE7B7;padding:14px 32px">
+                        <p style="margin:0;font-size:14px;font-weight:700;color:#065F46">💰 El cliente pagó el servicio adicional. El trámite fue desbloqueado.</p>
+                      </div>
+                      <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                        ${tableBase}
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
+                          <tr><td style="padding:8px 10px;color:#718096;width:40%">Cliente</td><td style="padding:8px 10px">${proj.client_nombre} ${proj.client_apellido}</td></tr>
+                        </table>
+                        <p style="font-size:12px;color:#718096;margin-top:16px;">El monto correspondiente a tus honorarios será transferido en los próximos días hábiles. Recuerda emitir la boleta de honorarios electrónica a DSR ARQ SPA (RUT 76.341.206-7).</p>
+                        <div style="text-align:center;margin-top:20px;">
+                          <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ir a mi portal</a>
+                        </div>
+                        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                      </div>
+                    </div>`,
+                }, RESEND_API_KEY);
+              }
+
+              /* Email a hola@apparq.cl */
+              await sendEmail({
+                to:      'hola@apparq.cl',
+                subject: `💰 Cobro adicional pagado — ${cobro.tramite_id} — ${cobro.descripcion} — ${clpFmt(cobro.valor_clp)}`,
+                html: `
+                  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                    <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                      <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Cobro adicional pagado</h1>
+                    </div>
+                    <div style="background:#D1FAE5;border:2px solid #6EE7B7;padding:14px 32px">
+                      <p style="margin:0;font-size:13px;font-weight:700;color:#065F46">✅ Cobro pagado · Trámite desbloqueado</p>
+                    </div>
+                    <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                      ${tableBase}
+                      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
+                        <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Cliente</td><td style="padding:8px 10px">${proj.client_nombre} ${proj.client_apellido} · ${proj.client_email}</td></tr>
+                        <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${proj.architect_nombre} ${proj.architect_apellido} · ${proj.architect_email}</td></tr>
+                      </table>
+                      <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-top:16px;">
+                        <p style="margin:0;font-size:12px;font-weight:700;color:#92400E;">⚠️ Recordatorio: transferir honorarios al arquitecto (previa boleta electrónica)</p>
+                      </div>
+                    </div>
+                  </div>`,
+              }, RESEND_API_KEY);
+
+              console.log('Cobro adicional procesado correctamente:', cobroId);
+            }
+          } else {
+            console.log('Cobro no encontrado o ya procesado:', cobroId);
+          }
+        } catch (cobroErr) {
+          console.error('Error procesando cobro adicional:', cobroErr);
+        }
+      } else if (extRef && extRef.startsWith('ARQ-') && SERVICE_KEY) {
         try {
           const projRes = await fetch(
             `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(extRef)}&stage=eq.pendiente_pago&select=id,project_number,client_email,client_nombre,client_apellido,client_telefono,client_rut,service_type,servicio_subtipo,commune,m2,total_clp,e1_clp,address,firma_url`,

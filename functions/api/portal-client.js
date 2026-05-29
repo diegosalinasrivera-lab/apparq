@@ -167,6 +167,19 @@ export async function onRequest(context) {
     /* ── GET-PROJECT (default) ──────────────────── */
     const stageInfo = STAGE_LABELS[project.stage] || { label: project.stage, pct: 0, desc: '' };
 
+    /* Obtener cobro adicional pendiente si existe */
+    let cobro_pendiente = null;
+    if (project.cobro_adicional_pendiente) {
+      try {
+        const cobroRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/cobros_adicionales?tramite_id=eq.${encodeURIComponent(numUpper)}&estado=eq.pendiente_pago&order=fecha_creacion.desc&limit=1`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        const cobroArr = cobroRes.ok ? await cobroRes.json() : [];
+        cobro_pendiente = cobroArr[0] || null;
+      } catch(_) {}
+    }
+
     return corsResponse({
       project: {
         ...project,
@@ -174,6 +187,7 @@ export async function onRequest(context) {
         stage_pct:   stageInfo.pct,
         stage_desc:  stageInfo.desc,
       },
+      cobro_pendiente,
     });
 
   } catch (err) {

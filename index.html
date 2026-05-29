@@ -2347,6 +2347,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div style="font-size:0.72rem;color:var(--muted);" id="pcProjDesc"></div>
       </div>
 
+      <!-- Banner cobro adicional pendiente -->
+      <div id="pcCobroBanner" style="display:none;margin-bottom:0.85rem;border:2px solid #E8503A;border-radius:var(--radius);overflow:hidden;">
+        <div style="background:#FFF7ED;padding:0.85rem 1rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.1rem;">⚠️</span>
+            <span style="font-size:0.85rem;font-weight:800;color:#92400E;">Servicio adicional requerido — Trámite pausado</span>
+          </div>
+          <div id="pcCobroDesc" style="font-size:0.82rem;color:#78350F;margin-bottom:0.4rem;"></div>
+          <div id="pcCobroMonto" style="font-size:1.2rem;font-weight:900;color:#E8503A;margin-bottom:0.5rem;"></div>
+          <div id="pcCobroFundamento" style="font-size:0.75rem;color:#92400E;background:#FEF9C3;border:1px solid #FDE047;border-radius:var(--radius);padding:0.5rem 0.7rem;margin-bottom:0.75rem;line-height:1.5;"></div>
+          <button id="pcCobroPagarBtn" style="width:100%;background:#E8503A;color:#fff;border:none;border-radius:var(--radius);padding:0.65rem 1rem;font-size:0.85rem;font-weight:700;cursor:pointer;">💳 Pagar con Mercado Pago</button>
+          <div id="pcCobroPagarMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;text-align:center;"></div>
+          <p style="font-size:0.7rem;color:#92400E;margin:0.5rem 0 0;text-align:center;">
+            ¿Tienes dudas? <a href="https://wa.me/56942054581" target="_blank" style="color:#E8503A;font-weight:700;">Contáctanos por WhatsApp</a>
+          </p>
+        </div>
+      </div>
+
       <!-- Historial de avances -->
       <div style="margin-top:0.75rem;">
         <div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:0.6rem;">📋 Historial de avances</div>
@@ -4913,7 +4931,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       if (!res.ok || data.error) { errEl.textContent = data.error || 'Error al buscar.'; errEl.style.display = 'block'; return; }
 
       currentProject = data.project;
-      renderClientProject(data.project, email);
+      renderClientProject(data.project, email, data.cobro_pendiente || null);
     } catch(e) {
       errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
     } finally {
@@ -4926,7 +4944,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('portalClienteForm').style.display = '';
   };
 
-  function renderClientProject(p, clientEmail) {
+  function renderClientProject(p, clientEmail, cobroPendiente) {
     document.getElementById('portalClienteForm').style.display = 'none';
     document.getElementById('portalClienteDetalle').style.display = '';
     document.getElementById('pcProjNum').textContent = p.project_number;
@@ -4937,6 +4955,45 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     const SVC = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
     document.getElementById('pcProjInfo').innerHTML =
       `<strong>${SVC[p.service_type] || p.service_type}</strong> · ${p.commune} · ${p.m2} m² · Arquitecto: ${p.architect_nombre || 'Por asignar'} ${p.architect_apellido || ''}`;
+
+    /* ── Cobro adicional pendiente ── */
+    const cobroBanner  = document.getElementById('pcCobroBanner');
+    const cobroPagarBtn = document.getElementById('pcCobroPagarBtn');
+    const cobroPagarMsg = document.getElementById('pcCobroPagarMsg');
+    if (cobroPendiente && cobroPendiente.id) {
+      const clpFmtC = n => '$' + Math.round(n).toLocaleString('es-CL');
+      document.getElementById('pcCobroDesc').textContent = cobroPendiente.descripcion || '';
+      document.getElementById('pcCobroMonto').textContent = clpFmtC(cobroPendiente.valor_clp || 0);
+      document.getElementById('pcCobroFundamento').textContent = cobroPendiente.fundamento_tecnico || '';
+      cobroBanner.style.display = '';
+      cobroPagarBtn.onclick = async () => {
+        cobroPagarMsg.style.display = '';
+        cobroPagarMsg.style.color = '#718096';
+        cobroPagarMsg.textContent = 'Creando pago…';
+        cobroPagarBtn.disabled = true;
+        try {
+          const res = await fetch('/api/cobro-adicional', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'create-payment', project_number: p.project_number, email: clientEmail, cobro_id: cobroPendiente.id }),
+          });
+          const data = await res.json();
+          if (data.init_point) {
+            cobroPagarMsg.textContent = 'Redirigiendo a Mercado Pago…';
+            window.location.href = data.init_point;
+          } else {
+            cobroPagarMsg.style.color = '#DC2626';
+            cobroPagarMsg.textContent = data.error || 'Error al crear el pago. Intenta de nuevo.';
+            cobroPagarBtn.disabled = false;
+          }
+        } catch(e) {
+          cobroPagarMsg.style.color = '#DC2626';
+          cobroPagarMsg.textContent = 'Error de conexión. Intenta de nuevo.';
+          cobroPagarBtn.disabled = false;
+        }
+      };
+    } else {
+      cobroBanner.style.display = 'none';
+    }
 
     loadUpdates(p.project_number);
     pcLoadFiles(p.project_number, clientEmail);
@@ -5447,12 +5504,16 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       const pagos = p.pagos || [];
       const pagosPagados = pagos.filter(g => g.pagado).length;
       const pagosDots = pagos.map(g => `<span title="${g.label}: ${g.pagado?'✓ Cobrado':'Pendiente'}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${g.pagado?'#059669':'#D1D5DB'};border:1.5px solid ${g.pagado?'#059669':'#9CA3AF'};"></span>`).join('');
+      const cobroPendienteCard = p.cobros && p.cobros.some(c => c.estado === 'pendiente_pago');
       card.innerHTML = `
         <div class="pa-card-num">${p.project_number}</div>
         <div class="pa-card-title">${SVC_LABELS[p.service_type]||p.service_type} · ${p.commune} · ${p.m2}m²</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">Cliente: ${p.client_nombre} ${p.client_apellido}</div>
-        <span class="pa-card-stage">${p.stage_label}</span>
-        ${p.unread_messages > 0 ? `<span class="pa-card-unread">${p.unread_messages} nuevo${p.unread_messages>1?'s':''}</span>` : ''}
+        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+          <span class="pa-card-stage">${p.stage_label}</span>
+          ${cobroPendienteCard ? `<span style="background:#7C3AED;color:#fff;font-size:0.65rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:var(--radius-pill);">💳 Cobro pendiente</span>` : ''}
+          ${p.unread_messages > 0 ? `<span class="pa-card-unread">${p.unread_messages} nuevo${p.unread_messages>1?'s':''}</span>` : ''}
+        </div>
         ${pagos.length ? `<div style="margin-top:0.45rem;display:flex;align-items:center;gap:0.3rem;"><span style="font-size:0.68rem;color:var(--muted);font-weight:600;">Pagos:</span>${pagosDots}<span style="font-size:0.68rem;color:${pagosPagados===pagos.length?'#059669':'var(--muted)'};">${pagosPagados}/${pagos.length}</span></div>` : ''}`;
       card.onclick = () => openArqDetail(p, token);
       box.appendChild(card);
@@ -5509,6 +5570,45 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         <textarea id="paStageNota" placeholder="Describe el avance o novedad para el cliente (opcional)…" maxlength="600" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 0.75rem;font-size:0.8rem;font-family:inherit;resize:vertical;min-height:64px;box-sizing:border-box;margin-bottom:0.5rem;"></textarea>
         <button id="paUpdateStage" style="width:100%;background:var(--grad);color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Notificar avance al cliente</button>
         <div id="paStageMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
+      </div>
+
+      <!-- Cobros adicionales -->
+      <div id="paCobroSection" style="margin-bottom:1rem;border:1.5px solid #C4B5FD;border-radius:var(--radius);overflow:hidden;">
+        <div style="background:#F5F3FF;padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:0.82rem;font-weight:700;color:#5B21B6;">💳 Servicios adicionales</span>
+          <button id="paCobroAddBtn" style="background:#7C3AED;color:#fff;border:none;border-radius:var(--radius-pill);padding:0.28rem 0.75rem;font-size:0.73rem;font-weight:700;cursor:pointer;">+ Agregar</button>
+        </div>
+        <!-- Formulario crear cobro (oculto por defecto) -->
+        <div id="paCobroForm" style="display:none;padding:0.9rem 1rem;background:#faf8ff;border-top:1px solid #C4B5FD;">
+          <div style="font-size:0.78rem;font-weight:700;color:#5B21B6;margin-bottom:0.6rem;">Nuevo servicio adicional</div>
+          <div style="margin-bottom:0.55rem;">
+            <label style="font-size:0.73rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.25rem;">Tipo de servicio <span style="color:#D97706">*</span></label>
+            <select id="paCobroTipo" style="width:100%;border:1px solid #C4B5FD;border-radius:var(--radius);padding:0.45rem 0.6rem;font-size:0.82rem;background:#fff;box-sizing:border-box;">
+              <option value="">— Selecciona —</option>
+              <option value="modificacion_proyecto">Modificación de Proyecto (10 UF fijo)</option>
+              <option value="otro">Otro servicio (especifica valor en UF)</option>
+            </select>
+          </div>
+          <div id="paCobroUFCustomWrap" style="display:none;margin-bottom:0.55rem;">
+            <label style="font-size:0.73rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.25rem;">Valor en UF <span style="color:#D97706">*</span></label>
+            <input id="paCobroUFCustom" type="number" min="0.1" step="0.1" placeholder="ej. 5" style="width:100%;border:1px solid #C4B5FD;border-radius:var(--radius);padding:0.45rem 0.65rem;font-size:0.82rem;box-sizing:border-box;" />
+            <div id="paCobroCLPEstimate" style="font-size:0.7rem;color:#7C3AED;margin-top:0.3rem;"></div>
+          </div>
+          <div style="margin-bottom:0.55rem;">
+            <label style="font-size:0.73rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.25rem;">Fundamento técnico <span style="color:#D97706">*</span> <span style="font-weight:400;color:var(--muted);">(mín. 100 caracteres)</span></label>
+            <textarea id="paCobroFundamento" maxlength="800" rows="4" placeholder="Describe el motivo técnico que justifica este cobro adicional. Ej: El proyecto requiere una modificación sustancial debido a que..." style="width:100%;border:1px solid #C4B5FD;border-radius:var(--radius);padding:0.5rem 0.65rem;font-size:0.8rem;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+            <div id="paCobroFundamentoCount" style="font-size:0.68rem;color:var(--muted);text-align:right;margin-top:2px;">0 / 100 mínimo</div>
+          </div>
+          <div id="paCobroFormMsg" style="display:none;font-size:0.75rem;margin-bottom:0.5rem;"></div>
+          <div style="display:flex;gap:0.5rem;">
+            <button id="paCobroSubmit" style="flex:1;background:#7C3AED;color:#fff;border:none;border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;">Enviar cobro al cliente</button>
+            <button id="paCobroCancelarForm" style="background:none;border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 0.85rem;font-size:0.8rem;cursor:pointer;color:var(--muted);">Cancelar</button>
+          </div>
+        </div>
+        <!-- Lista de cobros -->
+        <div id="paCobrosList" style="padding:0.65rem 1rem;font-size:0.78rem;color:var(--muted);">
+          <em>Cargando cobros adicionales…</em>
+        </div>
       </div>
 
       <!-- Pagos del arquitecto -->
@@ -5765,8 +5865,165 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     paLoadUpdates();
     document.getElementById('paRefreshUpdates').onclick = paLoadUpdates;
 
-    /* ── Pagos de honorarios ─────────────────── */
+    /* ── Cobros adicionales ──────────────────── */
     const clpFmt = n => '$' + Math.round(n||0).toLocaleString('es-CL');
+    let ufActual = null;
+
+    async function paLoadCobros() {
+      const box = document.getElementById('paCobrosList');
+      if (!box) return;
+      box.innerHTML = '<em style="font-size:0.75rem;color:var(--muted);">Cargando…</em>';
+      try {
+        const res = await fetch('/api/cobro-adicional', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get-cobros', token, project_number: p.project_number }),
+        });
+        const data = await res.json();
+        const cobros = data.cobros || [];
+        if (!cobros.length) {
+          box.innerHTML = '<em style="font-size:0.75rem;color:var(--muted);">Sin cobros adicionales en este trámite.</em>';
+          return;
+        }
+        const estadoColor = { pendiente_pago: '#D97706', pagado: '#059669', cancelado: '#9CA3AF' };
+        const estadoLabel = { pendiente_pago: '⏳ Pendiente de pago', pagado: '✅ Pagado', cancelado: '✗ Cancelado' };
+        box.innerHTML = cobros.map((c, i) => `
+          <div style="padding:0.6rem 0;${i > 0 ? 'border-top:1px solid #EDE9FE;' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:0.8rem;font-weight:700;color:var(--dark);">${c.descripcion}</div>
+                <div style="font-size:0.72rem;color:${estadoColor[c.estado]||'#718096'};font-weight:700;margin-top:1px;">${estadoLabel[c.estado]||c.estado}</div>
+                ${c.fecha_pago ? `<div style="font-size:0.68rem;color:var(--muted);">Pagado el ${new Date(c.fecha_pago).toLocaleDateString('es-CL')}</div>` : ''}
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:0.9rem;font-weight:800;color:var(--dark);">${clpFmt(c.valor_clp)}</div>
+                <div style="font-size:0.68rem;color:var(--muted);">${c.valor_uf} UF</div>
+              </div>
+            </div>
+            ${c.estado === 'pendiente_pago' ? `
+            <button data-cobro-id="${c.id}" class="pa-cancelar-cobro-btn" style="margin-top:0.4rem;background:none;border:1px solid #FECACA;border-radius:var(--radius-pill);padding:0.2rem 0.6rem;font-size:0.68rem;color:#DC2626;cursor:pointer;font-weight:700;">Cancelar cobro</button>` : ''}
+          </div>`).join('');
+
+        /* Handlers para cancelar */
+        box.querySelectorAll('.pa-cancelar-cobro-btn').forEach(btn => {
+          btn.onclick = async () => {
+            if (!confirm('¿Cancelar este cobro adicional? El trámite será desbloqueado para el cliente.')) return;
+            btn.disabled = true; btn.textContent = 'Cancelando…';
+            try {
+              const r = await fetch('/api/cobro-adicional', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'cancelar-cobro', token, cobro_id: btn.dataset.cobroId, project_number: p.project_number }),
+              });
+              const d = await r.json();
+              if (d.ok) { paLoadCobros(); }
+              else { btn.disabled = false; btn.textContent = 'Cancelar cobro'; alert(d.error || 'Error al cancelar'); }
+            } catch(e) { btn.disabled = false; btn.textContent = 'Cancelar cobro'; }
+          };
+        });
+      } catch(e) {
+        box.innerHTML = '<em style="font-size:0.75rem;color:#DC2626;">Error al cargar cobros.</em>';
+      }
+    }
+    paLoadCobros();
+
+    /* Mostrar/ocultar formulario */
+    document.getElementById('paCobroAddBtn').onclick = async () => {
+      const form = document.getElementById('paCobroForm');
+      const isOpen = form.style.display !== 'none';
+      form.style.display = isOpen ? 'none' : '';
+      if (!isOpen && !ufActual) {
+        /* Cargar UF una sola vez */
+        try {
+          const res = await fetch('/api/get-uf');
+          const d = await res.json();
+          if (d.uf) ufActual = d.uf;
+        } catch(_) {}
+        paActualizarEstimadoCLP();
+      }
+    };
+    document.getElementById('paCobroCancelarForm').onclick = () => {
+      document.getElementById('paCobroForm').style.display = 'none';
+    };
+
+    /* Mostrar/ocultar campo UF custom */
+    document.getElementById('paCobroTipo').onchange = () => {
+      const tipo = document.getElementById('paCobroTipo').value;
+      document.getElementById('paCobroUFCustomWrap').style.display = tipo === 'otro' ? '' : 'none';
+      paActualizarEstimadoCLP();
+    };
+
+    /* Estimar CLP */
+    function paActualizarEstimadoCLP() {
+      if (!ufActual) return;
+      const tipo = document.getElementById('paCobroTipo').value;
+      if (tipo === 'modificacion_proyecto') {
+        document.getElementById('paCobroCLPEstimate').textContent = `≈ ${clpFmt(Math.round(10 * ufActual))} CLP (10 UF × ${clpFmt(ufActual)})`;
+      } else if (tipo === 'otro') {
+        const ufVal = parseFloat(document.getElementById('paCobroUFCustom').value);
+        if (!isNaN(ufVal) && ufVal > 0) {
+          document.getElementById('paCobroCLPEstimate').textContent = `≈ ${clpFmt(Math.round(ufVal * ufActual))} CLP (${ufVal} UF × ${clpFmt(ufActual)})`;
+        } else {
+          document.getElementById('paCobroCLPEstimate').textContent = '';
+        }
+      }
+    }
+    document.getElementById('paCobroUFCustom').oninput = paActualizarEstimadoCLP;
+
+    /* Contador de caracteres fundamento */
+    document.getElementById('paCobroFundamento').oninput = () => {
+      const len = document.getElementById('paCobroFundamento').value.length;
+      const cEl = document.getElementById('paCobroFundamentoCount');
+      cEl.textContent = `${len} / 100 mínimo`;
+      cEl.style.color = len >= 100 ? '#059669' : '#DC2626';
+    };
+
+    /* Enviar cobro */
+    document.getElementById('paCobroSubmit').onclick = async () => {
+      const tipo       = document.getElementById('paCobroTipo').value;
+      const fundamento = document.getElementById('paCobroFundamento').value.trim();
+      const ufCustom   = document.getElementById('paCobroUFCustom').value;
+      const msgEl      = document.getElementById('paCobroFormMsg');
+      const btn        = document.getElementById('paCobroSubmit');
+
+      msgEl.style.display = 'none';
+      if (!tipo) { msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Selecciona el tipo de servicio.'; return; }
+      if (tipo === 'otro' && (!ufCustom || isNaN(Number(ufCustom)) || Number(ufCustom) <= 0)) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='Ingresa el valor en UF.'; return;
+      }
+      if (fundamento.length < 100) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent='El fundamento técnico debe tener al menos 100 caracteres.'; return;
+      }
+
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        const payload = { action: 'crear-cobro', token, project_number: p.project_number, tipo_servicio: tipo, fundamento_tecnico: fundamento };
+        if (tipo === 'otro') payload.valor_uf_custom = Number(ufCustom);
+
+        const res = await fetch('/api/cobro-adicional', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          msgEl.style.display=''; msgEl.style.color='#059669';
+          msgEl.textContent = `✓ Cobro de ${clpFmt(data.valor_clp)} enviado al cliente. El trámite fue pausado hasta que pague.`;
+          document.getElementById('paCobroTipo').value = '';
+          document.getElementById('paCobroFundamento').value = '';
+          document.getElementById('paCobroUFCustom').value = '';
+          document.getElementById('paCobroUFCustomWrap').style.display = 'none';
+          document.getElementById('paCobroFundamentoCount').textContent = '0 / 100 mínimo';
+          paLoadCobros();
+        } else {
+          msgEl.style.display=''; msgEl.style.color='#DC2626';
+          msgEl.textContent = data.error || 'Error al crear el cobro.';
+          btn.disabled = false; btn.textContent = 'Enviar cobro al cliente';
+        }
+      } catch(e) {
+        msgEl.style.display=''; msgEl.style.color='#DC2626'; msgEl.textContent = 'Error de conexión.';
+        btn.disabled = false; btn.textContent = 'Enviar cobro al cliente';
+      }
+    };
+
+    /* ── Pagos de honorarios ─────────────────── */
     function renderPagos(pagosArr) {
       const list = document.getElementById('paPagosList');
       if (!list) return;
