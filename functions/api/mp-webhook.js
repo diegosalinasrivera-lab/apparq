@@ -691,10 +691,16 @@ export async function onRequest(context) {
               /* ── Email al arquitecto asignado ── */
               if (arqObj?.email) {
                 const arqEmail   = arqObj.email;
-                const ARQ_PCT    = arqObj.patente ? 0.80 : 0.70;
-                const APP_PCT    = 1 - ARQ_PCT;
-                const arqTotal   = Math.round((clp || 0) * ARQ_PCT);
-                const arqE1      = Math.round((e1Real || 0) * ARQ_PCT);
+                const ARQ_PCT      = arqObj.patente ? 0.80 : 0.70;
+                const COM_PCT      = arqObj.patente ? 20 : 30;
+                const RETENCION    = 0.1525; /* 15,25% — Ley 21.133 vigente 2026 */
+                const APP_PCT      = 1 - ARQ_PCT;
+                const arqTotal     = Math.round((clp || 0) * ARQ_PCT);
+                const arqE1        = Math.round((e1Real || 0) * ARQ_PCT);
+                const arqTotalRet  = Math.round(arqTotal * RETENCION);
+                const arqTotalNeto = arqTotal - arqTotalRet;
+                const arqE1Ret     = Math.round(arqE1 * RETENCION);
+                const arqE1Neto    = arqE1 - arqE1Ret;
                 const esInforme  = p.service_type === 'informe';
                 const esDJ       = p.service_type === 'declaracion-jurada';
                 const isDemolicion = p.servicio_subtipo === 'demolicion';
@@ -703,16 +709,28 @@ export async function onRequest(context) {
                 const svcName    = ({ regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' })[p.service_type] || p.service_type;
 
                 const e1InfLabelWH = p.servicio_subtipo === 'evaluacion' ? 'Análisis normativo' : 'Visita a terreno';
+                const mkRow = (label, bruto, isPaid = false, bg = '') => {
+                  const ret  = Math.round(bruto * RETENCION);
+                  const neto = bruto - ret;
+                  const s    = isPaid ? 'color:#059669;font-weight:700' : '';
+                  const chk  = isPaid ? ' ✓' : '';
+                  const bgS  = bg ? ` style="background:${bg}"` : '';
+                  return `<tr${bgS}><td style="padding:8px 10px;color:#718096">${label}${chk}</td><td style="padding:8px 10px;font-weight:700;${s}">${clpFmt(bruto)}</td><td style="padding:8px 10px;${s}">${clpFmt(neto)}</td></tr>`;
+                };
+                const hdrRow = `<tr style="background:#d1fae5"><td style="padding:5px 10px;font-size:11px;font-weight:700;color:#065f46;text-transform:uppercase">Etapa</td><td style="padding:5px 10px;font-size:11px;font-weight:700;color:#065f46">Bruto boleta</td><td style="padding:5px 10px;font-size:11px;font-weight:700;color:#065f46">Neto recibes</td></tr>`;
                 const etapasBlock = esInforme
-                  ? `<tr><td style="padding:8px 10px;color:#718096">E1 · ${e1InfLabelWH} (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))} ✓</td></tr>
-                     <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Entrega del informe</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.5*ARQ_PCT))}</td></tr>`
+                  ? hdrRow +
+                    mkRow(`E1 · ${e1InfLabelWH} (ya pagado)`, Math.round((clp||0)*0.5*ARQ_PCT), true) +
+                    mkRow('E2 · Entrega del informe', Math.round((clp||0)*0.5*ARQ_PCT), false, '#f7fafc')
                   : esDJ
-                    ? `<tr><td style="padding:8px 10px;color:#718096">E1 · Inicio (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
-                       <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · ${e2DJLabel}</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.50*ARQ_PCT))}</td></tr>`
-                    : `<tr><td style="padding:8px 10px;color:#718096">E1 · Levantamiento (ya pagado)</td><td style="padding:8px 10px;font-weight:700;color:#059669">${clpFmt(arqE1)} ✓</td></tr>
-                       <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E2 · Elaboración de planos</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>
-                       <tr><td style="padding:8px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.30*ARQ_PCT))}</td></tr>
-                       <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">E4 · Recepción final</td><td style="padding:8px 10px;font-weight:700">${clpFmt(Math.round((clp||0)*0.20*ARQ_PCT))}</td></tr>`;
+                    ? hdrRow +
+                      mkRow('E1 · Inicio (ya pagado)', arqE1, true) +
+                      mkRow(`E2 · ${e2DJLabel}`, Math.round((clp||0)*0.50*ARQ_PCT), false, '#f7fafc')
+                    : hdrRow +
+                      mkRow('E1 · Levantamiento (ya pagado)', arqE1, true) +
+                      mkRow('E2 · Elaboración de planos', Math.round((clp||0)*0.30*ARQ_PCT), false, '#f7fafc') +
+                      mkRow('E3 · Ingreso DOM', Math.round((clp||0)*0.30*ARQ_PCT)) +
+                      mkRow('E4 · Recepción final', Math.round((clp||0)*0.20*ARQ_PCT), false, '#f7fafc');
 
                 const firmaArqBlock = firmaUrl
                   ? `<div style="margin-top:8px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
@@ -739,15 +757,16 @@ export async function onRequest(context) {
                           <p style="margin:6px 0 0;font-size:11px;color:#78350F">Usa este número para gestionar el trámite en <strong>apparq.cl → Soy Arquitecto</strong></p>
                         </div>
                         <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:16px 20px;margin:20px 0">
-                          <p style="margin:0 0 10px;font-size:13px;font-weight:800;color:#15803d;">💰 Tus honorarios netos (descontado ${Math.round(APP_PCT*100)}% APPARQ)</p>
+                          <p style="margin:0 0 10px;font-size:13px;font-weight:800;color:#15803d;">💰 Tus honorarios — comisión APPARQ ${COM_PCT}% ya descontada</p>
                           <table style="width:100%;border-collapse:collapse;font-size:13px">
                             ${etapasBlock}
-                            <tr style="border-top:2px solid #86efac">
-                              <td style="padding:10px 10px;color:#15803d;font-weight:800">TOTAL a recibir</td>
-                              <td style="padding:10px 10px;font-weight:900;color:#15803d;font-size:15px">${clpFmt(arqTotal)}</td>
+                            <tr style="border-top:2px solid #86efac;background:#ecfdf5">
+                              <td style="padding:10px 10px;color:#15803d;font-weight:800">TOTAL</td>
+                              <td style="padding:10px 10px;font-weight:900;color:#15803d">${clpFmt(arqTotal)}</td>
+                              <td style="padding:10px 10px;font-weight:900;color:#15803d;font-size:15px">${clpFmt(arqTotalNeto)}</td>
                             </tr>
                           </table>
-                          <p style="margin:10px 0 0;font-size:11px;color:#4ade80;">* El pago de cada etapa se transfiere dentro de los 5 días hábiles desde la confirmación del pago del cliente, previa emisión de boleta de honorarios electrónica a nombre de DSR ARQ SPA.</p>
+                          <p style="margin:10px 0 0;font-size:11px;color:#166534;line-height:1.6">⚠️ Emite tu boleta por el <strong>monto BRUTO</strong>. APPARQ retiene el 15,25% (Ley 21.133) y lo entera en el F29 mensual.<br>* El pago se transfiere dentro de los 5 días hábiles desde la confirmación del pago del cliente.</p>
                         </div>
                         <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">📋 Datos del trámite</h3>
                         <table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -820,8 +839,6 @@ export async function onRequest(context) {
                 /* ── Email interno: recordatorio pago al arquitecto ── */
                 const payDueDate  = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
                 const payDueFmt   = payDueDate.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
-                const arqTotalAdm = Math.round((clp || 0) * ARQ_PCT);
-
                 await sendEmail({
                   to:      'hola@apparq.cl',
                   subject: `⚠️ Pagar arquitecto · ${p.project_number} · ${arqObj.nombre} ${arqObj.apellido} · E1 vence ${payDueFmt}`,
@@ -839,11 +856,13 @@ export async function onRequest(context) {
                           <tr><td style="padding:7px 10px;color:#718096">% honorarios</td><td style="padding:7px 10px">${Math.round(ARQ_PCT*100)}% ${arqObj.patente ? '(con patente)' : '(sin patente)'}</td></tr>
                           <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${nombreCliente}</td></tr>
                           <tr><td style="padding:7px 10px;color:#718096">Total cliente</td><td style="padding:7px 10px">${clpFmt(clp)}</td></tr>
-                          <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Total arquitecto</td><td style="padding:7px 10px;font-weight:700">${clpFmt(arqTotalAdm)}</td></tr>
+                          <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Bruto boletas total</td><td style="padding:7px 10px;font-weight:700">${clpFmt(arqTotal)}</td></tr>
+                          <tr><td style="padding:7px 10px;color:#718096">Retención SII 15,25%</td><td style="padding:7px 10px;color:#dc2626">-${clpFmt(arqTotalRet)}</td></tr>
+                          <tr style="background:#f0fdf4"><td style="padding:7px 10px;color:#15803d;font-weight:700">Neto a transferir</td><td style="padding:7px 10px;font-weight:700;color:#15803d">${clpFmt(arqTotalNeto)}</td></tr>
                         </table>
                         <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:14px 18px;margin-top:20px">
                           <p style="margin:0;font-size:13px;font-weight:700;color:#92400E">⚠️ Pago E1 — vence ${payDueFmt}</p>
-                          <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">Verificar que el arquitecto envíe datos de transferencia y boleta de honorarios antes de pagar.<br><strong>Monto E1: ${clpFmt(Math.round((clp||0)*((esInforme||esDJ)?0.50:0.20)*ARQ_PCT))}</strong></p>
+                          <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">Verificar que el arquitecto envíe datos de transferencia y boleta de honorarios antes de pagar.<br><strong>Neto E1 a transferir: ${clpFmt(arqE1Neto)}</strong> (bruto boleta: ${clpFmt(arqE1)} · ret. SII: ${clpFmt(arqE1Ret)})</p>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 12px">
                         <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · Sistema de notificaciones internas</p>
