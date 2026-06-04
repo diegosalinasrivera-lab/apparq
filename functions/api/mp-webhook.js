@@ -292,7 +292,7 @@ export async function onRequest(context) {
                   { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
                 );
                 const arqPatArr = arqPatRes.ok ? await arqPatRes.json() : [];
-                if (arqPatArr[0]?.patente === true) comisionPct = 20;
+                if (arqPatArr[0]?.patente) comisionPct = 20;  /* patente es text (nº patente) o null/'' */
               } catch(_) {}
             }
             const comisionMonto      = Math.round((cobro.valor_clp || 0) * comisionPct / 100);
