@@ -1360,12 +1360,23 @@
               </div>
             </div>
 
+            <!-- KPIs por tipo -->
+            <div id="cobros-kpi-tipo-wrap" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:1.5rem;">
+              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Desglose por tipo de servicio</div>
+              <div id="cobros-kpi-tipo-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;"></div>
+            </div>
+
             <!-- Filtros -->
-            <div class="filter-row" style="margin-bottom:1rem;">
+            <div class="filter-row" style="margin-bottom:1rem;flex-wrap:wrap;gap:6px;">
               <button class="filter-btn active" data-cobros-filter="todos">Todos</button>
-              <button class="filter-btn" data-cobros-filter="pendiente_pago">Pendientes</button>
-              <button class="filter-btn" data-cobros-filter="pagado">Pagados</button>
-              <button class="filter-btn" data-cobros-filter="cancelado">Cancelados</button>
+              <button class="filter-btn" data-cobros-filter="pendiente_pago">⏳ Pendientes</button>
+              <button class="filter-btn" data-cobros-filter="pagado">✅ Pagados</button>
+              <button class="filter-btn" data-cobros-filter="cancelado">❌ Cancelados</button>
+              <span style="color:#e2e8f0;margin:0 4px;">|</span>
+              <button class="filter-btn" data-cobros-tipo-filter="cambio_propietario">Cambio Propietario</button>
+              <button class="filter-btn" data-cobros-tipo-filter="cambio_profesional">Cambio Profesional</button>
+              <button class="filter-btn" data-cobros-tipo-filter="modificacion_proyecto">Modif. Proyecto</button>
+              <button class="filter-btn" data-cobros-tipo-filter="otro">Otro</button>
             </div>
 
             <!-- Tabla -->
@@ -3374,6 +3385,14 @@ function exportLeadsCSV() {
 ══════════════════════════════════════════════════ */
 let cobrosData     = null;
 let cobrosFilter   = 'todos';
+let cobrosTipoFilter = null;  /* null = todos los tipos */
+
+const COBROS_SVC_LABELS = {
+  cambio_propietario:    'Cambio de Propietario',
+  cambio_profesional:    'Cambio de Profesional',
+  modificacion_proyecto: 'Modificación de Proyecto',
+  otro:                  'Otro',
+};
 
 async function loadCobros() {
   if (cobrosData) { renderCobros(); return; }
@@ -3393,25 +3412,47 @@ async function loadCobros() {
 function renderCobros() {
   const { cobros = [], kpis = {} } = cobrosData;
 
-  /* KPIs */
+  /* KPIs globales */
   document.getElementById('cobros-kpi-total').textContent       = kpis.total ?? '—';
   document.getElementById('cobros-kpi-sub').textContent         = `${kpis.pagados ?? 0} pagados · ${kpis.pendientes ?? 0} pendientes`;
   document.getElementById('cobros-kpi-recaudacion').textContent = fmtCLP(kpis.total_recaudacion || 0);
   document.getElementById('cobros-kpi-comision').textContent    = fmtCLP(kpis.total_comision || 0);
   document.getElementById('cobros-kpi-neto-sub').textContent    = `Neto arquitectos: ${fmtCLP(kpis.total_neto || 0)}`;
 
-  /* Filtrar */
-  const filtered = cobrosFilter === 'todos' ? cobros : cobros.filter(c => c.estado === cobrosFilter);
+  /* KPIs por tipo */
+  const tipoWrap = document.getElementById('cobros-kpi-tipo-wrap');
+  const tipoGrid = document.getElementById('cobros-kpi-tipo-grid');
+  const kpiTipo  = kpis.por_tipo || {};
+  const tipoKeys = Object.keys(kpiTipo);
+  if (tipoKeys.length) {
+    tipoGrid.innerHTML = tipoKeys.map(t => {
+      const d = kpiTipo[t];
+      return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">${COBROS_SVC_LABELS[t] || t}</div>
+        <div style="font-size:18px;font-weight:900;color:#1e293b;">${d.total}</div>
+        <div style="font-size:11px;color:#94a3b8;">${fmtCLP(d.recaudacion)} · ${d.uf_total} UF</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px;">${d.pagados} pag. · ${d.pendientes} pend.</div>
+      </div>`;
+    }).join('');
+    tipoWrap.style.display = '';
+  } else {
+    tipoWrap.style.display = 'none';
+  }
+
+  /* Filtrar por estado y/o tipo */
+  let filtered = cobros;
+  if (cobrosFilter !== 'todos')  filtered = filtered.filter(c => c.estado === cobrosFilter);
+  if (cobrosTipoFilter)          filtered = filtered.filter(c => c.tipo_servicio === cobrosTipoFilter);
 
   const tbody = document.getElementById('cobros-tbody');
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">💳</div>Sin cobros adicionales${cobrosFilter !== 'todos' ? ' en esta categoría' : ''}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">💳</div>Sin cobros adicionales en esta categoría</div></td></tr>`;
     return;
   }
 
   const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'ley-del-mono':'Ley del Mono', 'declaracion-jurada':'DJ' };
-  const estadoLabel = { pendiente_pago:'⏳ Pendiente', pagado:'✅ Pagado', cancelado:'❌ Cancelado' };
-  const estadoColor = { pendiente_pago:'#D97706', pagado:'#059669', cancelado:'#6B7280' };
+  const estadoLabel = { pendiente_pago:'⏳ Pendiente', pagado:'✅ Pagado', cancelado:'❌ Cancelado', bloqueado:'🔒 Bloqueado' };
+  const estadoColor = { pendiente_pago:'#D97706', pagado:'#059669', cancelado:'#6B7280', bloqueado:'#9CA3AF' };
 
   tbody.innerHTML = filtered.map((c, idx) => {
     const fecha      = c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-CL') : '—';
@@ -3421,6 +3462,7 @@ function renderCobros() {
     const clientName = `${c.client_nombre || ''} ${c.client_apellido || ''}`.trim() || c.client_email || '—';
     const isPagado   = c.estado === 'pagado';
     const comisionPctStr = isPagado && c.comision_pct != null ? `${c.comision_pct}%` : '—';
+    const tipoLabel  = COBROS_SVC_LABELS[c.tipo_servicio] || c.tipo_servicio || '—';
     const rowBg = idx % 2 === 1 ? 'background:#f8fafc;' : '';
     return `
       <tr style="${rowBg}">
@@ -3438,8 +3480,8 @@ function renderCobros() {
           <div style="font-size:0.7rem;color:#6B7280;">${c.arquitecto_email || ''}</div>
         </td>
         <td style="padding:8px 10px;">
-          <div style="font-weight:600;">${c.descripcion || c.tipo_servicio || '—'}</div>
-          <div style="font-size:0.7rem;color:#6B7280;">${svc}</div>
+          <div style="font-weight:700;color:#1e293b;">${tipoLabel}</div>
+          <div style="font-size:0.7rem;color:#6B7280;">${c.valor_uf ? c.valor_uf + ' UF · ' : ''}${svc}</div>
         </td>
         <td style="padding:8px 10px;text-align:right;font-weight:700;">${c.valor_clp ? fmtCLP(c.valor_clp) : '—'}</td>
         <td style="padding:8px 10px;text-align:right;color:#E8503A;">
@@ -3987,6 +4029,15 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('[data-cobros-filter]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       cobrosFilter = btn.dataset.cobrosFilter;
+      if (cobrosData) renderCobros();
+    });
+  });
+  document.querySelectorAll('[data-cobros-tipo-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wasActive = btn.classList.contains('active');
+      document.querySelectorAll('[data-cobros-tipo-filter]').forEach(b => b.classList.remove('active'));
+      cobrosTipoFilter = wasActive ? null : btn.dataset.cobrosTipoFilter;
+      if (!wasActive) btn.classList.add('active');
       if (cobrosData) renderCobros();
     });
   });

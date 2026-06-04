@@ -79,6 +79,17 @@ function clpFmt(n) {
   return '$' + Math.round(n).toLocaleString('es-CL');
 }
 
+const SERVICIOS_ADICIONALES = {
+  cambio_propietario:    { label: 'Cambio de Propietario',    valor_uf: 5,    editable: false },
+  cambio_profesional:    { label: 'Cambio de Profesional',    valor_uf: 5,    editable: false },
+  modificacion_proyecto: { label: 'Modificación de Proyecto', valor_uf: 10,   editable: false },
+  otro:                  { label: 'Otro',                     valor_uf: null, editable: true  },
+};
+
+function svcLabel(tipo_servicio) {
+  return SERVICIOS_ADICIONALES[tipo_servicio]?.label || tipo_servicio;
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const SUPABASE_URL   = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
@@ -145,7 +156,7 @@ export async function onRequest(context) {
         if (!project_number || !tipo_servicio || !fundamento_tecnico) {
           return corsResponse({ error: 'Faltan campos obligatorios' }, 400);
         }
-        if (!['modificacion_proyecto', 'otro'].includes(tipo_servicio)) {
+        if (!Object.keys(SERVICIOS_ADICIONALES).includes(tipo_servicio)) {
           return corsResponse({ error: 'tipo_servicio inválido' }, 400);
         }
         if (fundamento_tecnico.trim().length < 100) {
@@ -178,11 +189,12 @@ export async function onRequest(context) {
         const ufData = await getUF();
         if (!ufData) return corsResponse({ error: 'No se pudo obtener el valor de la UF. Intenta en un momento.' }, 503);
 
-        const valor_uf = tipo_servicio === 'modificacion_proyecto' ? 10 : Number(valor_uf_custom);
+        const svcDef    = SERVICIOS_ADICIONALES[tipo_servicio];
+        const valor_uf  = svcDef.editable ? Number(valor_uf_custom) : svcDef.valor_uf;
         const valor_clp = Math.round(valor_uf * ufData.valor);
-        const descripcion = tipo_servicio === 'modificacion_proyecto'
-          ? 'Modificación de Proyecto (10 UF)'
-          : `Servicio Adicional (${valor_uf} UF)`;
+        const descripcion = svcDef.editable
+          ? (valor_uf_custom ? `${svcDef.label} (${valor_uf} UF)` : svcDef.label)
+          : `${svcDef.label} (${valor_uf} UF)`;
 
         /* Insertar cobro */
         const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/cobros_adicionales`, {
@@ -231,7 +243,7 @@ export async function onRequest(context) {
         if (proj.client_email) {
           await sendEmail({
             to: proj.client_email,
-            subject: `⚠️ Servicio adicional requerido en tu trámite ${project_number} — APPARQ`,
+            subject: `⚠️ ${svcLabel(tipo_servicio)} requerido en tu trámite ${project_number} — APPARQ`,
             html: `
               <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
                 <div style="background:#1a1a2e;padding:28px 32px;text-align:center;border-radius:8px 8px 0 0">

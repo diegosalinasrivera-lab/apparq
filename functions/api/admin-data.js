@@ -712,17 +712,39 @@ export async function onRequest(context) {
         };
       });
 
-      const pagados   = enriched.filter(c => c.estado === 'pagado');
+      const pagados    = enriched.filter(c => c.estado === 'pagado');
       const pendientes = enriched.filter(c => c.estado === 'pendiente_pago');
+
+      /* Desglose por tipo de servicio */
+      const TIPOS = ['cambio_propietario', 'cambio_profesional', 'modificacion_proyecto', 'otro'];
+      const por_tipo = {};
+      for (const t of TIPOS) {
+        const todos  = enriched.filter(c => c.tipo_servicio === t);
+        const pag    = todos.filter(c => c.estado === 'pagado');
+        const pend   = todos.filter(c => c.estado === 'pendiente_pago');
+        if (!todos.length) continue;
+        por_tipo[t] = {
+          total:       todos.length,
+          pagados:     pag.length,
+          pendientes:  pend.length,
+          uf_total:    todos.reduce((s, c) => s + (c.valor_uf || 0), 0),
+          recaudacion: Math.round(pag.reduce((s, c) => s + (c.valor_clp || 0), 0)),
+        };
+      }
+      /* Tipos "otro" con descripciones personalizadas */
+      const otroTodos = enriched.filter(c => !TIPOS.slice(0, 3).includes(c.tipo_servicio) && c.tipo_servicio !== 'otro' && c.tipo_servicio);
+      if (otroTodos.length && !por_tipo['otro']) por_tipo['otro'] = { total: 0, pagados: 0, pendientes: 0, uf_total: 0, recaudacion: 0 };
+
       return json({
         cobros: enriched,
         kpis: {
           total:              enriched.length,
           pagados:            pagados.length,
           pendientes:         pendientes.length,
-          total_recaudacion:  Math.round(pagados.reduce((s, c) => s + (c.valor_clp    || 0), 0)),
-          total_comision:     Math.round(pagados.reduce((s, c) => s + (c.comision_monto       || 0), 0)),
+          total_recaudacion:  Math.round(pagados.reduce((s, c) => s + (c.valor_clp          || 0), 0)),
+          total_comision:     Math.round(pagados.reduce((s, c) => s + (c.comision_monto     || 0), 0)),
           total_neto:         Math.round(pagados.reduce((s, c) => s + (c.pago_neto_arquitecto || 0), 0)),
+          por_tipo,
         },
       });
     }

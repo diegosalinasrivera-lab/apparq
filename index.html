@@ -5613,9 +5613,15 @@ function communeMatchLabel(targetCommune, assignedCommune) {
             <label style="font-size:0.73rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.25rem;">Tipo de servicio <span style="color:#D97706">*</span></label>
             <select id="paCobroTipo" style="width:100%;border:1px solid #C4B5FD;border-radius:var(--radius);padding:0.45rem 0.6rem;font-size:0.82rem;background:#fff;box-sizing:border-box;">
               <option value="">— Selecciona —</option>
-              <option value="modificacion_proyecto">Modificación de Proyecto (10 UF fijo)</option>
-              <option value="otro">Otro servicio (especifica valor en UF)</option>
+              <option value="cambio_propietario">Cambio de Propietario — 5 UF (fijo)</option>
+              <option value="cambio_profesional">Cambio de Profesional — 5 UF (fijo)</option>
+              <option value="modificacion_proyecto">Modificación de Proyecto — 10 UF (fijo)</option>
+              <option value="otro">Otro (especifica valor en UF)</option>
             </select>
+            <!-- Valor UF bloqueado para tipos fijos -->
+            <div id="paCobroUFFixedWrap" style="display:none;margin-top:0.35rem;padding:0.4rem 0.65rem;background:#EDE9FE;border-radius:var(--radius);font-size:0.8rem;color:#5B21B6;font-weight:700;">
+              🔒 Valor: <span id="paCobroUFFixedLabel"></span> (fijo por APPARQ)
+            </div>
           </div>
           <div id="paCobroUFCustomWrap" style="display:none;margin-bottom:0.55rem;">
             <label style="font-size:0.73rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.25rem;">Valor en UF <span style="color:#D97706">*</span></label>
@@ -5916,8 +5922,8 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           box.innerHTML = '<em style="font-size:0.75rem;color:var(--muted);">Sin cobros adicionales en este trámite.</em>';
           return;
         }
-        const estadoColor = { pendiente_pago: '#D97706', pagado: '#059669', cancelado: '#9CA3AF' };
-        const estadoLabel = { pendiente_pago: '⏳ Pendiente de pago', pagado: '✅ Pagado', cancelado: '✗ Cancelado' };
+        const estadoColor = { pendiente_pago: '#D97706', pagado: '#059669', cancelado: '#9CA3AF', bloqueado: '#6B7280' };
+        const estadoLabel = { pendiente_pago: '⏳ Pendiente de pago cliente', pagado: '✅ Pagado', cancelado: '✗ Cancelado', bloqueado: '🔒 En espera (se activa al pagar el anterior)' };
         box.innerHTML = cobros.map((c, i) => `
           <div style="padding:0.6rem 0;${i > 0 ? 'border-top:1px solid #EDE9FE;' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
@@ -5976,19 +5982,39 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       document.getElementById('paCobroForm').style.display = 'none';
     };
 
-    /* Mostrar/ocultar campo UF custom */
+    /* Tabla de tipos de cobro */
+    const PA_SVC_TIPOS = {
+      cambio_propietario:    { label: 'Cambio de Propietario',    uf: 5,    fijo: true  },
+      cambio_profesional:    { label: 'Cambio de Profesional',    uf: 5,    fijo: true  },
+      modificacion_proyecto: { label: 'Modificación de Proyecto', uf: 10,   fijo: true  },
+      otro:                  { label: 'Otro',                     uf: null, fijo: false },
+    };
+
+    /* Mostrar/ocultar campos según tipo */
     document.getElementById('paCobroTipo').onchange = () => {
-      const tipo = document.getElementById('paCobroTipo').value;
-      document.getElementById('paCobroUFCustomWrap').style.display = tipo === 'otro' ? '' : 'none';
+      const tipo    = document.getElementById('paCobroTipo').value;
+      const svcInfo = PA_SVC_TIPOS[tipo];
+      const esOtro  = tipo === 'otro';
+      const esFijo  = svcInfo && svcInfo.fijo;
+
+      document.getElementById('paCobroUFCustomWrap').style.display  = esOtro ? '' : 'none';
+      document.getElementById('paCobroUFFixedWrap').style.display   = esFijo ? '' : 'none';
+      if (esFijo && ufActual) {
+        document.getElementById('paCobroUFFixedLabel').textContent =
+          `${svcInfo.uf} UF ≈ ${clpFmt(Math.round(svcInfo.uf * ufActual))} CLP`;
+      }
       paActualizarEstimadoCLP();
     };
 
     /* Estimar CLP */
     function paActualizarEstimadoCLP() {
       if (!ufActual) return;
-      const tipo = document.getElementById('paCobroTipo').value;
-      if (tipo === 'modificacion_proyecto') {
-        document.getElementById('paCobroCLPEstimate').textContent = `≈ ${clpFmt(Math.round(10 * ufActual))} CLP (10 UF × ${clpFmt(ufActual)})`;
+      const tipo    = document.getElementById('paCobroTipo').value;
+      const svcInfo = PA_SVC_TIPOS[tipo];
+      if (svcInfo && svcInfo.fijo) {
+        document.getElementById('paCobroUFFixedLabel').textContent =
+          `${svcInfo.uf} UF ≈ ${clpFmt(Math.round(svcInfo.uf * ufActual))} CLP`;
+        document.getElementById('paCobroCLPEstimate').textContent = '';
       } else if (tipo === 'otro') {
         const ufVal = parseFloat(document.getElementById('paCobroUFCustom').value);
         if (!isNaN(ufVal) && ufVal > 0) {
