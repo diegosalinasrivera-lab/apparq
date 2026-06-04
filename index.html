@@ -5178,8 +5178,13 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
   async function pcUploadFile(file, projectNumber, email) {
     const btn = document.getElementById('pcUploadBtn');
+    const MAX_MB = 50;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      pcSetUploadMsg(`El archivo pesa ${(file.size/1024/1024).toFixed(1)} MB. El límite es ${MAX_MB} MB. Comprime o divide el archivo e intenta de nuevo.`, '#DC2626');
+      return;
+    }
     btn.disabled = true; btn.textContent = 'Subiendo…';
-    pcSetUploadMsg(`Subiendo ${file.name}…`, 'var(--muted)');
+    pcSetUploadMsg(`Subiendo ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)…`, 'var(--muted)');
     try {
       // 1. Obtener URL firmada
       const signRes = await fetch('/api/files', {
@@ -5195,7 +5200,13 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         headers: { 'Content-Type': file.type || 'application/octet-stream' },
         body: file,
       });
-      if (!upRes.ok) throw new Error('Error al subir el archivo');
+      if (!upRes.ok) {
+        const upErr = await upRes.text().catch(() => '');
+        if (upRes.status === 413 || upErr.includes('size') || upErr.includes('limit')) {
+          throw new Error(`El archivo es demasiado grande. Límite: ${MAX_MB} MB.`);
+        }
+        throw new Error(`Error al subir el archivo (${upRes.status}). Intenta con un archivo más pequeño.`);
+      }
 
       pcSetUploadMsg(`✓ ${file.name} subido correctamente.`, '#059669');
       pcLoadFiles(projectNumber, email);
@@ -6645,8 +6656,13 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
   async function paUploadFile(file, projectNumber, token) {
     const btn = document.getElementById('paUploadBtn');
+    const MAX_MB = 50;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      paSetUploadMsg(`El archivo pesa ${(file.size/1024/1024).toFixed(1)} MB. El límite es ${MAX_MB} MB. Comprime o divide el archivo e intenta de nuevo.`, '#DC2626');
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
-    paSetUploadMsg(`Subiendo ${file.name}…`, 'var(--muted)');
+    paSetUploadMsg(`Subiendo ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)…`, 'var(--muted)');
     try {
       const signRes = await fetch('/api/files', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -6660,7 +6676,13 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         headers: { 'Content-Type': file.type || 'application/octet-stream' },
         body: file,
       });
-      if (!upRes.ok) throw new Error('Error al subir el archivo');
+      if (!upRes.ok) {
+        const upErr = await upRes.text().catch(() => '');
+        if (upRes.status === 413 || upErr.includes('size') || upErr.includes('limit')) {
+          throw new Error(`El archivo es demasiado grande. Límite: ${MAX_MB} MB.`);
+        }
+        throw new Error(`Error al subir el archivo (${upRes.status}). Intenta con un archivo más pequeño.`);
+      }
 
       paSetUploadMsg(`✓ ${file.name} subido correctamente.`, '#059669');
       paLoadFiles(projectNumber, token);
