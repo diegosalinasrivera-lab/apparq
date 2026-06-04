@@ -665,18 +665,24 @@ export async function onRequest(context) {
       const totalLeads         = leads.length;
       const leadsNoConvertidos = leads.filter(l => !l.converted).length;
 
-      /* Funnel */
-      const ctaClicks         = funnelEvents.filter(e => e.event_type === 'cta_click').length;
-      const inscripIniciadas  = funnelEvents.filter(e => e.event_type === 'inscripcion_iniciada').length;
-      const inscripCompletadas = projects.length;                                           /* confirm-tramite = pagaron */
-      const abandonos         = inscripIniciadas - inscripCompletadas > 0
-                                  ? inscripIniciadas - inscripCompletadas : 0;
+      /* Funnel — totales históricos + este mes */
+      const funnelMes             = funnelEvents.filter(e => e.created_at >= monthStart);
+      const ctaClicks             = funnelEvents.filter(e => e.event_type === 'cta_click').length;
+      const ctaClicksMes          = funnelMes.filter(e => e.event_type === 'cta_click').length;
+      const inscripIniciadas      = funnelEvents.filter(e => e.event_type === 'inscripcion_iniciada').length;
+      const inscripIniciadasMes   = funnelMes.filter(e => e.event_type === 'inscripcion_iniciada').length;
+      const inscripCompletadas    = projects.length;                                       /* pagaron — total histórico */
+      const inscripCompletadasMes = projects.filter(p => p.created_at >= monthStart).length; /* pagaron este mes */
+      const abandonos             = inscripIniciadas - inscripCompletadas > 0
+                                      ? inscripIniciadas - inscripCompletadas : 0;
+      const abandonosMes          = inscripIniciadasMes - inscripCompletadasMes > 0
+                                      ? inscripIniciadasMes - inscripCompletadasMes : 0;
 
       /* Last 10 projects + last 5 payments for recent tables */
       const recentProjects = projects.slice(0, 10);
       const recentPayments = payments.slice(0, 5);
 
-      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, inscripIniciadas, inscripCompletadas, abandonos, recentProjects, recentPayments });
+      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
     }
 
     if (section === 'cobros') {
