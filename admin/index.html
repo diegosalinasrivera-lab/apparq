@@ -3025,158 +3025,137 @@ async function loadArqPagos() {
 
 function renderArqPagos() {
   const container = document.getElementById('arq-pago-content');
-  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe', 'ley-del-mono':'Ley del Mono' };
+  const SVC_SHORT = { regularizacion:'Regulariz.', ampliacion:'Ampliación', 'declaracion-jurada':'DJ', 'obra-nueva':'Obra Nueva', informe:'Informe', 'ley-del-mono':'Ley del Mono' };
 
   if (!arqPagosData.length) {
     container.innerHTML = '<div class="empty-state"><div class="empty-icon">👷</div>Sin pagos de arquitectos registrados</div>';
     return;
   }
 
-  /* Resumen global con retención 15,25% */
-  let globalBruto = 0, globalRet = 0, globalNeto = 0;
-  let globalPagadoNeto = 0, globalListoNeto = 0, globalEsperaNeto = 0;
+  /* ── Totales globales ── */
+  let globalBruto = 0, globalRet = 0, globalPagadoNeto = 0, globalListoNeto = 0, globalEsperaNeto = 0;
   for (const arq of arqPagosData) {
     for (const p of arq.projects) {
       const pctFrac = (p.pct || 80) / 100;
-      let cumClient = 0;
+      let cum = 0;
       p.etapas.forEach(e => {
-        cumClient += Math.round((e.brutoBoleta || e.monto) / pctFrac);
+        cum += Math.round((e.brutoBoleta || e.monto) / pctFrac);
         const neto = e.netoArquitecto || e.monto;
         globalBruto += (e.brutoBoleta || e.monto);
         globalRet   += (e.retencion   || 0);
-        globalNeto  += neto;
-        if (e.pagado)                             globalPagadoNeto += neto;
-        else if (p.cliente_pagado >= cumClient)   globalListoNeto  += neto;
-        else                                      globalEsperaNeto += neto;
+        if (e.pagado)                    globalPagadoNeto += neto;
+        else if (p.cliente_pagado >= cum) globalListoNeto += neto;
+        else                             globalEsperaNeto += neto;
       });
     }
   }
-  const clientePendiente = arqPagosTotales.cliente_pendiente || 0;
-  const clienteCobrado   = arqPagosTotales.cliente_cobrado   || 0;
 
+  /* ── 4 KPIs en grid fijo ── */
   let html = `
-    <div class="summary-row" style="margin-bottom:0.5rem;">
-      <div class="summary-item">
-        <div class="sum-label">Cobrado a clientes</div>
-        <div class="sum-value" style="color:#059669">${fmtCLP(clienteCobrado)}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem;">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Bruto boletas</div>
+        <div style="font-size:1.25rem;font-weight:800;color:#1e293b">${fmtCLP(globalBruto)}</div>
       </div>
-      <div class="summary-item">
-        <div class="sum-label">Bruto total boletas arq.</div>
-        <div class="sum-value">${fmtCLP(globalBruto)}</div>
+      <div style="background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Ret. SII 15,25%</div>
+        <div style="font-size:1.25rem;font-weight:800;color:#7C3AED">${fmtCLP(globalRet)}</div>
       </div>
-      <div class="summary-item" style="background:#F5F3FF;border-radius:8px;padding:4px 8px;">
-        <div class="sum-label" style="color:#7C3AED;">Ret. SII 15,25% (a enterar)</div>
-        <div class="sum-value" style="color:#7C3AED;">${fmtCLP(globalRet)}</div>
+      <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">✅ Neto transferido</div>
+        <div style="font-size:1.25rem;font-weight:800;color:#059669">${fmtCLP(globalPagadoNeto)}</div>
       </div>
-      <div class="summary-item">
-        <div class="sum-label" style="color:#059669;">✅ Neto transferido</div>
-        <div class="sum-value" style="color:#059669">${fmtCLP(globalPagadoNeto)}</div>
-      </div>
-      <div class="summary-item">
-        <div class="sum-label">🟡 Neto listo a desembolsar</div>
-        <div class="sum-value" style="color:#d97706">${fmtCLP(globalListoNeto)}</div>
-      </div>
-      <div class="summary-item">
-        <div class="sum-label">⏳ Neto espera cliente</div>
-        <div class="sum-value" style="color:#94a3b8">${fmtCLP(globalEsperaNeto)}</div>
+      <div style="background:#FFFBEB;border:2px solid #FCD34D;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟡 Listo para pagar</div>
+        <div style="font-size:1.25rem;font-weight:800;color:#b45309">${fmtCLP(globalListoNeto)}</div>
+        ${globalEsperaNeto > 0 ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px">⏳ Espera cliente: ${fmtCLP(globalEsperaNeto)}</div>` : ''}
       </div>
     </div>
-    <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:1.25rem;padding:0 2px;">
-      Todos los montos de arquitecto son NETO (después de retención SII 15,25%) &nbsp;·&nbsp; ✅ Transferido &nbsp;·&nbsp; 🟡 Cliente pagó, pendiente desembolso &nbsp;·&nbsp; ⏳ Esperando pago cliente
-    </div>`;
+
+    <!-- Tabla unificada: una fila por etapa, columnas globales alineadas -->
+    <div class="card">
+      <div class="table-wrap">
+        <table style="width:100%;font-size:0.8rem;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#1e293b;">
+              <th style="padding:10px 14px;text-align:left;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Trámite</th>
+              <th style="padding:10px 14px;text-align:left;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Servicio · Etapa</th>
+              <th style="padding:10px 14px;text-align:right;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Bruto boleta</th>
+              <th style="padding:10px 14px;text-align:right;color:#a78bfa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Ret. 15,25%</th>
+              <th style="padding:10px 14px;text-align:right;color:#6ee7b7;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Neto a pagar</th>
+              <th style="padding:10px 14px;text-align:center;color:#94a3b8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Estado</th>
+            </tr>
+          </thead>
+          <tbody>`;
 
   for (const arq of arqPagosData) {
-    let arqPagadoN = 0, arqListoN = 0, arqEsperaN = 0;
+    /* Pre-calcular totales y aplanar etapas del arquitecto */
+    let arqListoN = 0, arqPagadoN = 0, arqEsperaN = 0;
+    const etapaRows = [];
     for (const p of arq.projects) {
       const pctFrac = (p.pct || 80) / 100;
-      let cumClient = 0;
+      let cum = 0;
+      const svc = SVC_SHORT[p.service_type] || p.service_type;
+      const sub = p.servicio_subtipo ? ` · ${p.servicio_subtipo.charAt(0).toUpperCase()+p.servicio_subtipo.slice(1)}` : '';
       p.etapas.forEach(e => {
-        cumClient += Math.round((e.brutoBoleta || e.monto) / pctFrac);
+        cum += Math.round((e.brutoBoleta || e.monto) / pctFrac);
         const neto = e.netoArquitecto || e.monto;
-        if (e.pagado)                             arqPagadoN += neto;
-        else if (p.cliente_pagado >= cumClient)   arqListoN  += neto;
-        else                                      arqEsperaN += neto;
+        const bruto = e.brutoBoleta || e.monto;
+        const ret   = e.retencion   || 0;
+        const isPaid  = !!e.pagado;
+        const isReady = !isPaid && p.cliente_pagado >= cum;
+        if (isPaid)        arqPagadoN += neto;
+        else if (isReady)  arqListoN  += neto;
+        else               arqEsperaN += neto;
+        etapaRows.push({ p, e, svc, sub, neto, bruto, ret, isPaid, isReady });
       });
     }
 
+    /* ── Fila cabecera arquitecto ── */
     html += `
-    <div class="card" style="margin-bottom:1.25rem;">
-      <div class="card-body" style="padding:0;">
-        <!-- Cabecera arquitecto -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:0.5rem;">
-          <div>
-            <div style="font-size:1rem;font-weight:800;color:#1a1a2e;">${arq.nombre} ${arq.apellido}</div>
-            <div style="font-size:0.78rem;color:#718096;">${arq.email}${arq.patente ? ` · Patente ${arq.patente}` : ' · Sin patente'} · ${arq.pct || ''}% honorarios · ret. SII 15,25%</div>
-          </div>
-          <div style="display:flex;gap:1rem;text-align:right;">
-            <div><div style="font-size:0.7rem;color:#718096;font-weight:600;">✅ NETO PAGADO</div><div style="font-size:1rem;font-weight:800;color:#059669;">${fmtCLP(arqPagadoN)}</div></div>
-            ${arqListoN > 0 ? `<div><div style="font-size:0.7rem;color:#d97706;font-weight:600;">🟡 NETO LISTO</div><div style="font-size:1rem;font-weight:800;color:#d97706;">${fmtCLP(arqListoN)}</div></div>` : ''}
-            ${arqEsperaN > 0 ? `<div><div style="font-size:0.7rem;color:#94a3b8;font-weight:600;">⏳ NETO ESPERA</div><div style="font-size:1rem;font-weight:800;color:#94a3b8;">${fmtCLP(arqEsperaN)}</div></div>` : ''}
-          </div>
-        </div>
+      <tr style="background:#0f172a;border-top:3px solid #E8503A;">
+        <td colspan="2" style="padding:13px 14px;">
+          <div style="font-size:0.95rem;font-weight:800;color:#f1f5f9;line-height:1.2">${arq.nombre} ${arq.apellido}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:2px">${arq.email}&nbsp;·&nbsp;${arq.pct || (arq.patente ? 80 : 70)}% honorarios&nbsp;·&nbsp;ret. SII 15,25%</div>
+        </td>
+        <td colspan="2" style="padding:13px 14px;text-align:right;vertical-align:middle;">
+          ${arqPagadoN > 0 ? `<div style="font-size:11px;color:#4ade80;font-weight:600;">✅ Ya pagado: ${fmtCLP(arqPagadoN)}</div>` : ''}
+          ${arqEsperaN > 0 ? `<div style="font-size:11px;color:#475569;">⏳ Espera cliente: ${fmtCLP(arqEsperaN)}</div>` : ''}
+        </td>
+        <td style="padding:13px 14px;text-align:right;vertical-align:middle;">
+          ${arqListoN > 0
+            ? `<div style="font-size:1.1rem;font-weight:900;color:#fbbf24;line-height:1.1">🟡 ${fmtCLP(arqListoN)}</div>
+               <div style="font-size:9px;color:#92400e;font-weight:700;text-transform:uppercase;letter-spacing:.05em">listo para pagar</div>`
+            : `<div style="font-size:11px;color:#334155">—</div>`}
+        </td>
+        <td style="padding:13px 14px;text-align:center;vertical-align:middle;"></td>
+      </tr>`;
 
-        <!-- Tabla de trámites -->
-        <div class="table-wrap">
-          <table style="font-size:0.8rem;">
-            <thead>
-              <tr style="background:#f8fafc;">
-                <th style="padding:8px 12px;">Trámite</th>
-                <th style="padding:8px 12px;">Cliente</th>
-                <th style="padding:8px 12px;">Servicio</th>
-                <th style="padding:8px 12px;">Stage</th>
-                <th style="padding:8px 12px;text-align:right;color:#718096;">Pend. cliente</th>
-                ${arq.projects.some(p => p.etapas.length === 4)
-                  ? '<th style="padding:8px 12px;text-align:right;">E1 arq.</th><th style="padding:8px 12px;text-align:right;">E2 arq.</th><th style="padding:8px 12px;text-align:right;">E3 arq.</th><th style="padding:8px 12px;text-align:right;">E4 arq.</th>'
-                  : '<th style="padding:8px 12px;text-align:right;">E1 arq.</th><th style="padding:8px 12px;text-align:right;">E2 arq.</th>'}
-              </tr>
-            </thead>
-            <tbody>
-              ${arq.projects.map((p, pi) => {
-                const svc = SVC_LABELS[p.service_type] || p.service_type;
-                const sub = p.servicio_subtipo ? ` · ${p.servicio_subtipo.charAt(0).toUpperCase()+p.servicio_subtipo.slice(1)}` : '';
-                const rowBg = pi % 2 === 1 ? 'background:#f8fafc;' : '';
-                const maxEtapas = arq.projects.some(x => x.etapas.length === 4) ? 4 : 2;
-                /* Compute cumulative client thresholds to determine readiness */
-                const pctFracRow = (p.pct || 80) / 100;
-                let cumClientRow = 0;
-                const clientThresholds = p.etapas.map(e => {
-                  cumClientRow += Math.round(e.monto / pctFracRow);
-                  return cumClientRow;
-                });
-                const etapasCells = Array.from({length: maxEtapas}, (_, i) => {
-                  const e = p.etapas[i];
-                  if (!e) return `<td style="padding:7px 12px;text-align:right;color:#cbd5e0;">—</td>`;
-                  const neto = e.netoArquitecto || e.monto;
-                  const tipBruto = `Bruto: ${fmtCLP(e.brutoBoleta||e.monto)} · Ret: ${fmtCLP(e.retencion||0)} · Neto: ${fmtCLP(neto)}`;
-                  if (e.pagado) {
-                    const tip = ` title="${e.at?'Transferido '+fmtDate(e.at)+' · ':''} ${tipBruto}"`;
-                    return `<td style="padding:7px 12px;text-align:right;font-weight:700;color:#059669;"${tip}>✅ ${fmtCLP(neto)}</td>`;
-                  }
-                  const listo = p.cliente_pagado >= clientThresholds[i];
-                  if (listo) {
-                    return `<td style="padding:7px 12px;text-align:right;font-weight:700;color:#d97706;" title="Cliente pagó · ${tipBruto}">🟡 ${fmtCLP(neto)}</td>`;
-                  }
-                  return `<td style="padding:7px 12px;text-align:right;font-weight:500;color:#cbd5e0;" title="Esperando pago del cliente · ${tipBruto}">⏳ ${fmtCLP(neto)}</td>`;
-                }).join('');
-                const pendCliente = p.cliente_pendiente || 0;
-                const pendColor   = pendCliente > 0 ? '#E8503A' : '#059669';
-                const pendTxt     = pendCliente > 0 ? fmtCLP(pendCliente) : '✓ Cobrado';
-                return `<tr style="${rowBg}cursor:pointer;" onclick="openTramiteDetail('${p.id}')">
-                  <td style="padding:7px 12px;font-weight:700;color:#E8503A;font-size:0.75rem;">${p.project_number}</td>
-                  <td style="padding:7px 12px;">${p.client}</td>
-                  <td style="padding:7px 12px;">${svc}${sub} · ${p.commune}</td>
-                  <td style="padding:7px 12px;">${stageBadge(p.stage)}</td>
-                  <td style="padding:7px 12px;text-align:right;font-weight:700;color:${pendColor};">${pendTxt}</td>
-                  ${etapasCells}
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
+    /* ── Una fila por etapa ── */
+    etapaRows.forEach((row, ri) => {
+      const bg = ri % 2 === 0 ? '#ffffff' : '#f8fafc';
+      let netoColor = '#94a3b8', netoWeight = '500', netoSize = '0.8rem';
+      let statusHtml = `<span style="font-size:10px;color:#94a3b8;">⏳ Espera<br><span style="font-size:9px">pago cliente</span></span>`;
+      if (row.isPaid) {
+        netoColor = '#059669'; netoWeight = '800'; netoSize = '0.85rem';
+        statusHtml = `<span style="display:inline-block;background:#D1FAE5;color:#065f46;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;">✅ Pagado${row.e.at ? '<br><span style=\'font-size:9px;font-weight:400\'>'+fmtDate(row.e.at)+'</span>' : ''}</span>`;
+      } else if (row.isReady) {
+        netoColor = '#d97706'; netoWeight = '800'; netoSize = '0.85rem';
+        statusHtml = `<span style="display:inline-block;background:#FEF3C7;color:#92400e;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;">🟡 Pagar</span>`;
+      }
+      html += `
+        <tr style="background:${bg};border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="openTramiteDetail('${row.p.id}')">
+          <td style="padding:9px 14px;font-weight:700;color:#E8503A;font-size:0.75rem;white-space:nowrap">${row.p.project_number}</td>
+          <td style="padding:9px 14px;color:#374151">${row.svc}${row.sub} <span style="color:#94a3b8;font-size:11px">· ${row.e.label}</span></td>
+          <td style="padding:9px 14px;text-align:right;color:#64748b">${fmtCLP(row.bruto)}</td>
+          <td style="padding:9px 14px;text-align:right;color:#7C3AED">${fmtCLP(row.ret)}</td>
+          <td style="padding:9px 14px;text-align:right;font-weight:${netoWeight};color:${netoColor};font-size:${netoSize}">${fmtCLP(row.neto)}</td>
+          <td style="padding:9px 14px;text-align:center">${statusHtml}</td>
+        </tr>`;
+    });
   }
 
+  html += `</tbody></table></div></div>`;
   container.innerHTML = html;
 }
 
