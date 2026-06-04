@@ -476,19 +476,29 @@ export async function onRequest(context) {
           };
         }
         const pct    = archMap[p.architect_email]?.patente ? 0.80 : 0.70;
+        const pctCom = archMap[p.architect_email]?.patente ? 20 : 30;
+        const RETENCION = 0.1525; /* 15,25% — Ley 21.133 vigente 2026 */
         const clp    = p.total_clp || 0;
         const e1c    = p.e1_clp   || 0;
         const is2    = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+        function mkEtapa(key, label, valorCliente, pagado, at) {
+          const vCli = Math.round(valorCliente);
+          const bruto = Math.round(vCli * pct);
+          const ret   = Math.round(bruto * RETENCION);
+          return { key, label, valorCliente: vCli, monto: bruto,
+                   brutoBoleta: bruto, retencion: ret, netoArquitecto: bruto - ret,
+                   comisionAPPARQ: vCli - bruto, pctCom, pagado, at };
+        }
         const etapas = is2
           ? [
-              { key:'e1', label:'E1 · Inicio',         monto: Math.round(clp*0.50*pct), pagado: p.arq_pago_e1, at: p.arq_pago_e1_at },
-              { key:'e2', label:'E2 · Cierre',          monto: Math.round(clp*0.50*pct), pagado: p.arq_pago_e2, at: p.arq_pago_e2_at },
+              mkEtapa('e1', 'E1 · Inicio',         clp*0.50, p.arq_pago_e1, p.arq_pago_e1_at),
+              mkEtapa('e2', 'E2 · Cierre',          clp*0.50, p.arq_pago_e2, p.arq_pago_e2_at),
             ]
           : [
-              { key:'e1', label:'E1 · Levantamiento',   monto: Math.round(e1c*pct),      pagado: p.arq_pago_e1, at: p.arq_pago_e1_at },
-              { key:'e2', label:'E2 · Elaboración',     monto: Math.round(clp*0.30*pct), pagado: p.arq_pago_e2, at: p.arq_pago_e2_at },
-              { key:'e3', label:'E3 · Ingreso DOM',     monto: Math.round(clp*0.30*pct), pagado: p.arq_pago_e3, at: p.arq_pago_e3_at },
-              { key:'e4', label:'E4 · Recepción final', monto: Math.round(clp*0.20*pct), pagado: p.arq_pago_e4, at: p.arq_pago_e4_at },
+              mkEtapa('e1', 'E1 · Levantamiento',   e1c,       p.arq_pago_e1, p.arq_pago_e1_at),
+              mkEtapa('e2', 'E2 · Elaboración',     clp*0.30,  p.arq_pago_e2, p.arq_pago_e2_at),
+              mkEtapa('e3', 'E3 · Ingreso DOM',     clp*0.30,  p.arq_pago_e3, p.arq_pago_e3_at),
+              mkEtapa('e4', 'E4 · Recepción final', clp*0.20,  p.arq_pago_e4, p.arq_pago_e4_at),
             ];
         const clientePagado    = payByProj[p.project_number] || 0;
         const clientePendiente = Math.max(0, clp - clientePagado);
