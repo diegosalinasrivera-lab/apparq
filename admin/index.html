@@ -3497,13 +3497,32 @@ function renderCobros() {
           ${fundamento ? `<div style="font-size:0.65rem;color:#94a3b8;margin-top:2px;">▼ fundamento</div>` : ''}
         </td>
       </tr>
-      ${fundamento ? `
+      ${(fundamento || isPagado) ? `
       <tr id="${detailId}" style="display:none;${rowBg}">
         <td colspan="9" style="padding:0 10px 12px 10px;">
-          <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px 16px;">
+          ${fundamento ? `
+          <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px 16px;margin-bottom:${isPagado ? '10px' : '0'};">
             <div style="font-size:11px;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">📋 Fundamento técnico del arquitecto</div>
             <div style="font-size:13px;color:#7F1D1D;line-height:1.7;">${fundamento}</div>
-          </div>
+          </div>` : ''}
+          ${isPagado ? (() => {
+            const vc  = c.valor_clp       || 0;
+            const cm  = c.comision_monto  || 0;
+            const bb  = c.bruto_boleta    != null ? c.bruto_boleta   : (vc - cm);
+            const rs  = c.retencion_sii   != null ? c.retencion_sii  : Math.round(bb * 0.1525);
+            const pn  = c.pago_neto_arquitecto != null ? c.pago_neto_arquitecto : (bb - rs);
+            return `
+          <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;overflow:hidden;">
+            <div style="padding:8px 14px;font-size:11px;font-weight:700;color:#065F46;text-transform:uppercase;letter-spacing:.05em;background:#D1FAE5;">💰 Desglose honorarios arquitecto</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <tr style="background:#fff"><td style="padding:6px 14px;color:#718096;width:55%">Valor cliente</td><td style="padding:6px 14px;font-weight:700;">${fmtCLP(vc)}</td></tr>
+              <tr><td style="padding:6px 14px;color:#718096;">Comisión APPARQ (${c.comision_pct != null ? c.comision_pct : '?'}%)</td><td style="padding:6px 14px;font-weight:700;color:#E8503A;">−${fmtCLP(cm)}</td></tr>
+              <tr style="background:#fff"><td style="padding:6px 14px;color:#718096;">Bruto boleta</td><td style="padding:6px 14px;font-weight:700;">${fmtCLP(bb)}</td></tr>
+              <tr><td style="padding:6px 14px;color:#718096;">Retención SII (15,25%)</td><td style="padding:6px 14px;font-weight:700;color:#DC2626;">−${fmtCLP(rs)}</td></tr>
+              <tr style="background:#D1FAE5"><td style="padding:7px 14px;font-weight:700;color:#065F46;">Neto a recibir arquitecto</td><td style="padding:7px 14px;font-weight:900;color:#059669;">${fmtCLP(pn)}</td></tr>
+            </table>
+          </div>`;
+          })() : ''}
         </td>
       </tr>` : ''}`;
   }).join('');

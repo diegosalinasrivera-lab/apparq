@@ -687,7 +687,7 @@ export async function onRequest(context) {
 
     if (section === 'cobros') {
       const [cobrosRes, projRes, archRes] = await Promise.all([
-        sb('/cobros_adicionales?select=id,tramite_id,arquitecto_email,tipo_servicio,descripcion,fundamento_tecnico,valor_uf,valor_clp,valor_uf_fecha,estado,mp_payment_id,fecha_creacion,fecha_pago,comision_pct,comision_monto,pago_neto_arquitecto&order=fecha_creacion.desc&limit=500'),
+        sb('/cobros_adicionales?select=id,tramite_id,arquitecto_email,tipo_servicio,descripcion,fundamento_tecnico,valor_uf,valor_clp,valor_uf_fecha,estado,mp_payment_id,fecha_creacion,fecha_pago,comision_pct,comision_monto,bruto_boleta,retencion_sii,pago_neto_arquitecto&order=fecha_creacion.desc&limit=500'),
         sb('/projects?select=project_number,client_nombre,client_apellido,client_email,service_type,commune&limit=2000'),
         sb('/architects?select=email,nombre,apellido,patente'),
       ]);
@@ -709,6 +709,8 @@ export async function onRequest(context) {
           commune:            proj.commune          || '',
           architect_nombre:   arq.nombre            || '',
           architect_apellido: arq.apellido          || '',
+          bruto_boleta:       c.bruto_boleta        ?? null,
+          retencion_sii:      c.retencion_sii       ?? null,
         };
       });
 

@@ -283,8 +283,10 @@ export async function onRequest(context) {
           const cobro    = cobroArr[0] || null;
 
           if (cobro) {
-            /* Calcular comisión según patente del arquitecto */
-            let comisionPct = 30;  /* default: sin patente → 30% APPARQ */
+            /* Calcular comisión + retención según patente del arquitecto */
+            const RETENCION = 0.1525;
+            let arqPct      = 0.70;   /* default: sin patente */
+            let comisionPct = 30;
             if (cobro.arquitecto_email) {
               try {
                 const arqPatRes = await fetch(
@@ -292,13 +294,16 @@ export async function onRequest(context) {
                   { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
                 );
                 const arqPatArr = arqPatRes.ok ? await arqPatRes.json() : [];
-                if (arqPatArr[0]?.patente) comisionPct = 20;  /* patente es text (nº patente) o null/'' */
+                if (arqPatArr[0]?.patente) { arqPct = 0.80; comisionPct = 20; }
               } catch(_) {}
             }
-            const comisionMonto      = Math.round((cobro.valor_clp || 0) * comisionPct / 100);
-            const pagoNetoArquitecto = (cobro.valor_clp || 0) - comisionMonto;
+            const valorCliente      = cobro.valor_clp || 0;
+            const brutoBoleta       = Math.round(valorCliente * arqPct);
+            const retencionSii      = Math.round(brutoBoleta * RETENCION);
+            const pagoNetoArquitecto = brutoBoleta - retencionSii;
+            const comisionMonto     = valorCliente - brutoBoleta;
 
-            /* Marcar cobro como pagado + guardar comisión */
+            /* Marcar cobro como pagado + guardar todos los campos */
             await fetch(`${SUPABASE_URL}/rest/v1/cobros_adicionales?id=eq.${encodeURIComponent(cobroId)}`, {
               method: 'PATCH',
               headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -308,6 +313,8 @@ export async function onRequest(context) {
                 fecha_pago:            new Date().toISOString(),
                 comision_pct:          comisionPct,
                 comision_monto:        comisionMonto,
+                bruto_boleta:          brutoBoleta,
+                retencion_sii:         retencionSii,
                 pago_neto_arquitecto:  pagoNetoArquitecto,
               }),
             });
@@ -397,8 +404,21 @@ export async function onRequest(context) {
                         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
                           <tr><td style="padding:8px 10px;color:#718096;width:40%">Cliente</td><td style="padding:8px 10px">${proj.client_nombre} ${proj.client_apellido}</td></tr>
                         </table>
-                        <p style="font-size:12px;color:#718096;margin-top:16px;">El monto correspondiente a tus honorarios será transferido en los próximos días hábiles. Recuerda emitir la boleta de honorarios electrónica a DSR ARQ SPA (RUT 76.341.206-7).</p>
-                        <div style="text-align:center;margin-top:20px;">
+                        <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:2px 0;margin-top:16px;">
+                          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <tr><td colspan="2" style="padding:10px 14px;font-weight:700;color:#065F46;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">💰 Detalle de honorarios</td></tr>
+                            <tr style="background:#fff"><td style="padding:7px 14px;color:#718096;width:55%">Valor cliente (cobro adicional)</td><td style="padding:7px 14px;font-weight:700;">${clpFmt(valorCliente)}</td></tr>
+                            <tr><td style="padding:7px 14px;color:#718096">Comisión APPARQ (${comisionPct}%)</td><td style="padding:7px 14px;color:#E8503A;font-weight:700;">−${clpFmt(comisionMonto)}</td></tr>
+                            <tr style="background:#fff"><td style="padding:7px 14px;color:#718096">Bruto boleta (${Math.round(arqPct*100)}%)</td><td style="padding:7px 14px;font-weight:700;">${clpFmt(brutoBoleta)}</td></tr>
+                            <tr><td style="padding:7px 14px;color:#718096">Retención SII (15,25%)</td><td style="padding:7px 14px;color:#DC2626;font-weight:700;">−${clpFmt(retencionSii)}</td></tr>
+                            <tr style="background:#D1FAE5"><td style="padding:9px 14px;font-weight:700;color:#065F46;">Neto a recibir en tu banco</td><td style="padding:9px 14px;font-weight:900;color:#059669;font-size:15px;">${clpFmt(pagoNetoArquitecto)}</td></tr>
+                          </table>
+                        </div>
+                        <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-top:12px;">
+                          <p style="margin:0;font-size:12px;font-weight:700;color:#92400E;">📋 Instrucciones boleta de honorarios</p>
+                          <p style="margin:4px 0 0;font-size:12px;color:#78350F;line-height:1.5;">Emite tu boleta electrónica por <strong>${clpFmt(brutoBoleta)}</strong> (monto bruto) a nombre de <strong>DSR ARQ SPA · RUT 76.341.206-7</strong>. APPARQ te transferirá el neto (<strong>${clpFmt(pagoNetoArquitecto)}</strong>) dentro de 5 días hábiles.</p>
+                        </div>
+                        <div style="text-align:center;margin-top:16px;">
                           <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ir a mi portal</a>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
