@@ -3063,6 +3063,15 @@ function renderArqPagos() {
         else                             globalEsperaNeto += neto;
       });
     }
+    /* Cobros adicionales pagados */
+    for (const c of (arq.cobros_adicionales || [])) {
+      const bruto = c.bruto_boleta      || Math.round((c.valor_clp || 0) * ((arq.pct || 80) / 100));
+      const ret   = c.retencion_sii     || Math.round(bruto * 0.1525);
+      const neto  = c.pago_neto_arquitecto != null ? c.pago_neto_arquitecto : (bruto - ret);
+      globalBruto      += bruto;
+      globalRet        += ret;
+      globalPagadoNeto += neto;  /* cobros pagados = APPARQ les debe */
+    }
   }
 
   /* ── 4 KPIs en grid fijo ── */
@@ -3104,7 +3113,7 @@ function renderArqPagos() {
           <tbody>`;
 
   for (const arq of arqPagosData) {
-    /* Pre-calcular totales y aplanar etapas del arquitecto */
+    /* Pre-calcular totales y aplanar etapas + cobros adicionales del arquitecto */
     let arqListoN = 0, arqPagadoN = 0, arqEsperaN = 0;
     const etapaRows = [];
     for (const p of arq.projects) {
@@ -3122,8 +3131,16 @@ function renderArqPagos() {
         if (isPaid)        arqPagadoN += neto;
         else if (isReady)  arqListoN  += neto;
         else               arqEsperaN += neto;
-        etapaRows.push({ p, e, svc, sub, neto, bruto, ret, isPaid, isReady });
+        etapaRows.push({ p, e, svc, sub, neto, bruto, ret, isPaid, isReady, isCobro: false });
       });
+    }
+    /* Filas de cobros adicionales pagados */
+    for (const c of (arq.cobros_adicionales || [])) {
+      const bruto = c.bruto_boleta      || Math.round((c.valor_clp || 0) * ((arq.pct || 80) / 100));
+      const ret   = c.retencion_sii     || Math.round(bruto * 0.1525);
+      const neto  = c.pago_neto_arquitecto != null ? c.pago_neto_arquitecto : (bruto - ret);
+      arqPagadoN += neto;
+      etapaRows.push({ cobro: c, neto, bruto, ret, isPaid: true, isReady: false, isCobro: true });
     }
 
     /* ── Fila cabecera arquitecto ── */
@@ -3146,27 +3163,44 @@ function renderArqPagos() {
         <td style="padding:13px 14px;text-align:center;vertical-align:middle;"></td>
       </tr>`;
 
-    /* ── Una fila por etapa ── */
+    /* ── Una fila por etapa o cobro adicional ── */
     etapaRows.forEach((row, ri) => {
       const bg = ri % 2 === 0 ? '#ffffff' : '#f8fafc';
       let netoColor = '#94a3b8', netoWeight = '500', netoSize = '0.8rem';
       let statusHtml = `<span style="font-size:10px;color:#94a3b8;">⏳ Espera<br><span style="font-size:9px">pago cliente</span></span>`;
       if (row.isPaid) {
         netoColor = '#059669'; netoWeight = '800'; netoSize = '0.85rem';
-        statusHtml = `<span style="display:inline-block;background:#D1FAE5;color:#065f46;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;">✅ Pagado${row.e.at ? '<br><span style=\'font-size:9px;font-weight:400\'>'+fmtDate(row.e.at)+'</span>' : ''}</span>`;
+        const atDate = row.isCobro ? (row.cobro?.fecha_pago || '') : (row.e?.at || '');
+        statusHtml = `<span style="display:inline-block;background:#D1FAE5;color:#065f46;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;">✅ Pagado${atDate ? '<br><span style=\'font-size:9px;font-weight:400\'>'+fmtDate(atDate)+'</span>' : ''}</span>`;
       } else if (row.isReady) {
         netoColor = '#d97706'; netoWeight = '800'; netoSize = '0.85rem';
         statusHtml = `<span style="display:inline-block;background:#FEF3C7;color:#92400e;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;">🟡 Pagar</span>`;
       }
-      html += `
-        <tr style="background:${bg};border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="openTramiteDetail('${row.p.id}')">
-          <td style="padding:9px 14px;font-weight:700;color:#E8503A;font-size:0.75rem;white-space:nowrap">${row.p.project_number}</td>
-          <td style="padding:9px 14px;color:#374151">${row.svc}${row.sub} <span style="color:#94a3b8;font-size:11px">· ${row.e.label}</span></td>
-          <td style="padding:9px 14px;text-align:right;color:#64748b">${fmtCLP(row.bruto)}</td>
-          <td style="padding:9px 14px;text-align:right;color:#7C3AED">${fmtCLP(row.ret)}</td>
-          <td style="padding:9px 14px;text-align:right;font-weight:${netoWeight};color:${netoColor};font-size:${netoSize}">${fmtCLP(row.neto)}</td>
-          <td style="padding:9px 14px;text-align:center">${statusHtml}</td>
-        </tr>`;
+      if (row.isCobro) {
+        const c = row.cobro;
+        html += `
+          <tr style="background:${bg};border-bottom:1px solid #f1f5f9;border-left:3px solid #8B5CF6;">
+            <td style="padding:9px 14px;font-weight:700;color:#8B5CF6;font-size:0.75rem;white-space:nowrap">${c.tramite_id}</td>
+            <td style="padding:9px 14px;color:#374151">
+              <span style="display:inline-block;background:#EDE9FE;color:#5B21B6;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-right:4px;">Cobro adicional</span>
+              <span style="color:#94a3b8;font-size:11px">${c.descripcion || c.tipo_servicio || ''}</span>
+            </td>
+            <td style="padding:9px 14px;text-align:right;color:#64748b">${fmtCLP(row.bruto)}</td>
+            <td style="padding:9px 14px;text-align:right;color:#7C3AED">${fmtCLP(row.ret)}</td>
+            <td style="padding:9px 14px;text-align:right;font-weight:${netoWeight};color:${netoColor};font-size:${netoSize}">${fmtCLP(row.neto)}</td>
+            <td style="padding:9px 14px;text-align:center">${statusHtml}</td>
+          </tr>`;
+      } else {
+        html += `
+          <tr style="background:${bg};border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="openTramiteDetail('${row.p.id}')">
+            <td style="padding:9px 14px;font-weight:700;color:#E8503A;font-size:0.75rem;white-space:nowrap">${row.p.project_number}</td>
+            <td style="padding:9px 14px;color:#374151">${row.svc}${row.sub} <span style="color:#94a3b8;font-size:11px">· ${row.e.label}</span></td>
+            <td style="padding:9px 14px;text-align:right;color:#64748b">${fmtCLP(row.bruto)}</td>
+            <td style="padding:9px 14px;text-align:right;color:#7C3AED">${fmtCLP(row.ret)}</td>
+            <td style="padding:9px 14px;text-align:right;font-weight:${netoWeight};color:${netoColor};font-size:${netoSize}">${fmtCLP(row.neto)}</td>
+            <td style="padding:9px 14px;text-align:center">${statusHtml}</td>
+          </tr>`;
+      }
     });
   }
 

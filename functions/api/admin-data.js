@@ -434,18 +434,28 @@ export async function onRequest(context) {
     }
 
     if (section === 'arq_payments') {
-      /* Proyectos con arquitecto asignado + pagos aprobados + todos los proyectos activos */
-      const [projRes, archRes, payRes, allProjRes] = await Promise.all([
+      /* Proyectos con arquitecto asignado + pagos aprobados + todos los proyectos activos + cobros adicionales pagados */
+      const [projRes, archRes, payRes, allProjRes, cobrosArqRes] = await Promise.all([
         sb('/projects?architect_email=neq.&stage=neq.pendiente_pago&select=id,project_number,client_nombre,client_apellido,service_type,servicio_subtipo,commune,total_clp,e1_clp,stage,architect_email,arq_pago_e1,arq_pago_e2,arq_pago_e3,arq_pago_e4,arq_pago_e1_at,arq_pago_e2_at,arq_pago_e3_at,arq_pago_e4_at&order=created_at.desc&limit=500'),
         sb('/architects?select=nombre,apellido,email,patente&activo=eq.true'),
         sb('/payments?status=eq.approved&select=external_ref,amount'),
         sb('/projects?stage=neq.pendiente_pago&stage=neq.completado&select=project_number,total_clp'),
+        sb('/cobros_adicionales?estado=eq.pagado&select=id,tramite_id,arquitecto_email,descripcion,tipo_servicio,valor_clp,bruto_boleta,retencion_sii,pago_neto_arquitecto,comision_pct,comision_monto,fecha_pago&order=fecha_pago.desc&limit=500'),
       ]);
       if (!projRes.ok) return json({ error: 'Error al obtener proyectos' }, 500);
-      const projects   = Array.isArray(projRes.data)    ? projRes.data    : [];
-      const architects = Array.isArray(archRes.data)    ? archRes.data    : [];
-      const payments   = Array.isArray(payRes.data)     ? payRes.data     : [];
-      const allProjs   = Array.isArray(allProjRes.data) ? allProjRes.data : [];
+      const projects   = Array.isArray(projRes.data)       ? projRes.data       : [];
+      const architects = Array.isArray(archRes.data)       ? archRes.data       : [];
+      const payments   = Array.isArray(payRes.data)        ? payRes.data        : [];
+      const allProjs   = Array.isArray(allProjRes.data)    ? allProjRes.data    : [];
+      const cobrosArq  = Array.isArray(cobrosArqRes.data)  ? cobrosArqRes.data  : [];
+
+      /* Mapa de cobros adicionales por email de arquitecto */
+      const cobrosByArq = {};
+      for (const c of cobrosArq) {
+        if (!c.arquitecto_email) continue;
+        if (!cobrosByArq[c.arquitecto_email]) cobrosByArq[c.arquitecto_email] = [];
+        cobrosByArq[c.arquitecto_email].push(c);
+      }
       const archMap    = {};
       architects.forEach(a => { archMap[a.email] = a; });
 
@@ -517,6 +527,21 @@ export async function onRequest(context) {
           cliente_pendiente: clientePendiente,
           etapas,
         });
+      }
+      /* Adjuntar cobros adicionales a cada arquitecto */
+      for (const arqEntry of Object.values(byArq)) {
+        arqEntry.cobros_adicionales = cobrosByArq[arqEntry.email] || [];
+      }
+      /* Arquitectos que solo tienen cobros adicionales (sin proyectos en la lista principal) */
+      for (const [arqEmail, cobros] of Object.entries(cobrosByArq)) {
+        if (!byArq[arqEmail]) {
+          const a = archMap[arqEmail] || {};
+          byArq[arqEmail] = {
+            email: arqEmail, nombre: a.nombre || arqEmail, apellido: a.apellido || '',
+            patente: a.patente || null, pct: a.patente ? 80 : 70,
+            projects: [], cobros_adicionales: cobros,
+          };
+        }
       }
       return json({
         arq_payments: Object.values(byArq),
