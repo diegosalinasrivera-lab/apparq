@@ -472,6 +472,7 @@ export async function onRequest(context) {
             nombre:   a.nombre   || p.architect_email,
             apellido: a.apellido || '',
             patente:  a.patente  || null,
+            pct:      a.patente  ? 80 : 70,
             projects: [],
           };
         }
