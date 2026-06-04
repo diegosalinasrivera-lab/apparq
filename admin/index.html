@@ -3463,9 +3463,11 @@ function renderCobros() {
     const isPagado   = c.estado === 'pagado';
     const comisionPctStr = isPagado && c.comision_pct != null ? `${c.comision_pct}%` : '—';
     const tipoLabel  = COBROS_SVC_LABELS[c.tipo_servicio] || c.tipo_servicio || '—';
-    const rowBg = idx % 2 === 1 ? 'background:#f8fafc;' : '';
+    const rowBg      = idx % 2 === 1 ? 'background:#f8fafc;' : '';
+    const detailId   = `cobro-detail-${c.id}`;
+    const fundamento = c.fundamento_tecnico || '';
     return `
-      <tr style="${rowBg}">
+      <tr style="${rowBg}cursor:pointer;" onclick="document.getElementById('${detailId}').style.display=document.getElementById('${detailId}').style.display==='none'?'':'none'" title="Click para ver fundamento técnico">
         <td style="white-space:nowrap;padding:8px 10px;">
           ${fecha}
           ${fechaPago ? `<div style="font-size:0.7rem;color:#059669;">pagado ${fechaPago}</div>` : ''}
@@ -3492,8 +3494,18 @@ function renderCobros() {
         </td>
         <td style="padding:8px 10px;">
           <span style="font-size:0.72rem;font-weight:700;color:${estadoColor[c.estado] || '#6B7280'};">${estadoLabel[c.estado] || c.estado}</span>
+          ${fundamento ? `<div style="font-size:0.65rem;color:#94a3b8;margin-top:2px;">▼ fundamento</div>` : ''}
         </td>
-      </tr>`;
+      </tr>
+      ${fundamento ? `
+      <tr id="${detailId}" style="display:none;${rowBg}">
+        <td colspan="9" style="padding:0 10px 12px 10px;">
+          <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px 16px;">
+            <div style="font-size:11px;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">📋 Fundamento técnico del arquitecto</div>
+            <div style="font-size:13px;color:#7F1D1D;line-height:1.7;">${fundamento}</div>
+          </div>
+        </td>
+      </tr>` : ''}`;
   }).join('');
 }
 
