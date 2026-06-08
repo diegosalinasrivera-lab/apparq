@@ -5208,6 +5208,12 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         throw new Error(`Error al subir el archivo (${upRes.status}). Intenta con un archivo más pequeño.`);
       }
 
+      // 3. Notificar backend (no bloquea si falla)
+      fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm-upload', project_number: projectNumber, email, filename: file.name, filesize: file.size }),
+      }).catch(() => {});
+
       pcSetUploadMsg(`✓ ${file.name} subido correctamente.`, '#059669');
       pcLoadFiles(projectNumber, email);
     } catch(e) {
@@ -6683,6 +6689,12 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         }
         throw new Error(`Error al subir el archivo (${upRes.status}). Intenta con un archivo más pequeño.`);
       }
+
+      // Notificar backend (no bloquea si falla)
+      fetch('/api/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm-upload', project_number: projectNumber, token, filename: file.name, filesize: file.size }),
+      }).catch(() => {});
 
       paSetUploadMsg(`✓ ${file.name} subido correctamente.`, '#059669');
       paLoadFiles(projectNumber, token);
