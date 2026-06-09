@@ -324,7 +324,7 @@ export async function onRequest(context) {
     /* ── Email de bienvenida al arquitecto ── */
     await sendEmail({
       to:      payload.email,
-      subject: `✅ Tu inscripción en APPARQ fue recibida — ${nombreCompleto}`,
+      subject: `¡Bienvenido/a a APPARQ, ${payload.nombre}! Tu perfil está activo`,
       attachments: contratoAttachment,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a2e;">
@@ -333,11 +333,36 @@ export async function onRequest(context) {
             <p style="color:#a0aec0;margin:8px 0 0;font-size:13px;">Plataforma de arquitectura</p>
           </div>
           <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px;">
-            <h2 style="margin-top:0;color:#1a1a2e;">¡Hola ${payload.nombre}! Tu inscripción fue recibida 🎉</h2>
+            <h2 style="margin-top:0;color:#1a1a2e;">¡Hola ${payload.nombre}! Tu perfil está activo 🎉</h2>
             <p style="color:#4a5568;font-size:14px;line-height:1.7;">
-              Gracias por unirte a APPARQ. Hemos recibido tu solicitud y la revisaremos en las próximas 24–48 horas hábiles.
+              Tu inscripción en APPARQ está confirmada y tu perfil ya está activo. Puedes comenzar a recibir trámites de inmediato.
             </p>
 
+            <!-- Botón portal -->
+            <div style="text-align:center;margin:28px 0;">
+              <a href="https://apparq.cl/arquitecto"
+                 style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 36px;border-radius:999px;letter-spacing:0.3px;">
+                INGRESAR AL PORTAL →
+              </a>
+              <p style="margin:10px 0 0;font-size:11px;color:#718096;">Ingresa con tu email y contraseña en <strong>apparq.cl/arquitecto</strong></p>
+            </div>
+
+            <!-- Cómo funciona la asignación -->
+            <div style="background:#FAF7F4;border:1.5px solid #EDE8E3;border-radius:8px;padding:20px 24px;margin:20px 0;">
+              <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1a2e;">¿Cómo funciona la asignación de trámites?</p>
+              <p style="margin:0 0 6px;font-size:12px;color:#4a5568;">La asignación es completamente automática:</p>
+              <ol style="margin:8px 0 0;padding-left:18px;font-size:12px;color:#4a5568;line-height:2;">
+                <li>Un cliente solicita un trámite en una de tus comunas inscritas</li>
+                <li>La plataforma verifica que el tipo de trámite coincida con los servicios que seleccionaste</li>
+                <li>El trámite te es asignado automáticamente</li>
+                <li>Recibes una notificación por email con todos los detalles</li>
+              </ol>
+              <p style="margin:12px 0 0;font-size:12px;color:#718096;font-style:italic;">
+                Si aún no has recibido un trámite, es porque no ha habido una solicitud que coincida con tu perfil todavía. Cuando ocurra, te notificamos de inmediato.
+              </p>
+            </div>
+
+            <!-- Contrato adjunto -->
             <div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;padding:16px 20px;margin:20px 0;">
               <p style="margin:0;font-size:13px;color:#1e3a5f;font-weight:700;">📎 Tu contrato de colaboración</p>
               <p style="margin:8px 0 0;font-size:12px;color:#1e3a5f;line-height:1.6;">
@@ -345,14 +370,8 @@ export async function onRequest(context) {
               </p>
             </div>
 
-            <h3 style="color:#1a1a2e;font-size:14px;margin-top:28px;">⏱ ¿Qué sigue?</h3>
-            <ol style="color:#4a5568;font-size:13px;line-height:2;padding-left:20px;margin:8px 0;">
-              <li>Revisaremos tu ficha y validaremos tus antecedentes</li>
-              <li>Recibirás un email de activación cuando estés disponible en tu(s) comuna(s)</li>
-              <li>Podrás ingresar al <strong>Portal Arquitecto</strong> en apparq.cl con tu email y contraseña</li>
-            </ol>
-
-            <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:24px;">
+            <!-- Recuerda -->
+            <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:20px;">
               <p style="margin:0;font-size:12px;color:#92400E;font-weight:700;">⚠️ Recuerda</p>
               <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6;">
                 Todos los pagos y comunicaciones con clientes deben hacerse exclusivamente a través de <strong>apparq.cl</strong>, según el contrato firmado.
@@ -362,7 +381,8 @@ export async function onRequest(context) {
             <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px;" />
             <p style="font-size:11px;color:#a0aec0;margin:0;">
               APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
-              ¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea;">hola@apparq.cl</a>
+              ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea;">hola@apparq.cl</a>
+              o por <a href="https://wa.me/56942054581" style="color:#25D366;">WhatsApp</a>
             </p>
           </div>
         </div>
