@@ -177,7 +177,77 @@ export async function onRequest(context) {
 
   const numUpper = project_number.trim().toUpperCase();
 
-  /* ── Verificar identidad ───────────────────────── */
+  /* ── confirm-upload: verificación ligera por project_number ───────────
+     La seguridad real está en la URL firmada de Supabase Storage que se
+     necesitó para hacer el PUT. Aquí solo verificamos que el trámite existe
+     y enviamos la notificación interna. No se modifica ningún dato. */
+  if (action === 'confirm-upload') {
+    const uploadedFilename = body.filename || filename || '(sin nombre)';
+    const filesize         = body.filesize || 0;
+    const sizeMB           = filesize ? `${(filesize / 1024 / 1024).toFixed(2)} MB` : '—';
+    const uploaderRole     = token ? 'architect' : 'client';
+    const uploaderLabel    = token ? 'Arquitecto' : 'Cliente';
+    const emoji            = token ? '🏗' : '📁';
+    const fechaHora        = new Date().toLocaleString('es-CL', {
+      timeZone: 'America/Santiago', day: '2-digit', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+
+    /* Verificar que el trámite existe y obtener datos para el correo */
+    let proyectoHtml = '';
+    try {
+      const projRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(numUpper)}&select=client_nombre,client_apellido,client_email,architect_nombre,architect_apellido,architect_email,service_type,commune,address&limit=1`,
+        { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+      );
+      if (!projRes.ok) return json({ error: 'Trámite no encontrado' }, 404);
+      const projArr = await projRes.json();
+      if (!projArr.length) return json({ error: 'Trámite no encontrado' }, 404);
+      const p = projArr[0];
+      const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'declaracion-jurada':'Declaración Jurada', 'ley-del-mono':'Ley del Mono' };
+      proyectoHtml = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:14px">
+          <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">Servicio</td><td style="padding:7px 10px">${svcLabels[p.service_type] || p.service_type} · ${p.commune}</td></tr>
+          <tr><td style="padding:7px 10px;color:#718096">Dirección</td><td style="padding:7px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+          <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
+          <tr><td style="padding:7px 10px;color:#718096">Arquitecto</td><td style="padding:7px 10px">${p.architect_nombre} ${p.architect_apellido} · ${p.architect_email || '—'}</td></tr>
+        </table>`;
+    } catch (e) {
+      console.error('confirm-upload: error al verificar proyecto:', e);
+      return json({ error: 'Error al verificar trámite' }, 500);
+    }
+
+    await sendEmail({
+      to: NOTIFY_EMAIL,
+      subject: `${emoji} Archivo subido — ${numUpper} · ${uploaderLabel}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+          <div style="background:#1a1a2e;padding:22px 32px;border-radius:8px 8px 0 0">
+            <h2 style="color:#fff;margin:0;font-size:17px">APPARQ — Archivo subido a la plataforma</h2>
+          </div>
+          <div style="background:#EFF6FF;border:2px solid #BFDBFE;padding:12px 32px">
+            <p style="margin:0;font-size:14px;font-weight:700;color:#1D4ED8">${emoji} ${uploaderLabel} subió un archivo al trámite <strong>${numUpper}</strong></p>
+          </div>
+          <div style="background:#fff;padding:22px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${numUpper}</td></tr>
+              <tr><td style="padding:7px 10px;color:#718096">Subido por</td><td style="padding:7px 10px;font-weight:700">${uploaderLabel}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Nombre archivo</td><td style="padding:7px 10px">${uploadedFilename}</td></tr>
+              <tr><td style="padding:7px 10px;color:#718096">Tamaño</td><td style="padding:7px 10px">${sizeMB}</td></tr>
+              <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Fecha y hora</td><td style="padding:7px 10px">${fechaHora}</td></tr>
+            </table>
+            ${proyectoHtml}
+            <div style="text-align:center;margin-top:18px">
+              <a href="https://apparq.cl/admin" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 24px;border-radius:6px">Ver en Admin</a>
+            </div>
+          </div>
+        </div>`,
+    }, RESEND_API_KEY);
+
+    return json({ ok: true });
+  }
+
+  /* ── Verificar identidad (resto de acciones) ───────────────────────── */
   let role = null; // 'client' | 'architect'
 
   if (token) {
@@ -263,72 +333,6 @@ export async function onRequest(context) {
 
       const ok = await deleteObject(SUPABASE_URL, SERVICE_KEY, filePath);
       if (!ok) return json({ error: 'Error al eliminar el archivo' }, 500);
-      return json({ ok: true });
-    }
-
-    /* ── confirm-upload ──────────────────────────── */
-    if (action === 'confirm-upload') {
-      /* Llamado por el frontend tras PUT exitoso; envía notificación interna */
-      const uploadedFilename = body.filename || filename || '(sin nombre)';
-      const filesize         = body.filesize || 0;
-      const sizeMB           = filesize ? `${(filesize / 1024 / 1024).toFixed(2)} MB` : '—';
-      const uploaderLabel    = role === 'architect' ? 'Arquitecto' : 'Cliente';
-      const emoji            = role === 'architect' ? '🏗' : '📁';
-      const fechaHora        = new Date().toLocaleString('es-CL', {
-        timeZone: 'America/Santiago', day: '2-digit', month: 'long', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-      });
-
-      /* Obtener datos del proyecto para el correo */
-      let proyectoHtml = '';
-      try {
-        const projRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(numUpper)}&select=client_nombre,client_apellido,client_email,architect_nombre,architect_apellido,architect_email,service_type,commune,address&limit=1`,
-          { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
-        );
-        if (projRes.ok) {
-          const projArr = await projRes.json();
-          if (projArr.length) {
-            const p = projArr[0];
-            const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe', 'declaracion-jurada':'Declaración Jurada', 'ley-del-mono':'Ley del Mono' };
-            proyectoHtml = `
-              <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:14px">
-                <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">Servicio</td><td style="padding:7px 10px">${svcLabels[p.service_type] || p.service_type} · ${p.commune}</td></tr>
-                <tr><td style="padding:7px 10px;color:#718096">Dirección</td><td style="padding:7px 10px">${p.address || '—'}, ${p.commune}</td></tr>
-                <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
-                <tr><td style="padding:7px 10px;color:#718096">Arquitecto</td><td style="padding:7px 10px">${p.architect_nombre} ${p.architect_apellido} · ${p.architect_email || '—'}</td></tr>
-              </table>`;
-          }
-        }
-      } catch (_) { /* no bloquear si falla la fetch del proyecto */ }
-
-      await sendEmail({
-        to: NOTIFY_EMAIL,
-        subject: `${emoji} Archivo subido — ${numUpper} · ${uploaderLabel}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
-            <div style="background:#1a1a2e;padding:22px 32px;border-radius:8px 8px 0 0">
-              <h2 style="color:#fff;margin:0;font-size:17px">APPARQ — Archivo subido a la plataforma</h2>
-            </div>
-            <div style="background:#EFF6FF;border:2px solid #BFDBFE;padding:12px 32px">
-              <p style="margin:0;font-size:14px;font-weight:700;color:#1D4ED8">${emoji} ${uploaderLabel} subió un archivo al trámite <strong>${numUpper}</strong></p>
-            </div>
-            <div style="background:#fff;padding:22px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
-              <table style="width:100%;border-collapse:collapse;font-size:13px">
-                <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${numUpper}</td></tr>
-                <tr><td style="padding:7px 10px;color:#718096">Subido por</td><td style="padding:7px 10px;font-weight:700">${uploaderLabel}</td></tr>
-                <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Nombre archivo</td><td style="padding:7px 10px">${uploadedFilename}</td></tr>
-                <tr><td style="padding:7px 10px;color:#718096">Tamaño</td><td style="padding:7px 10px">${sizeMB}</td></tr>
-                <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Fecha y hora</td><td style="padding:7px 10px">${fechaHora}</td></tr>
-              </table>
-              ${proyectoHtml}
-              <div style="text-align:center;margin-top:18px">
-                <a href="https://apparq.cl/admin" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 24px;border-radius:6px">Ver en Admin</a>
-              </div>
-            </div>
-          </div>`,
-      }, RESEND_API_KEY);
-
       return json({ ok: true });
     }
 
