@@ -1014,6 +1014,150 @@ export async function onRequest(context) {
       return corsResponse({ ok: true });
     }
 
+    /* ── REQUEST-PAYMENT ─────────────────────── */
+    if (action === 'request-payment') {
+      const { project_number, etapa } = rest;
+      if (!project_number || !etapa || !['e2','e3','e4'].includes(etapa)) {
+        return corsResponse({ error: 'Faltan datos o etapa inválida' }, 400);
+      }
+
+      /* 1. Verificar que el proyecto pertenece al arquitecto */
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(project_number)}&architect_email=eq.${encodeURIComponent(email)}&select=*&limit=1`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const checkData = checkRes.ok ? await checkRes.json() : [];
+      if (!checkData.length) {
+        return corsResponse({ error: 'Proyecto no encontrado' }, 403);
+      }
+      const p = checkData[0];
+
+      /* 2. Calcular monto del cliente */
+      const is2stages = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+      const clp = p.total_clp || 0;
+      let monto;
+      if (is2stages) {
+        monto = Math.round(clp * 0.50);
+      } else {
+        const pcts = { e2: 0.30, e3: 0.30, e4: 0.20 };
+        monto = Math.round(clp * pcts[etapa]);
+      }
+
+      /* 3. Verificar que esa etapa no fue ya solicitada en las últimas 2h */
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const dupRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/project_updates?project_number=eq.${encodeURIComponent(project_number)}&stage=eq.solicitud_pago_${etapa}&created_at=gte.${twoHoursAgo}&select=id&limit=1`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const dupData = dupRes.ok ? await dupRes.json() : [];
+      if (dupData.length) {
+        return corsResponse({ ok: true, already_sent: true, link: null });
+      }
+
+      /* 4. Llamar /api/create-payment internamente */
+      const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono', 'declaracion-jurada':'Declaración Jurada' };
+      const svcName = svcLabels[p.service_type] || p.service_type;
+      const clpFmt = n => '$ ' + Math.round(n).toLocaleString('es-CL');
+
+      const cpRes = await fetch('https://apparq.cl/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount:      monto,
+          description: `APPARQ · ${project_number} · Pago ${etapa.toUpperCase()} · ${svcName}`,
+          email:       p.client_email,
+          reference:   `${project_number}-${etapa.toUpperCase()}`,
+        }),
+      });
+      if (!cpRes.ok) {
+        const errTxt = await cpRes.text();
+        console.error('Error create-payment:', errTxt);
+        return corsResponse({ error: 'Error al generar link de pago' }, 500);
+      }
+      const cpData = await cpRes.json();
+      const init_point = cpData.init_point;
+      if (!init_point) {
+        return corsResponse({ error: 'No se obtuvo link de pago' }, 500);
+      }
+
+      /* 5. Insertar en project_updates */
+      await fetch(`${SUPABASE_URL}/rest/v1/project_updates`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          project_number: project_number,
+          author:         'architect',
+          stage:          `solicitud_pago_${etapa}`,
+          stage_label:    `Solicitud pago ${etapa.toUpperCase()} enviada`,
+          nota:           `Solicitud de pago ${etapa.toUpperCase()} enviada al cliente. Monto: ${clpFmt(monto)}`,
+        }),
+      });
+
+      /* 6. Email al cliente con el link de pago */
+      if (p.client_email) {
+        await sendEmail({
+          to: p.client_email,
+          subject: `💳 Pago ${etapa.toUpperCase()} de tu trámite ${project_number} — APPARQ`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+              <div style="background:#1a1a2e;padding:28px 32px;text-align:center;border-radius:8px 8px 0 0">
+                <h1 style="color:#fff;margin:0;font-size:22px">APPARQ</h1>
+                <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Pago de etapa de tu trámite</p>
+              </div>
+              <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                <h2 style="margin-top:0;color:#1a1a2e;">Hola ${p.client_nombre}, hay un nuevo pago pendiente</h2>
+                <p style="color:#4a5568;font-size:14px;line-height:1.7;">Tu arquitecto <strong>${p.architect_nombre} ${p.architect_apellido}</strong> ha completado la etapa <strong>${etapa.toUpperCase()}</strong> de tu trámite. Para continuar, realiza el siguiente pago:</p>
+                <div style="background:#FFF7ED;border:2px solid #E8503A;border-radius:8px;padding:16px 20px;margin:20px 0;text-align:center;">
+                  <p style="margin:0 0 4px;font-size:12px;color:#92400E;font-weight:700;">MONTO A PAGAR — ${etapa.toUpperCase()}</p>
+                  <p style="margin:0;font-size:30px;font-weight:900;color:#E8503A;">${clpFmt(monto)}</p>
+                  <p style="margin:6px 0 0;font-size:11px;color:#78350F;">${svcName} · ${project_number}</p>
+                </div>
+                <div style="text-align:center;margin:24px 0;">
+                  <a href="${init_point}" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;letter-spacing:0.5px;">PAGAR AHORA →</a>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Etapa</td><td style="padding:8px 10px;font-weight:700">${etapa.toUpperCase()} · ${svcName}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Dirección</td><td style="padding:8px 10px">${p.address || '—'}, ${p.commune}</td></tr>
+                  <tr><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido}</td></tr>
+                </table>
+                <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:20px">
+                  <p style="margin:0;font-size:12px;color:#3730A3;font-weight:700;">💡 Puedes pagar en cuotas con Mercado Pago</p>
+                  <p style="margin:4px 0 0;font-size:12px;color:#4338CA;line-height:1.5;">Selecciona la opción de cuotas con tu tarjeta de crédito directamente en Mercado Pago.</p>
+                </div>
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl · Todos los pagos deben realizarse exclusivamente a través de apparq.cl</p>
+              </div>
+            </div>`,
+        }, RESEND_API_KEY);
+      }
+
+      /* 7. Email interno a hola@apparq.cl */
+      await sendEmail({
+        to: 'hola@apparq.cl',
+        subject: `💳 Arquitecto solicitó pago ${etapa.toUpperCase()} — ${project_number}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+            <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:18px">APPARQ — Solicitud de pago de etapa</h1>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${project_number}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Etapa</td><td style="padding:8px 10px;font-weight:700">${etapa.toUpperCase()}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Monto cliente</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${clpFmt(monto)}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${p.client_nombre} ${p.client_apellido} · ${p.client_email}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${p.architect_nombre} ${p.architect_apellido} · ${email}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Link de pago</td><td style="padding:8px 10px;word-break:break-all;font-size:11px"><a href="${init_point}" style="color:#E8503A">${init_point}</a></td></tr>
+              </table>
+            </div>
+          </div>`,
+      }, RESEND_API_KEY);
+
+      /* 8. Retornar */
+      return corsResponse({ ok: true, link: init_point, monto });
+    }
+
     return corsResponse({ error: 'Acción no reconocida' }, 400);
 
   } catch (err) {

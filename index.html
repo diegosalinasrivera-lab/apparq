@@ -5617,6 +5617,32 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         <div id="paStageMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
       </div>
 
+      ${(() => {
+        const is2s = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
+        const clpFmtUI = n => '$ ' + Math.round(n).toLocaleString('es-CL');
+        const etapasAMostrar = is2s
+          ? [{ etapa: 'e2', label: 'E2 · ' + (p.service_type === 'informe' ? 'Entrega informe' : 'Cierre DJ'), monto: Math.round((p.total_clp||0) * 0.50), pagado: p.arq_pago_e2 }]
+          : [
+              { etapa: 'e2', label: 'E2 · Elaboración planos', monto: Math.round((p.total_clp||0) * 0.30), pagado: p.arq_pago_e2 },
+              { etapa: 'e3', label: 'E3 · Ingreso DOM',        monto: Math.round((p.total_clp||0) * 0.30), pagado: p.arq_pago_e3 },
+              { etapa: 'e4', label: 'E4 · Recepción final',    monto: Math.round((p.total_clp||0) * 0.20), pagado: p.arq_pago_e4 },
+            ];
+        const etapasPendientes = etapasAMostrar.filter(e => !e.pagado);
+        if (!etapasPendientes.length) return '';
+        const btns = etapasPendientes.map(e => `
+          <div class="pa-req-pago-item" data-etapa="${e.etapa}" data-monto="${e.monto}" data-label="${e.label}" style="margin-bottom:0.45rem;">
+            <button class="pa-req-pago-btn" style="width:100%;background:#E8503A;color:#fff;border:none;border-radius:var(--radius);padding:0.55rem 1rem;font-size:0.8rem;font-weight:700;cursor:pointer;text-align:left;">
+              💳 Solicitar pago ${e.label} · ${clpFmtUI(e.monto)}
+            </button>
+          </div>`).join('');
+        return `
+      <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--radius);padding:0.9rem 1rem;margin-bottom:1rem;">
+        <div style="font-size:0.78rem;font-weight:700;color:#92400E;margin-bottom:0.5rem;">💳 Solicitar pago de etapa al cliente</div>
+        <div style="font-size:0.72rem;color:#78350F;margin-bottom:0.65rem;">Genera y envía el link de pago Mercado Pago al cliente. El link se envía por correo automáticamente.</div>
+        <div id="paReqPagoContainer">${btns}</div>
+      </div>`;
+      })()}
+
       <!-- Cobros adicionales -->
       <div id="paCobroSection" style="margin-bottom:1rem;border:1.5px solid #C4B5FD;border-radius:var(--radius);overflow:hidden;">
         <div style="background:#F5F3FF;padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center;">
@@ -6270,6 +6296,49 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         } else { msgEl.style.color = '#DC2626'; msgEl.textContent = data.error || 'Error al actualizar'; }
       } finally { btn.disabled = false; btn.textContent = 'Notificar avance al cliente'; }
     };
+
+    /* Solicitar pago de etapa */
+    const reqPagoContainer = document.getElementById('paReqPagoContainer');
+    if (reqPagoContainer) {
+      reqPagoContainer.querySelectorAll('.pa-req-pago-item').forEach(item => {
+        const etapa = item.dataset.etapa;
+        const monto = Number(item.dataset.monto);
+        const label = item.dataset.label;
+        const btn = item.querySelector('.pa-req-pago-btn');
+        btn.onclick = async () => {
+          btn.disabled = true; btn.textContent = 'Enviando…';
+          try {
+            const res = await fetch('/api/portal-architect', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'request-payment', token, project_number: p.project_number, etapa }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+              if (data.already_sent) {
+                btn.textContent = '✓ Link ya enviado anteriormente';
+                btn.style.background = '#718096';
+              } else {
+                btn.textContent = '✓ Link enviado al cliente';
+                btn.style.background = '#059669';
+                btn.disabled = true;
+                const linkDiv = document.createElement('div');
+                linkDiv.style.cssText = 'margin-top:6px;padding:8px 10px;background:#f0fdf4;border:1px solid #86EFAC;border-radius:6px;font-size:0.7rem;word-break:break-all;';
+                linkDiv.innerHTML = `<strong style="color:#15803D">Link de pago:</strong> <a href="${data.link}" target="_blank" style="color:#059669">${data.link}</a>`;
+                btn.parentNode.appendChild(linkDiv);
+              }
+            } else {
+              btn.disabled = false;
+              btn.textContent = `💳 Solicitar pago ${label}`;
+              alert(data.error || 'Error al generar link de pago');
+            }
+          } catch(err) {
+            btn.disabled = false;
+            btn.textContent = `💳 Solicitar pago ${label}`;
+            alert('Error de conexión');
+          }
+        };
+      });
+    }
 
     /* Mark contacted */
     const contactedBtn = document.getElementById('paMarkContacted');

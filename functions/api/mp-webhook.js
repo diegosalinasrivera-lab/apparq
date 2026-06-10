@@ -461,6 +461,98 @@ export async function onRequest(context) {
         } catch (cobroErr) {
           console.error('Error procesando cobro adicional:', cobroErr);
         }
+      } else if (extRef && /^ARQ-.+-E[234]$/.test(extRef) && SERVICE_KEY) {
+        /* ── Pago de etapa E2/E3/E4 del cliente ─────────────── */
+        try {
+          const parts = extRef.split('-');
+          const etapa = parts[parts.length - 1].toLowerCase(); // 'e2'|'e3'|'e4'
+          const projectNumber = parts.slice(0, parts.length - 1).join('-'); // 'ARQ-2026-000101'
+
+          /* Obtener proyecto */
+          const projRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(projectNumber)}&select=*&limit=1`,
+            { headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } }
+          );
+          const projArr = projRes.ok ? await projRes.json() : [];
+          const project = projArr[0];
+
+          if (project) {
+            /* Insertar en project_updates */
+            await fetch(`${SUPABASE_URL}/rest/v1/project_updates`, {
+              method: 'POST',
+              headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+              body: JSON.stringify({
+                project_number: projectNumber,
+                author:         'sistema',
+                stage:          `pago_cliente_${etapa}`,
+                stage_label:    `Pago ${etapa.toUpperCase()} recibido`,
+                nota:           `Cliente pagó ${etapa.toUpperCase()}. Monto: $ ${Math.round(payment.transaction_amount).toLocaleString('es-CL')}. ID MP: ${payment.id}`,
+              }),
+            });
+
+            /* Email al arquitecto */
+            if (project.architect_email) {
+              await sendEmail({
+                to: project.architect_email,
+                subject: `💰 Cliente pagó ${etapa.toUpperCase()} — ${projectNumber} — APPARQ`,
+                html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                  <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                    <h1 style="color:#fff;margin:0;font-size:20px">APPARQ — Pago recibido</h1>
+                  </div>
+                  <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                    <h2 style="margin-top:0;color:#1a1a2e">¡El cliente pagó ${etapa.toUpperCase()}! 🎉</h2>
+                    <div style="background:#f0fdf4;border:1.5px solid #86EFAC;border-radius:8px;padding:14px 20px;margin:16px 0;text-align:center">
+                      <p style="margin:0 0 4px;font-size:12px;color:#718096;font-weight:700">MONTO RECIBIDO</p>
+                      <p style="margin:0;font-size:22px;font-weight:900;color:#059669">$ ${Math.round(payment.transaction_amount).toLocaleString('es-CL')}</p>
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;font-size:13px">
+                      <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${projectNumber}</td></tr>
+                      <tr><td style="padding:7px 10px;color:#718096">Etapa</td><td style="padding:7px 10px;font-weight:700">${etapa.toUpperCase()}</td></tr>
+                      <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${project.client_nombre} ${project.client_apellido}</td></tr>
+                    </table>
+                    <p style="font-size:12px;color:#718096;margin-top:20px">APPARQ procesará tu pago según los plazos del contrato, previa recepción de tu boleta de honorarios.</p>
+                    <div style="text-align:center;margin-top:16px">
+                      <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 24px;border-radius:6px">Ver en Portal Arquitecto</a>
+                    </div>
+                    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                  </div>
+                </div>`,
+              }, RESEND_API_KEY);
+            }
+
+            /* Email a hola@apparq.cl */
+            await sendEmail({
+              to: 'hola@apparq.cl',
+              subject: `💰 Pago ${etapa.toUpperCase()} recibido — ${projectNumber} · $ ${Math.round(payment.transaction_amount).toLocaleString('es-CL')}`,
+              html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+                <div style="background:#1a1a2e;padding:22px 32px;border-radius:8px 8px 0 0">
+                  <h2 style="color:#fff;margin:0;font-size:17px">APPARQ — Pago de etapa recibido</h2>
+                </div>
+                <div style="background:#fff;padding:22px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                  <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${projectNumber}</td></tr>
+                    <tr><td style="padding:7px 10px;color:#718096">Etapa pagada</td><td style="padding:7px 10px;font-weight:700">${etapa.toUpperCase()}</td></tr>
+                    <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Monto cliente</td><td style="padding:7px 10px;font-weight:700;color:#059669">$ ${Math.round(payment.transaction_amount).toLocaleString('es-CL')}</td></tr>
+                    <tr><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${project.client_nombre} ${project.client_apellido} · ${project.client_email}</td></tr>
+                    <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Arquitecto</td><td style="padding:7px 10px">${project.architect_nombre} ${project.architect_apellido} · ${project.architect_email || '—'}</td></tr>
+                    <tr><td style="padding:7px 10px;color:#718096">ID Pago MP</td><td style="padding:7px 10px;font-family:monospace;font-size:11px">${payment.id}</td></tr>
+                  </table>
+                  <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:12px 18px;margin-top:16px">
+                    <p style="margin:0;font-size:12px;font-weight:700;color:#92400E">⚠️ Acción requerida</p>
+                    <p style="margin:6px 0 0;font-size:12px;color:#78350F">Transferir honorarios al arquitecto (previa boleta electrónica). Verificar monto según tabla de retención.</p>
+                  </div>
+                </div>
+              </div>`,
+            }, RESEND_API_KEY);
+
+            console.log('Pago de etapa procesado:', projectNumber, etapa.toUpperCase(), payment.id);
+          } else {
+            console.log('Proyecto no encontrado para pago de etapa:', projectNumber);
+          }
+        } catch (etapaErr) {
+          console.error('Error procesando pago de etapa:', etapaErr);
+        }
       } else if (extRef && extRef.startsWith('ARQ-') && SERVICE_KEY) {
         try {
           const projRes = await fetch(
