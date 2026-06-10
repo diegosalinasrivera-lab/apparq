@@ -165,7 +165,7 @@ export async function onRequest(context) {
                 El trámite <strong>${p.project_number}</strong> ha sido reasignado a otro arquitecto porque no se confirmó el contacto con el cliente dentro del plazo contractual de 5 días (cláusula 7b).</p>
                 <p style="font-size:13px;color:#718096">Si tienes alguna consulta, escríbenos a <a href="mailto:hola@apparq.cl">hola@apparq.cl</a>.</p>
                 <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 12px">
-                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7</p>
+                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8</p>
               </div>
             </div>`,
           }, RESEND_API_KEY);
@@ -197,7 +197,7 @@ export async function onRequest(context) {
                   <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 32px;border-radius:6px;">apparq.cl → Soy Arquitecto</a>
                 </div>
                 <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 12px">
-                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
               </div>
             </div>`,
           }, RESEND_API_KEY);
@@ -275,7 +275,7 @@ export async function onRequest(context) {
             <div style="text-align:center;margin-bottom:20px">
               <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;">Ir a la plataforma →</a>
             </div>
-            <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+            <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
           </div>
         </div>`,
       }, RESEND_API_KEY);

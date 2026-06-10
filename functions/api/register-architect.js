@@ -130,12 +130,12 @@ export async function onRequest(context) {
       <div style="background:#fff;border:2px solid #1a1a2e;border-radius:8px;padding:28px 32px;font-size:12px;color:#1a1a2e;line-height:1.7;margin-top:16px;">
         <div style="text-align:center;margin-bottom:20px;">
           <h2 style="margin:0 0 4px;font-size:15px;font-weight:900;letter-spacing:1px;">CONTRATO DE COLABORACIÓN PROFESIONAL</h2>
-          <p style="margin:0;font-size:11px;color:#718096;">APPARQ — DSR ARQ SPA · RUT 76.341.206-7</p>
+          <p style="margin:0;font-size:11px;color:#718096;">APPARQ SpA · RUT 78.441.391-8</p>
         </div>
 
         <p><strong>En Santiago de Chile, a ${fecha}</strong>, entre:</p>
 
-        <p><strong>APPARQ (DSR ARQ SPA)</strong>, RUT 76.341.206-7, en adelante <em>"la Plataforma"</em>; y</p>
+        <p><strong>APPARQ SpA</strong>, RUT 78.441.391-8, en adelante <em>"la Plataforma"</em>; y</p>
 
         <p><strong>${nombreCompleto}</strong>, RUT ${payload.rut || '—'}, arquitecto, en adelante <em>"el Profesional"</em>.</p>
 
@@ -150,7 +150,7 @@ export async function onRequest(context) {
           <tr><td style="padding:6px 10px;color:#718096;">Trámites</td><td style="padding:6px 10px;">${tramites.join(', ') || '—'}</td></tr>
         </table>
 
-        <p>Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el profesional que suscribe este documento (en adelante "el Arquitecto"), se acuerda lo siguiente:</p>
+        <p>Entre <strong>APPARQ SpA</strong>, RUT 78.441.391-8, en adelante "APPARQ", y el profesional que suscribe este documento (en adelante "el Arquitecto"), se acuerda lo siguiente:</p>
 
         <p><strong>1. Objeto.</strong> El Arquitecto se incorpora a la red APPARQ como colaborador independiente para ejecutar trámites de arquitectura asignados por la plataforma en las comunas que declare trabajar. Esta relación no constituye vínculo laboral ni de subordinación entre las partes.</p>
 
@@ -220,10 +220,10 @@ export async function onRequest(context) {
 </head>
 <body>
 <h1>CONTRATO DE COLABORACIÓN PROFESIONAL</h1>
-<p class="subtitle">APPARQ — DSR ARQ SPA · RUT 76.341.206-7</p>
+<p class="subtitle">APPARQ SpA · RUT 78.441.391-8</p>
 
 <p><strong>En Santiago de Chile, a ${fecha}</strong>, entre:</p>
-<p><strong>APPARQ (DSR ARQ SPA)</strong>, RUT 76.341.206-7, en adelante <em>"la Plataforma"</em>; y</p>
+<p><strong>APPARQ SpA</strong>, RUT 78.441.391-8, en adelante <em>"la Plataforma"</em>; y</p>
 <p><strong>${nombreCompleto}</strong>, RUT ${payload.rut || '—'}, arquitecto, en adelante <em>"el Profesional"</em>.</p>
 
 <table>
@@ -237,7 +237,7 @@ export async function onRequest(context) {
   <tr><td>Trámites</td><td>${tramites.join(', ') || '—'}</td></tr>
 </table>
 
-<p>Entre <strong>DSR ARQ SPA</strong>, RUT 76.341.206-7, en adelante "APPARQ", y el profesional que suscribe este documento (en adelante "el Arquitecto"), se acuerda lo siguiente:</p>
+<p>Entre <strong>APPARQ SpA</strong>, RUT 78.441.391-8, en adelante "APPARQ", y el profesional que suscribe este documento (en adelante "el Arquitecto"), se acuerda lo siguiente:</p>
 
 <p><strong>1. Objeto.</strong> El Arquitecto se incorpora a la red APPARQ como colaborador independiente para ejecutar trámites de arquitectura asignados por la plataforma en las comunas que declare trabajar. Esta relación no constituye vínculo laboral ni de subordinación entre las partes.</p>
 
@@ -283,7 +283,7 @@ export async function onRequest(context) {
   <p class="firma-note">Firmado electrónicamente por <strong>${nombreCompleto}</strong> (${payload.email}) en apparq.cl</p>
 </div>
 
-<div class="footer">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile · hola@apparq.cl</div>
+<div class="footer">APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile · hola@apparq.cl</div>
 </body>
 </html>`;
 
@@ -380,7 +380,7 @@ export async function onRequest(context) {
 
             <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px;" />
             <p style="font-size:11px;color:#a0aec0;margin:0;">
-              APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+              APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>
               ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea;">hola@apparq.cl</a>
               o por <a href="https://wa.me/56942054581" style="color:#25D366;">WhatsApp</a>
             </p>

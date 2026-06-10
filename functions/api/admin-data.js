@@ -127,8 +127,8 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
 
           <h3 style="color:#1a1a2e;font-size:14px;margin-top:24px">🧾 Datos para emitir tu boleta de honorarios</h3>
           <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Razón Social</td><td style="padding:8px 10px;font-weight:700">DSR ARQ SPA</td></tr>
-            <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px;font-weight:700">76.341.206-7</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Razón Social</td><td style="padding:8px 10px;font-weight:700">APPARQ SpA</td></tr>
+            <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px;font-weight:700">78.441.391-8</td></tr>
             <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Giro</td><td style="padding:8px 10px">Arquitectura y servicios conexos</td></tr>
             <tr><td style="padding:8px 10px;color:#718096">Correo boleta</td><td style="padding:8px 10px">hola@apparq.cl</td></tr>
           </table>
@@ -145,7 +145,7 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
           </div>
 
           <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
-          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7<br>
+          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8<br>
           ¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
         </div>
       </div>
@@ -947,7 +947,7 @@ export async function onRequest(context) {
                     <p style="color:#4a5568;font-size:14px;line-height:1.7;">Tu arquitecto te contactará a la brevedad para coordinar los próximos pasos. Si tienes alguna consulta, escríbenos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a>.</p>
 
                     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7<br>
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8<br>
                     <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
                   </div>
                 </div>
@@ -1089,7 +1089,7 @@ export async function onRequest(context) {
                   ${notas ? `<div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:8px;padding:14px 18px;margin-top:16px"><p style="margin:0 0 4px;font-size:12px;color:#0369A1;font-weight:700">NOTAS DE APPARQ</p><p style="margin:0;font-size:13px;color:#0C4A6E">${notas}</p></div>` : ''}
                   <div style="text-align:center;margin-top:20px"><a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px">Ir a mi portal</a></div>
                   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                 </div>
               </div>`,
           }, RESEND_API_KEY);
@@ -1116,7 +1116,7 @@ export async function onRequest(context) {
                   <p style="font-size:13px;color:#4a5568;margin-top:16px;">Si tienes dudas, contáctanos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a>.</p>
                   <div style="text-align:center;margin-top:20px"><a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px">Ir a mi portal</a></div>
                   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                 </div>
               </div>`,
           }, RESEND_API_KEY);
@@ -1264,7 +1264,7 @@ export async function onRequest(context) {
                 Al hacer clic serás llevado a <strong>apparq.cl</strong> donde podrás crear tu contraseña.
               </p>
               <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 14px">
-              <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+              <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
             </div>
           </div>`,
       }, RESEND_API_KEY);

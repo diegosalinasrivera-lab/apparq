@@ -235,7 +235,7 @@ exports.handler = async (event) => {
 
               <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
               <p style="font-size:11px;color:#a0aec0;margin:0">
-                APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+                APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>
                 ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a>
                 o por <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a>
               </p>
@@ -274,7 +274,7 @@ exports.handler = async (event) => {
         ? `<div style="margin-top:8px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
              <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente — ${nombreCliente}</p>
              <img src="${firma_data}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
-             <p style="margin:8px 0 0;font-size:11px;color:#a0aec0;">Firmado el ${fecha} en apparq.cl · Contrato de prestación de servicios con DSR ARQ SPA</p>
+             <p style="margin:8px 0 0;font-size:11px;color:#a0aec0;">Firmado el ${fecha} en apparq.cl · Contrato de prestación de servicios con APPARQ SpA</p>
            </div>`
         : `<p style="font-size:12px;color:#718096;font-style:italic;margin:4px 0;">Contrato firmado digitalmente por el cliente el ${fecha} en apparq.cl</p>`;
 
@@ -364,7 +364,7 @@ exports.handler = async (event) => {
 
               <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
               <p style="font-size:11px;color:#a0aec0;margin:0">
-                APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+                APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>
                 ¿Consultas? Escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a>
               </p>
             </div>

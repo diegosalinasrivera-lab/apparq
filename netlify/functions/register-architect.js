@@ -107,12 +107,12 @@ exports.handler = async (event) => {
       <div style="background:#fff;border:2px solid #1a1a2e;border-radius:8px;padding:28px 32px;font-size:12px;color:#1a1a2e;line-height:1.7;margin-top:16px;">
         <div style="text-align:center;margin-bottom:20px;">
           <h2 style="margin:0 0 4px;font-size:15px;font-weight:900;letter-spacing:1px;">CONTRATO DE COLABORACIÓN PROFESIONAL</h2>
-          <p style="margin:0;font-size:11px;color:#718096;">APPARQ — DSR ARQ SPA · RUT 76.341.206-7</p>
+          <p style="margin:0;font-size:11px;color:#718096;">APPARQ SpA · RUT 78.441.391-8</p>
         </div>
 
         <p><strong>En Santiago de Chile, a ${fecha}</strong>, entre:</p>
 
-        <p><strong>APPARQ (DSR ARQ SPA)</strong>, RUT 76.341.206-7, en adelante <em>"la Plataforma"</em>; y</p>
+        <p><strong>APPARQ SpA</strong>, RUT 78.441.391-8, en adelante <em>"la Plataforma"</em>; y</p>
 
         <p><strong>${nombreCompleto}</strong>, RUT ${payload.rut || '—'}, arquitecto, en adelante <em>"el Profesional"</em>.</p>
 
@@ -208,7 +208,7 @@ exports.handler = async (event) => {
 
             <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px;" />
             <p style="font-size:11px;color:#a0aec0;margin:0;">
-              APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>
+              APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>
               ¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea;">hola@apparq.cl</a>
             </p>
           </div>

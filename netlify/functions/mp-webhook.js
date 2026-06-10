@@ -166,7 +166,7 @@ exports.handler = async (event) => {
                 <p style="color:#4a5568">Nuestro equipo se pondrá en contacto contigo a la brevedad para coordinar los próximos pasos de tu trámite.</p>
                 <p style="color:#4a5568">Si tienes preguntas, escríbenos a <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
                 <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-                <p style="color:#a0aec0;font-size:12px;margin:0">APPARQ — DSR ARQ SPA · RUT 76.341.206-7<br>apparq.cl</p>
+                <p style="color:#a0aec0;font-size:12px;margin:0">APPARQ SpA · RUT 78.441.391-8<br>apparq.cl</p>
               </div>
             </div>
           `,

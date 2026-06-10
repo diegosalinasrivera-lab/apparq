@@ -380,7 +380,7 @@ export async function onRequest(context) {
                           <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5;">En tus próximos pagos del trámite puedes seleccionar la opción de <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                       </div>
                     </div>`,
                 }, RESEND_API_KEY);
@@ -416,13 +416,13 @@ export async function onRequest(context) {
                         </div>
                         <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-top:12px;">
                           <p style="margin:0;font-size:12px;font-weight:700;color:#92400E;">📋 Instrucciones boleta de honorarios</p>
-                          <p style="margin:4px 0 0;font-size:12px;color:#78350F;line-height:1.5;">Emite tu boleta electrónica por <strong>${clpFmt(brutoBoleta)}</strong> (monto bruto) a nombre de <strong>DSR ARQ SPA · RUT 76.341.206-7</strong>. APPARQ te transferirá el neto (<strong>${clpFmt(pagoNetoArquitecto)}</strong>) dentro de 5 días hábiles.</p>
+                          <p style="margin:4px 0 0;font-size:12px;color:#78350F;line-height:1.5;">Emite tu boleta electrónica por <strong>${clpFmt(brutoBoleta)}</strong> (monto bruto) a nombre de <strong>APPARQ SpA · RUT 78.441.391-8</strong>. APPARQ te transferirá el neto (<strong>${clpFmt(pagoNetoArquitecto)}</strong>) dentro de 5 días hábiles.</p>
                         </div>
                         <div style="text-align:center;margin-top:16px;">
                           <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ir a mi portal</a>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                       </div>
                     </div>`,
                 }, RESEND_API_KEY);
@@ -515,7 +515,7 @@ export async function onRequest(context) {
                       <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 24px;border-radius:6px">Ver en Portal Arquitecto</a>
                     </div>
                     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                   </div>
                 </div>`,
               }, RESEND_API_KEY);
@@ -717,7 +717,7 @@ export async function onRequest(context) {
                             <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5;">En tus próximos pagos del trámite puedes seleccionar <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
                           </div>
                           <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
-                          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a> o <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a></p>
+                          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a> o <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a></p>
                         </div>
                       </div>
                     `,
@@ -792,7 +792,7 @@ export async function onRequest(context) {
                             <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">Todos los pagos y comunicaciones deben hacerse exclusivamente a través de <strong>apparq.cl</strong>. Nunca pagues directamente al arquitecto ni coordines por canales externos.</p>
                           </div>
                           <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
-                          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a> o <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a></p>
+                          <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a> o <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a></p>
                         </div>
                       </div>
                     `,
@@ -848,7 +848,7 @@ export async function onRequest(context) {
                   ? `<div style="margin-top:8px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
                        <p style="margin:0 0 8px;font-size:11px;color:#718096;font-weight:700;text-transform:uppercase;">Firma digital del cliente — ${nombreCliente}</p>
                        <img src="${firmaUrl}" style="max-width:100%;height:auto;border:1px solid #cbd5e0;border-radius:4px;" alt="Firma cliente" />
-                       <p style="margin:8px 0 0;font-size:11px;color:#a0aec0;">Firmado el ${fecha} en apparq.cl · Contrato de prestación de servicios con DSR ARQ SPA</p>
+                       <p style="margin:8px 0 0;font-size:11px;color:#a0aec0;">Firmado el ${fecha} en apparq.cl · Contrato de prestación de servicios con APPARQ SpA</p>
                      </div>`
                   : `<p style="font-size:12px;color:#718096;font-style:italic;margin:4px 0;">Contrato firmado digitalmente por el cliente el ${fecha} en apparq.cl</p>`;
 
@@ -929,8 +929,8 @@ export async function onRequest(context) {
                         </div>
                         <h3 style="color:#1a1a2e;font-size:14px;margin-top:28px">🧾 Datos para emitir tu boleta de honorarios</h3>
                         <table style="width:100%;border-collapse:collapse;font-size:13px">
-                          <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Razón Social</td><td style="padding:8px 10px;font-weight:700">DSR ARQ SPA</td></tr>
-                          <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px;font-weight:700">76.341.206-7</td></tr>
+                          <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:42%">Razón Social</td><td style="padding:8px 10px;font-weight:700">APPARQ SpA</td></tr>
+                          <tr><td style="padding:8px 10px;color:#718096">RUT</td><td style="padding:8px 10px;font-weight:700">78.441.391-8</td></tr>
                           <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Giro</td><td style="padding:8px 10px">Arquitectura y servicios conexos</td></tr>
                           <tr><td style="padding:8px 10px;color:#718096">Correo boleta</td><td style="padding:8px 10px">hola@apparq.cl</td></tr>
                         </table>
@@ -942,7 +942,7 @@ export async function onRequest(context) {
                           </ul>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
-                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · RUT 76.341.206-7 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile<br>¿Consultas? <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
                       </div>
                     </div>
                   `,
@@ -1036,7 +1036,7 @@ export async function onRequest(context) {
                   </div>
                   <p style="color:#4a5568">Nuestro equipo se pondrá en contacto contigo a la brevedad para coordinar los próximos pasos de tu trámite.</p>
                   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-                  <p style="color:#a0aec0;font-size:12px;margin:0">APPARQ — DSR ARQ SPA · RUT 76.341.206-7<br>apparq.cl</p>
+                  <p style="color:#a0aec0;font-size:12px;margin:0">APPARQ SpA · RUT 78.441.391-8<br>apparq.cl</p>
                 </div>
               </div>
             `,

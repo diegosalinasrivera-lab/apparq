@@ -266,7 +266,7 @@ exports.handler = async (event) => {
                       <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ver detalle en apparq.cl</a>
                     </div>
                     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                   </div>
                 </div>`,
             });
@@ -370,7 +370,7 @@ exports.handler = async (event) => {
 
                 <p style="font-size:13px;color:#4a5568;margin-top:16px;">Si tienes dudas o deseas más información, contáctanos a <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a>.</p>
                 <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
               </div>
             </div>`,
         });
@@ -513,7 +513,7 @@ exports.handler = async (event) => {
                     <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ver mi trámite</a>
                   </div>
                   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                 </div>
               </div>`,
           });
@@ -548,7 +548,7 @@ exports.handler = async (event) => {
                     <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ir a mi portal</a>
                   </div>
                   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · DSR ARQ SPA · hola@apparq.cl</p>
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
                 </div>
               </div>`,
           });
