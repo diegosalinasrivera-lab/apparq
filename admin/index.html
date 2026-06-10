@@ -994,7 +994,7 @@
           </div>
 
           <!-- KPIs arquitectos -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.25rem;">
             <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
               <div style="font-size:2.8rem;line-height:1;">👷</div>
               <div>
@@ -1009,15 +1009,37 @@
                 <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Activos / disponibles</div>
               </div>
             </div>
+            <div style="background:#fff;border:1.5px solid #BFDBFE;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.8rem;line-height:1;">🗺</div>
+              <div>
+                <div id="kpi-comunas-cubiertas" style="font-size:2.4rem;font-weight:900;color:#1D4ED8;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Comunas cubiertas</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #FED7AA;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.8rem;line-height:1;">📍</div>
+              <div>
+                <div id="kpi-comunas-pendientes" style="font-size:2.4rem;font-weight:900;color:#D97706;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Sin cobertura</div>
+              </div>
+            </div>
           </div>
 
-          <div style="margin-bottom:1rem;">
-            <div style="position:relative;max-width:360px;">
+          <div style="margin-bottom:1rem;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <div style="position:relative;flex:1;min-width:200px;max-width:320px;">
               <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
               <input id="arch-search" type="text" placeholder="Buscar por nombre o correo…"
                 style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13.5px;outline:none;box-sizing:border-box;transition:border-color .15s;"
                 oninput="renderArchitectsTable()"
                 onfocus="this.style.borderColor='#667eea'"
+                onblur="this.style.borderColor='#e2e8f0'" />
+            </div>
+            <div style="position:relative;flex:1;min-width:180px;max-width:260px;">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">📍</span>
+              <input id="arch-search-commune" type="text" placeholder="Filtrar por comuna…"
+                style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13.5px;outline:none;box-sizing:border-box;transition:border-color .15s;"
+                oninput="renderArchitectsTable()"
+                onfocus="this.style.borderColor='#1D4ED8'"
                 onblur="this.style.borderColor='#e2e8f0'" />
             </div>
           </div>
@@ -2008,6 +2030,8 @@ async function loadArchitects() {
   }
 }
 
+const TOTAL_COMUNAS_CHILE = 346;
+
 function renderArchitectsTable() {
   /* Update KPIs */
   const totalArq   = architects.length;
@@ -2017,15 +2041,27 @@ function renderArchitectsTable() {
   if (kpiTotal)   kpiTotal.textContent   = totalArq;
   if (kpiActivos) kpiActivos.textContent = activosArq;
 
+  /* KPIs de comunas — basados en arquitectos activos */
+  const coveredSet = new Set();
+  architects.filter(a => a.activo).forEach(a => {
+    (Array.isArray(a.comunas) ? a.comunas : []).forEach(c => coveredSet.add(c.trim()));
+  });
+  const kpiCubiertas  = document.getElementById('kpi-comunas-cubiertas');
+  const kpiPendientes = document.getElementById('kpi-comunas-pendientes');
+  if (kpiCubiertas)  kpiCubiertas.textContent  = coveredSet.size;
+  if (kpiPendientes) kpiPendientes.textContent = Math.max(0, TOTAL_COMUNAS_CHILE - coveredSet.size);
+
   const tbody = document.getElementById('arch-table-body');
-  const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
-  const list = q
-    ? architects.filter(a => {
-        const nombre = `${a.nombre || ''} ${a.apellido || ''}`.toLowerCase();
-        const email  = (a.email || '').toLowerCase();
-        return nombre.includes(q) || email.includes(q);
-      })
-    : architects;
+  const q       = (document.getElementById('arch-search')?.value         || '').toLowerCase().trim();
+  const qComuna = (document.getElementById('arch-search-commune')?.value || '').toLowerCase().trim();
+  const list = architects.filter(a => {
+    const nombre = `${a.nombre || ''} ${a.apellido || ''}`.toLowerCase();
+    const email  = (a.email || '').toLowerCase();
+    const matchNombre = !q || nombre.includes(q) || email.includes(q);
+    const matchComuna = !qComuna || (Array.isArray(a.comunas) ? a.comunas : [])
+      .some(c => c.toLowerCase().includes(qComuna));
+    return matchNombre && matchComuna;
+  });
   if (!architects.length) {
     tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">👷</div>No hay arquitectos registrados</div></td></tr>';
     return;
