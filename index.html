@@ -4937,7 +4937,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       if (!res.ok || data.error) { errEl.textContent = data.error || 'Error al buscar.'; errEl.style.display = 'block'; return; }
 
       currentProject = data.project;
-      renderClientProject(data.project, email, data.cobro_pendiente || null, data.cobros_historial || []);
+      renderClientProject(data.project, email, data.cobro_pendiente || null, data.cobros_historial || [], data.informe_pagado || false);
     } catch(e) {
       errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
     } finally {
@@ -4950,7 +4950,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     document.getElementById('portalClienteForm').style.display = '';
   };
 
-  function renderClientProject(p, clientEmail, cobroPendiente, cobrosHistorial) {
+  function renderClientProject(p, clientEmail, cobroPendiente, cobrosHistorial, informePagado) {
     document.getElementById('portalClienteForm').style.display = 'none';
     document.getElementById('portalClienteDetalle').style.display = '';
     document.getElementById('pcProjNum').textContent = p.project_number;
@@ -5024,7 +5024,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     }
 
     loadUpdates(p.project_number);
-    pcLoadFiles(p.project_number, clientEmail);
+    /* Para informe: el gate permite descargar sólo si se pagó E2 */
+    const informeGate = p.service_type !== 'informe' || informePagado;
+    pcLoadFiles(p.project_number, clientEmail, informeGate);
 
     /* Archivos */
     document.getElementById('pcUploadBtn').onclick = () =>
@@ -5114,7 +5116,7 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     setTimeout(() => { el.style.display = 'none'; }, 5000);
   }
 
-  async function pcLoadFiles(projectNumber, email) {
+  async function pcLoadFiles(projectNumber, email, informeGate = true) {
     const box = document.getElementById('pcFilesList');
     box.innerHTML = '<em style="color:var(--muted);">Cargando documentos…</em>';
     try {
@@ -5123,18 +5125,14 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         body: JSON.stringify({ action: 'list', project_number: projectNumber, email }),
       });
       const data = await res.json();
-      pcRenderFiles(data.files || [], projectNumber, email);
+      pcRenderFiles(data.files || [], projectNumber, email, informeGate);
     } catch(e) {
       box.innerHTML = '<em style="color:#DC2626;">Error al cargar archivos.</em>';
     }
   }
 
-  function pcRenderFiles(files, projectNumber, email) {
+  function pcRenderFiles(files, projectNumber, email, informeGate = true) {
     const box = document.getElementById('pcFilesList');
-    if (!files.length) {
-      box.innerHTML = '<em style="color:var(--muted);">Sin documentos aún. Sube los archivos de tu propiedad para que el arquitecto pueda comenzar.</em>';
-      return;
-    }
     const clientFiles = files.filter(f => f.uploader === 'cliente');
     const archFiles   = files.filter(f => f.uploader === 'arquitecto');
     const fmtSize = b => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.round(b/1024)+' KB';
@@ -5142,6 +5140,21 @@ function communeMatchLabel(targetCommune, assignedCommune) {
 
     const renderGroup = (list, label, canDelete) => {
       if (!list.length) return '';
+
+      /* Informe bloqueado: el arquitecto subió el archivo pero el cliente aún no pagó E2 */
+      if (!canDelete && !informeGate) {
+        return `<div style="margin-bottom:0.5rem;">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:0.3rem 0;">${label}</div>
+          <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:8px;padding:0.9rem 1rem;display:flex;align-items:flex-start;gap:0.75rem;">
+            <span style="font-size:1.4rem;line-height:1;">🔒</span>
+            <div>
+              <div style="font-size:0.82rem;font-weight:700;color:#92400E;">Informe disponible tras el Pago E2</div>
+              <div style="font-size:0.72rem;color:#B45309;margin-top:0.25rem;line-height:1.5;">Tu informe ya está listo. Realiza el <strong>Pago E2 (50%)</strong> para desbloquearlo. Recibirás el link de pago por email.</div>
+            </div>
+          </div>
+        </div>`;
+      }
+
       const items = list.map(f => `
         <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);">
           <span style="flex:1;font-size:0.77rem;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
@@ -5158,9 +5171,11 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       </div>`;
     };
 
-    box.innerHTML =
-      renderGroup(archFiles,   '🏗 Planos del arquitecto', false) +
-      renderGroup(clientFiles, '📁 Mis documentos',        true);
+    const content =
+      renderGroup(archFiles,   '🏗 Documentos del arquitecto', false) +
+      renderGroup(clientFiles, '📁 Mis documentos',            true);
+
+    box.innerHTML = content || '<em style="color:var(--muted);">Sin documentos aún. Sube los archivos de tu propiedad para que el arquitecto pueda comenzar.</em>';
   }
 
   window.pcDeleteFile = async (filePath, projectNumber, email) => {
