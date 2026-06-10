@@ -297,7 +297,7 @@ export async function onRequest(context) {
                     <a href="https://wa.me/56942054581" style="color:#25D366">WhatsApp</a>
                   </p>
                   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
+                  <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · hola@apparq.cl</p>
                 </div>
               </div>`,
           }, RESEND_API_KEY);

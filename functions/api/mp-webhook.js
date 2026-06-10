@@ -380,7 +380,7 @@ export async function onRequest(context) {
                           <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5;">En tus próximos pagos del trámite puedes seleccionar la opción de <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · hola@apparq.cl</p>
                       </div>
                     </div>`,
                 }, RESEND_API_KEY);
@@ -422,7 +422,7 @@ export async function onRequest(context) {
                           <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">Ir a mi portal</a>
                         </div>
                         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
+                        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · hola@apparq.cl</p>
                       </div>
                     </div>`,
                 }, RESEND_API_KEY);
@@ -515,7 +515,7 @@ export async function onRequest(context) {
                       <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 24px;border-radius:6px">Ver en Portal Arquitecto</a>
                     </div>
                     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 14px">
-                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · hola@apparq.cl</p>
+                    <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8 · hola@apparq.cl</p>
                   </div>
                 </div>`,
               }, RESEND_API_KEY);
@@ -921,7 +921,7 @@ export async function onRequest(context) {
                               ? `<li>Coordina la visita a terreno con el cliente a través de la plataforma</li><li>Elabora la Declaración Jurada según la DDU 542 y la Ley 21.718</li><li>Presenta la DJ ante la DOM (plazo DOM: <strong>3 días hábiles</strong> para emitir giro)</li>`
                               : '<li>Coordina la visita a terreno con el cliente a través de la plataforma</li><li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
                           }
-                          <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ para recibir cada pago</li>
+                          <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ SpA · RUT 78.441.391-8 para recibir cada pago</li>
                         </ol>
                         <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
                           <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#3730A3">Actualiza los avances del trámite en:</p>

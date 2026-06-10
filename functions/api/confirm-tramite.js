@@ -630,7 +630,7 @@ export async function onRequest(context) {
                     ? `<li>Coordina la visita a terreno con el cliente a través de la plataforma</li><li>Elabora la Declaración Jurada según la DDU 542 y la Ley 21.718</li><li>Presenta la DJ ante la DOM (plazo DOM: <strong>3 días hábiles</strong> para emitir giro)</li><li>${isDemocion ? '<strong>Nota:</strong> demolición no requiere DJTE — E2 se cobra al ingreso DOM y ejecución' : 'Al archivo de la DJTE, APPARQ cobrará el Pago E2 al cliente'}</li>`
                     : '<li>Coordina la visita a terreno con el cliente a través de la plataforma</li><li>Actualiza las etapas del trámite en la plataforma conforme avances</li><li>APPARQ notificará al cliente los pagos de cada etapa</li>'
                 }
-                <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ para recibir cada pago</li>
+                <li>Emite tu <strong>boleta de honorarios electrónica</strong> a APPARQ SpA · RUT 78.441.391-8 para recibir cada pago</li>
               </ol>
 
               <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
@@ -670,7 +670,7 @@ export async function onRequest(context) {
                 <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">
                   Toda coordinación con el cliente debe realizarse a través de <strong>apparq.cl</strong>.
                   No compartas tu teléfono ni correo personal con el cliente.
-                  Recuerda emitir tu boleta electrónica a APPARQ para recibir cada pago.
+                  Recuerda emitir tu boleta electrónica a APPARQ SpA · RUT 78.441.391-8 para recibir cada pago.
                 </p>
               </div>
 
