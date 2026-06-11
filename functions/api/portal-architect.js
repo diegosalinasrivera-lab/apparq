@@ -1041,7 +1041,7 @@ export async function onRequest(context) {
       if (is2stages) {
         monto = Math.round(clp * 0.50);
       } else {
-        const pcts = { e2: 0.30, e3: 0.30, e4: 0.20 };
+        const pcts = { e2: 0.30, e3: 0.20, e4: 0.30 };
         monto = Math.round(clp * pcts[etapa]);
       }
 
