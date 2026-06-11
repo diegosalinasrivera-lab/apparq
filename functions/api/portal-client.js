@@ -182,18 +182,16 @@ export async function onRequest(context) {
       cobro_pendiente  = cobrosArr.find(c => c.estado === 'pendiente_pago') || null;
     } catch(_) {}
 
-    /* Para trámites de informe: verificar si el cliente pagó la E2 */
+    /* Verificar si el cliente pagó la E2 (aplica a todos los tipos) */
     let informe_pagado = false;
-    if (project.service_type === 'informe') {
-      try {
-        const upRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/project_updates?project_number=eq.${encodeURIComponent(numUpper)}&stage=eq.pago_cliente_e2&limit=1`,
-          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-        );
-        const upArr = upRes.ok ? await upRes.json() : [];
-        informe_pagado = upArr.length > 0;
-      } catch(_) {}
-    }
+    try {
+      const upRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/project_updates?project_number=eq.${encodeURIComponent(numUpper)}&stage=eq.pago_cliente_e2&limit=1`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      const upArr = upRes.ok ? await upRes.json() : [];
+      informe_pagado = upArr.length > 0;
+    } catch(_) {}
 
     return corsResponse({
       project: {

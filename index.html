@@ -5024,8 +5024,8 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     }
 
     loadUpdates(p.project_number);
-    /* Para informe: el gate permite descargar sólo si se pagó E2 */
-    const informeGate = p.service_type !== 'informe' || informePagado;
+    /* Gate: el cliente puede descargar archivos sólo si pagó E2 */
+    const informeGate = informePagado;
     pcLoadFiles(p.project_number, clientEmail, informeGate);
 
     /* Archivos */
@@ -5148,8 +5148,8 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:8px;padding:0.9rem 1rem;display:flex;align-items:flex-start;gap:0.75rem;">
             <span style="font-size:1.4rem;line-height:1;">🔒</span>
             <div>
-              <div style="font-size:0.82rem;font-weight:700;color:#92400E;">Informe disponible tras el Pago E2</div>
-              <div style="font-size:0.72rem;color:#B45309;margin-top:0.25rem;line-height:1.5;">Tu informe ya está listo. Realiza el <strong>Pago E2 (50%)</strong> para desbloquearlo. Recibirás el link de pago por email.</div>
+              <div style="font-size:0.82rem;font-weight:700;color:#92400E;">Documentos disponibles tras el Pago E2</div>
+              <div style="font-size:0.72rem;color:#B45309;margin-top:0.25rem;line-height:1.5;">Los archivos de tu proyecto ya están listos. Realiza el <strong>Pago E2</strong> para descargarlos. Recibirás el link de pago por email.</div>
             </div>
           </div>
         </div>`;
