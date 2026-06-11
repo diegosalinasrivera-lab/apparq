@@ -26,7 +26,9 @@ function checkRateLimit(ip, maxReqs = 5, windowMs = 60000) {
 
 async function sendEmail({ to, subject, html, attachments }, RESEND_API_KEY) {
   if (!RESEND_API_KEY) { console.warn('Sin RESEND_API_KEY'); return; }
-  const body = { from: 'APPARQ <hola@apparq.cl>', to, subject, html };
+  const toStr = Array.isArray(to) ? to.join(',') : String(to);
+  const from = toStr.includes('hola@apparq.cl') ? 'APPARQ <no-reply@apparq.cl>' : 'APPARQ <hola@apparq.cl>';
+  const body = { from, to, subject, html };
   if (attachments && attachments.length) body.attachments = attachments;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',

@@ -20,6 +20,8 @@ function corsResponse(body, status = 200) {
 async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
   if (!RESEND_API_KEY) return;
   try {
+    const toStr = Array.isArray(to) ? to.join(',') : String(to);
+    const from = toStr.includes('hola@apparq.cl') ? 'APPARQ <no-reply@apparq.cl>' : 'APPARQ <hola@apparq.cl>';
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -27,7 +29,7 @@ async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
         'Content-Type':  'application/json',
       },
       body: JSON.stringify({
-        from:    'APPARQ <hola@apparq.cl>',
+        from,
         to,
         subject,
         html,
