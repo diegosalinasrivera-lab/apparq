@@ -3862,25 +3862,34 @@ function csvcCalcPrice() {
     </div>`;
 
   if (csvcYaPagado > 0) {
+    const aplicar   = document.getElementById('csvc-aplicar-descuento')?.checked ?? true;
+    const e1final   = aplicar ? Math.max(0, e1clp - csvcYaPagado) : e1clp;
+    const totalFinal = Math.max(0, clp - (aplicar ? csvcYaPagado : 0));
     html += `
-    <div style="background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e2e8f0;font-size:13px;">
-      <div style="font-weight:700;color:#374151;margin-bottom:8px;">💳 Reconciliación de pago</div>
+    <div style="background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e2e8f0;font-size:13px;margin-bottom:10px;">
+      <div style="font-weight:700;color:#374151;margin-bottom:10px;">💳 Pago ya realizado por el cliente</div>
       <div style="display:flex;justify-content:space-between;padding:3px 0;">
-        <span style="color:#64748b;">Ya pagado por el cliente</span>
+        <span style="color:#64748b;">Ya pagado (E1 anterior)</span>
         <span style="font-weight:700;color:#059669;">${fmtCLP(csvcYaPagado)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding:3px 0;">
         <span style="color:#64748b;">Primer pago del nuevo trámite</span>
         <span style="font-weight:600;">${fmtCLP(e1clp)}</span>
       </div>
+
+      <label style="display:flex;align-items:center;gap:8px;margin:10px 0;padding:8px 10px;background:#FFF7ED;border-radius:6px;border:1px solid #FED7AA;cursor:pointer;">
+        <input type="checkbox" id="csvc-aplicar-descuento" ${aplicar ? 'checked' : ''} onchange="csvcCalcPrice()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--orange);">
+        <span style="font-size:12px;font-weight:600;color:#92400E;">Descontar pago anterior del primer pago del nuevo trámite</span>
+      </label>
+
       <div style="border-top:1px solid #e2e8f0;margin:8px 0;"></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0;">
-        <span style="color:#64748b;font-weight:600;">Pendiente al cliente (E1)</span>
-        <span style="font-weight:700;color:${pendienteE1 > 0 ? 'var(--orange)' : '#059669'};">${pendienteE1 > 0 ? fmtCLP(pendienteE1) : '✓ Cubierto'}</span>
+        <span style="color:#64748b;font-weight:600;">E1 que deberá pagar el cliente</span>
+        <span style="font-weight:700;color:${e1final > 0 ? 'var(--orange)' : '#059669'};">${e1final > 0 ? fmtCLP(e1final) : '✓ Cubierto por pago anterior'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding:3px 0;">
         <span style="color:#64748b;font-weight:600;">Total pendiente nuevo trámite</span>
-        <span style="font-weight:800;color:#1e40af;">${fmtCLP(pendienteTotal)}</span>
+        <span style="font-weight:800;color:#1e40af;">${fmtCLP(totalFinal)}</span>
       </div>
     </div>`;
   }
@@ -3895,13 +3904,15 @@ async function confirmChangeSvc() {
   const sub    = document.getElementById('csvc-subtipo').value || null;
   const motivo = document.getElementById('csvc-motivo').value.trim();
   const { clp, e1clp } = csvcGetNewPrice();
+  const aplicarDescuento = csvcYaPagado > 0 && (document.getElementById('csvc-aplicar-descuento')?.checked ?? true);
+  const e1clpFinal = aplicarDescuento ? Math.max(0, e1clp - csvcYaPagado) : e1clp;
   const btn = document.getElementById('csvc-confirm-btn');
   btn.disabled = true; btn.textContent = 'Guardando…';
   try {
-    const d = await apiPost({ action:'change_service_type', project_id:csvcProjectId, new_service_type:svc, new_subtipo:sub, new_total_clp:clp, new_e1_clp:e1clp, motivo });
+    const d = await apiPost({ action:'change_service_type', project_id:csvcProjectId, new_service_type:svc, new_subtipo:sub, new_total_clp:clp, new_e1_clp:e1clpFinal, motivo: motivo + (aplicarDescuento ? ` [Descuento E1 anterior: ${fmtCLP(csvcYaPagado)}]` : '') });
     if (d.error) throw new Error(d.error);
     const idx = projects.findIndex(p => p.id === csvcProjectId);
-    if (idx >= 0) Object.assign(projects[idx], { service_type:svc, servicio_subtipo:sub, total_clp:clp, e1_clp:e1clp });
+    if (idx >= 0) Object.assign(projects[idx], { service_type:svc, servicio_subtipo:sub, total_clp:clp, e1_clp:e1clpFinal });
     closeModal('modal-change-svc');
     showToast('Tipo de trámite actualizado', 'success');
     arqPagosLoaded = false;
