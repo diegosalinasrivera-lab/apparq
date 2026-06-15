@@ -170,18 +170,36 @@ export async function onRequest(context) {
       }
 
       const enriched = projects.map(p => {
+        /* Para cliente_propio usar comision_pct del proyecto; de lo contrario usar patente del arquitecto */
+        const projArqPct = (p.cliente_propio && p.comision_pct != null)
+          ? (1 - p.comision_pct / 100)
+          : arqPct;
+        const projPctCom = (p.cliente_propio && p.comision_pct != null)
+          ? p.comision_pct
+          : pctCom;
+
+        function mkPagoP(etapa, label, valorCliente, pagado, at) {
+          const vCli           = Math.round(valorCliente);
+          const brutoBoleta    = Math.round(vCli * projArqPct);
+          const retencion      = Math.round(brutoBoleta * RETENCION);
+          const netoArquitecto = brutoBoleta - retencion;
+          const comisionAPPARQ = vCli - brutoBoleta;
+          return { etapa, label, valorCliente: vCli, monto: brutoBoleta,
+                   brutoBoleta, retencion, netoArquitecto, comisionAPPARQ, pctCom: projPctCom, pagado, at };
+        }
+
         const is2stages = p.service_type === 'informe' || p.service_type === 'declaracion-jurada';
         const clp  = p.total_clp || 0;
         const e1c  = p.e1_clp   || 0;
         const pagos = is2stages ? [
-          mkPago('e1', 'E1 · Inicio',         clp * 0.50, p.arq_pago_e1 || false, p.arq_pago_e1_at),
-          mkPago('e2', p.service_type === 'informe' ? 'E2 · Entrega informe' : 'E2 · Cierre DJ',
+          mkPagoP('e1', 'E1 · Inicio',         clp * 0.50, p.arq_pago_e1 || false, p.arq_pago_e1_at),
+          mkPagoP('e2', p.service_type === 'informe' ? 'E2 · Entrega informe' : 'E2 · Cierre DJ',
                        clp * 0.50, p.arq_pago_e2 || false, p.arq_pago_e2_at),
         ] : [
-          mkPago('e1', 'E1 · Levantamiento',   e1c,        p.arq_pago_e1 || false, p.arq_pago_e1_at),
-          mkPago('e2', 'E2 · Elaboración',     clp * 0.30, p.arq_pago_e2 || false, p.arq_pago_e2_at),
-          mkPago('e3', 'E3 · Ingreso DOM',     clp * 0.30, p.arq_pago_e3 || false, p.arq_pago_e3_at),
-          mkPago('e4', 'E4 · Recepción final', clp * 0.20, p.arq_pago_e4 || false, p.arq_pago_e4_at),
+          mkPagoP('e1', 'E1 · Levantamiento',   e1c,        p.arq_pago_e1 || false, p.arq_pago_e1_at),
+          mkPagoP('e2', 'E2 · Elaboración',     clp * 0.30, p.arq_pago_e2 || false, p.arq_pago_e2_at),
+          mkPagoP('e3', 'E3 · Ingreso DOM',     clp * 0.30, p.arq_pago_e3 || false, p.arq_pago_e3_at),
+          mkPagoP('e4', 'E4 · Recepción final', clp * 0.20, p.arq_pago_e4 || false, p.arq_pago_e4_at),
         ];
         return { ...p, stage_label: STAGE_LABELS[p.stage] || p.stage, pagos };
       });

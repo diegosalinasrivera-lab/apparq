@@ -2498,6 +2498,96 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div style="font-size:0.67rem;color:var(--muted);margin-top:0.45rem;">Activa solo los servicios que puedes realizar. Solo recibirás trámites de los seleccionados.</div>
       </div>
       <div id="paNotifBanner" style="display:none;"></div>
+
+      <!-- ── TRAER MI PROPIO CLIENTE ──────────────── -->
+      <div style="margin-bottom:0.85rem;">
+        <button id="paAddClientBtn" onclick="paToggleAddClient()" style="width:100%;background:linear-gradient(135deg,#1a1a2e,#2d2d5e);color:#fff;border:none;border-radius:var(--radius);padding:0.7rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+          <span>🤝 Traer mi propio cliente</span>
+          <span id="paAddClientChevron" style="font-size:0.7rem;transition:transform 0.2s;">▼</span>
+        </button>
+        <div id="paAddClientPanel" style="display:none;background:var(--bg-soft);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:1rem;">
+
+          <!-- Paso 1: datos del cliente -->
+          <div id="paAC_step1">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:0.6rem;">Datos del cliente</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+              <input id="paAC_nombre" type="text" placeholder="Nombre *" style="padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;" />
+              <input id="paAC_apellido" type="text" placeholder="Apellido" style="padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;" />
+            </div>
+            <input id="paAC_rut" type="text" placeholder="RUT cliente (12.345.678-9)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
+            <input id="paAC_email" type="email" placeholder="Email cliente *" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
+            <input id="paAC_telefono" type="tel" placeholder="Teléfono cliente (+56 9...)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
+
+            <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin:0.85rem 0 0.5rem;">Tipo de trámite</div>
+            <select id="paAC_svc" onchange="paAC_onSvcChange()" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
+              <option value="">Selecciona el trámite *</option>
+              <option value="ley-del-mono">Ley del Mono</option>
+              <option value="regularizacion">Regularización</option>
+              <option value="ampliacion">Ampliación</option>
+              <option value="obra-nueva">Obra Nueva</option>
+              <option value="informe">Informe de Propiedad</option>
+              <option value="declaracion-jurada">Declaración Jurada Ley 21.718</option>
+            </select>
+
+            <!-- Subtipo (informe) -->
+            <div id="paAC_subtipoInfWrap" style="display:none;margin-top:0.5rem;">
+              <select id="paAC_subtipoInf" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
+                <option value="evaluacion">Evaluación normativa (3 UF)</option>
+                <option value="factibilidad">Factibilidad con visita (6 UF)</option>
+                <option value="compraventa">Informe compraventa (8 UF)</option>
+              </select>
+            </div>
+
+            <!-- Subtipo (DJ) -->
+            <div id="paAC_subtipoDjWrap" style="display:none;margin-top:0.5rem;">
+              <select id="paAC_subtipoDj" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
+                <option value="piscina_privada">Piscina privada (10 UF)</option>
+                <option value="pergola_sombreadero">Pérgola / sombreadero (6 UF)</option>
+                <option value="demolicion">Demolición (desde 8 UF)</option>
+              </select>
+            </div>
+
+            <!-- Subtipo (regularizacion) -->
+            <div id="paAC_subtipoRegWrap" style="display:none;margin-top:0.5rem;">
+              <select id="paAC_subtipoReg" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
+                <option value="obra-menor">Obra menor (28 UF)</option>
+                <option value="obra-nueva-reg-hasta140">Obra nueva ≤140m² (38 UF)</option>
+                <option value="obra-nueva-reg-por-m2">Obra nueva >140m² (0,39 UF/m²)</option>
+              </select>
+            </div>
+
+            <!-- m² -->
+            <div id="paAC_m2Wrap" style="display:none;margin-top:0.5rem;">
+              <input id="paAC_m2" type="number" min="1" placeholder="Superficie en m² *" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;" />
+            </div>
+
+            <input id="paAC_commune" type="text" placeholder="Comuna *" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
+            <input id="paAC_address" type="text" placeholder="Dirección (opcional)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
+
+            <div id="paAC_step1Err" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:0.76rem;color:#b91c1c;margin-top:0.6rem;"></div>
+            <button onclick="paAC_getQuote()" style="width:100%;background:var(--orange);color:#fff;border:none;border-radius:var(--radius);padding:0.65rem;font-size:0.82rem;font-weight:700;cursor:pointer;margin-top:0.75rem;">Ver cotización →</button>
+          </div>
+
+          <!-- Paso 2: resumen de cotización -->
+          <div id="paAC_step2" style="display:none;">
+            <button onclick="paAC_backToStep1()" style="background:none;border:none;cursor:pointer;font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;padding:0;">← Modificar datos</button>
+            <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:0.6rem;">Resumen de cotización</div>
+            <div id="paAC_quoteSummary"></div>
+            <div id="paAC_step2Err" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:0.76rem;color:#b91c1c;margin-top:0.6rem;"></div>
+            <button id="paAC_confirmBtn" onclick="paAC_confirm()" style="width:100%;background:#059669;color:#fff;border:none;border-radius:var(--radius);padding:0.65rem;font-size:0.82rem;font-weight:700;cursor:pointer;margin-top:0.75rem;">Confirmar y enviar al cliente →</button>
+          </div>
+
+          <!-- Paso 3: éxito -->
+          <div id="paAC_step3" style="display:none;text-align:center;padding:1rem 0;">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">✅</div>
+            <div style="font-size:0.88rem;font-weight:700;color:#059669;margin-bottom:0.4rem;">¡Cliente registrado!</div>
+            <div id="paAC_successMsg" style="font-size:0.76rem;color:var(--muted);line-height:1.6;"></div>
+            <button onclick="paAC_reset()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.35rem 1rem;font-size:0.75rem;cursor:pointer;color:var(--muted);margin-top:0.75rem;">Agregar otro cliente</button>
+          </div>
+        </div>
+      </div>
+      <!-- ── FIN TRAER MI PROPIO CLIENTE ──────────── -->
+
       <div id="paProjects" style="display:flex;flex-direction:column;gap:0.75rem;max-height:380px;overflow-y:auto;"></div>
     </div>
 
@@ -6824,6 +6914,174 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     } catch(e) { console.warn('toggle-availability error:', e); }
     finally { btn.disabled = false; }
   };
+
+  /* ══════════════════════════════════════════════
+     TRAER MI PROPIO CLIENTE
+  ══════════════════════════════════════════════ */
+  let _paAC_quote = null; /* cotización en curso */
+
+  function paToggleAddClient() {
+    const panel = document.getElementById('paAddClientPanel');
+    const chevron = document.getElementById('paAddClientChevron');
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    chevron.style.transform = open ? 'rotate(180deg)' : '';
+  }
+
+  function paAC_onSvcChange() {
+    const svc = document.getElementById('paAC_svc').value;
+    document.getElementById('paAC_subtipoInfWrap').style.display = svc === 'informe' ? 'block' : 'none';
+    document.getElementById('paAC_subtipoDjWrap').style.display  = svc === 'declaracion-jurada' ? 'block' : 'none';
+    document.getElementById('paAC_subtipoRegWrap').style.display = svc === 'regularizacion' ? 'block' : 'none';
+    const needsM2 = ['ley-del-mono','ampliacion','obra-nueva','declaracion-jurada','regularizacion'].includes(svc);
+    document.getElementById('paAC_m2Wrap').style.display = needsM2 ? 'block' : 'none';
+  }
+
+  async function paAC_getQuote() {
+    const errEl = document.getElementById('paAC_step1Err');
+    errEl.style.display = 'none';
+
+    const nombre   = document.getElementById('paAC_nombre').value.trim();
+    const email    = document.getElementById('paAC_email').value.trim();
+    const svc      = document.getElementById('paAC_svc').value;
+    const commune  = document.getElementById('paAC_commune').value.trim();
+
+    if (!nombre)  { errEl.textContent = 'Ingresa el nombre del cliente.'; errEl.style.display='block'; return; }
+    if (!email)   { errEl.textContent = 'Ingresa el email del cliente.'; errEl.style.display='block'; return; }
+    if (!svc)     { errEl.textContent = 'Selecciona el tipo de trámite.'; errEl.style.display='block'; return; }
+    if (!commune) { errEl.textContent = 'Ingresa la comuna.'; errEl.style.display='block'; return; }
+
+    let servicio_subtipo = null;
+    if (svc === 'informe')          servicio_subtipo = document.getElementById('paAC_subtipoInf').value;
+    if (svc === 'declaracion-jurada') servicio_subtipo = document.getElementById('paAC_subtipoDj').value;
+    if (svc === 'regularizacion')   servicio_subtipo = document.getElementById('paAC_subtipoReg').value;
+
+    const m2 = parseFloat(document.getElementById('paAC_m2').value) || 0;
+    const needsM2 = ['ley-del-mono','ampliacion','obra-nueva'].includes(svc) ||
+      (svc === 'regularizacion' && servicio_subtipo === 'obra-nueva-reg-por-m2') ||
+      (svc === 'declaracion-jurada' && servicio_subtipo === 'demolicion');
+    if (needsM2 && !m2) { errEl.textContent = 'Ingresa la superficie en m².'; errEl.style.display='block'; return; }
+
+    const token = localStorage.getItem('arq_token');
+    if (!token) { errEl.textContent = 'Sesión expirada. Vuelve a ingresar.'; errEl.style.display='block'; return; }
+
+    const btn = document.querySelector('#paAC_step1 button:last-child');
+    btn.disabled = true; btn.textContent = 'Calculando…';
+
+    try {
+      const res  = await fetch('/api/architect-add-client', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get-quote', token, svc, servicio_subtipo, m2 }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { errEl.textContent = data.error || 'Error al calcular cotización.'; errEl.style.display='block'; return; }
+
+      _paAC_quote = { ...data, svc, servicio_subtipo, m2, commune,
+        nombre, apellido: document.getElementById('paAC_apellido').value.trim(),
+        rut: document.getElementById('paAC_rut').value.trim(),
+        email, telefono: document.getElementById('paAC_telefono').value.trim(),
+        address: document.getElementById('paAC_address').value.trim() };
+
+      const clp = n => '$ ' + Math.round(n).toLocaleString('es-CL');
+      const svcLabels = { regularizacion:'Regularización', ampliacion:'Ampliación', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono', 'declaracion-jurada':'Declaración Jurada' };
+      const svcName = svcLabels[svc] || svc;
+
+      document.getElementById('paAC_quoteSummary').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:0.75rem;">
+          <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted);width:55%">Cliente</td><td style="padding:7px 10px;font-weight:700;">${nombre} ${_paAC_quote.apellido}</td></tr>
+          <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted)">Email</td><td style="padding:7px 10px;">${email}</td></tr>
+          <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted)">Trámite</td><td style="padding:7px 10px;font-weight:700;">${svcName} · ${commune}</td></tr>
+          <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted)">UF trámite</td><td style="padding:7px 10px;">${data.uf_total} UF · UF ${Math.round(data.uf).toLocaleString('es-CL')}</td></tr>
+          <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted);font-weight:700;">Precio total cliente</td><td style="padding:7px 10px;font-weight:900;font-size:0.88rem;">${clp(data.clp_total)}</td></tr>
+          <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted)">Pago E1 (hoy)</td><td style="padding:7px 10px;font-weight:700;color:var(--orange);">${clp(data.e1_clp)}</td></tr>
+        </table>
+        <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:var(--radius);padding:0.5rem 0;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.76rem;">
+            <tr><td colspan="2" style="padding:7px 12px;font-weight:700;color:#065F46;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;">Tu comisión reducida (cliente propio)</td></tr>
+            <tr style="background:#fff"><td style="padding:6px 12px;color:var(--muted)">Precio total</td><td style="padding:6px 12px;font-weight:700;">${clp(data.clp_total)}</td></tr>
+            <tr><td style="padding:6px 12px;color:var(--muted)">Comisión APPARQ (${data.comision_pct}%)</td><td style="padding:6px 12px;color:#E8503A;font-weight:700;">− ${clp(data.com_total)}</td></tr>
+            <tr style="background:#D1FAE5"><td style="padding:8px 12px;font-weight:700;color:#065F46;">Lo que recibes tú (${Math.round(data.arq_pct*100)}%)</td><td style="padding:8px 12px;font-weight:900;font-size:0.88rem;color:#059669;">${clp(data.arq_total)}</td></tr>
+          </table>
+        </div>
+        <p style="font-size:0.7rem;color:var(--muted);margin:0.5rem 0 0;line-height:1.5;">Al confirmar, el cliente recibirá un email con la cotización y el link de pago (puede pagar en cuotas con tarjeta de crédito vía Mercado Pago).</p>`;
+
+      document.getElementById('paAC_step1').style.display = 'none';
+      document.getElementById('paAC_step2').style.display = 'block';
+    } catch(e) {
+      errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Ver cotización →';
+    }
+  }
+
+  function paAC_backToStep1() {
+    document.getElementById('paAC_step1').style.display = 'block';
+    document.getElementById('paAC_step2').style.display = 'none';
+  }
+
+  async function paAC_confirm() {
+    if (!_paAC_quote) return;
+    const errEl = document.getElementById('paAC_step2Err');
+    errEl.style.display = 'none';
+
+    const token = localStorage.getItem('arq_token');
+    if (!token) { errEl.textContent = 'Sesión expirada.'; errEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('paAC_confirmBtn');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+
+    try {
+      const res = await fetch('/api/architect-add-client', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create', token,
+          client_nombre:   _paAC_quote.nombre,
+          client_apellido: _paAC_quote.apellido,
+          client_rut:      _paAC_quote.rut,
+          client_email:    _paAC_quote.email,
+          client_telefono: _paAC_quote.telefono,
+          svc:             _paAC_quote.svc,
+          servicio_subtipo:_paAC_quote.servicio_subtipo,
+          m2:              _paAC_quote.m2,
+          commune:         _paAC_quote.commune,
+          address:         _paAC_quote.address,
+          clp_total:       _paAC_quote.clp_total,
+          e1_clp:          _paAC_quote.e1_clp,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { errEl.textContent = data.error || 'Error al registrar cliente.'; errEl.style.display='block'; return; }
+
+      const clp = n => '$ ' + Math.round(n).toLocaleString('es-CL');
+      document.getElementById('paAC_step2').style.display = 'none';
+      document.getElementById('paAC_step3').style.display = 'block';
+      document.getElementById('paAC_successMsg').innerHTML =
+        `Proyecto <strong>${data.project_number}</strong> creado.<br>
+         Se envió una cotización con link de pago a <strong>${_paAC_quote.email}</strong>.<br>
+         E1: <strong>${clp(_paAC_quote.e1_clp)}</strong>. El proyecto aparecerá en tu panel cuando el cliente pague.`;
+
+      /* Recargar proyectos del panel */
+      if (typeof loadArqDash === 'function') loadArqDash();
+    } catch(e) {
+      errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Confirmar y enviar al cliente →';
+    }
+  }
+
+  function paAC_reset() {
+    _paAC_quote = null;
+    ['paAC_nombre','paAC_apellido','paAC_rut','paAC_email','paAC_telefono',
+     'paAC_commune','paAC_address','paAC_m2'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('paAC_svc').value = '';
+    paAC_onSvcChange();
+    document.getElementById('paAC_step1').style.display = 'block';
+    document.getElementById('paAC_step2').style.display = 'none';
+    document.getElementById('paAC_step3').style.display = 'none';
+    document.getElementById('paAC_step1Err').style.display = 'none';
+  }
 
   /* ── Reset de contraseña (desde link de email) ── */
   document.getElementById('paResetBtn').onclick = async () => {
