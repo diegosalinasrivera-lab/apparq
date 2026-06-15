@@ -996,6 +996,14 @@ export async function onRequest(context) {
         total_clp:        totalFinal,
         e1_clp:           e1Final,
         num_etapas_pago:  is2 ? 2 : 4,
+        arq_pago_e1:      false,
+        arq_pago_e1_at:   null,
+        arq_pago_e2:      false,
+        arq_pago_e2_at:   null,
+        arq_pago_e3:      false,
+        arq_pago_e3_at:   null,
+        arq_pago_e4:      false,
+        arq_pago_e4_at:   null,
       };
       const { ok, data } = await sb(`/projects?id=eq.${proj.id}`, {
         method: 'PATCH',
