@@ -2516,7 +2516,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <input id="paAC_rut" type="text" placeholder="RUT cliente (12.345.678-9)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
             <input id="paAC_email" type="email" placeholder="Email cliente *" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
-            <input id="paAC_telefono" type="tel" placeholder="Teléfono cliente (+56 9...)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
+            <input id="paAC_telefono" type="tel" placeholder="Teléfono cliente (+56 9...) *" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
 
             <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin:0.85rem 0 0.5rem;">Tipo de trámite</div>
             <select id="paAC_svc" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
@@ -6952,10 +6952,12 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     const svc      = document.getElementById('paAC_svc').value;
     const commune  = document.getElementById('paAC_commune').value.trim();
 
-    if (!nombre)  { errEl.textContent = 'Ingresa el nombre del cliente.'; errEl.style.display='block'; return; }
-    if (!email)   { errEl.textContent = 'Ingresa el email del cliente.'; errEl.style.display='block'; return; }
-    if (!svc)     { errEl.textContent = 'Selecciona el tipo de trámite.'; errEl.style.display='block'; return; }
-    if (!commune) { errEl.textContent = 'Ingresa la comuna.'; errEl.style.display='block'; return; }
+    const telefono = document.getElementById('paAC_telefono').value.trim();
+    if (!nombre)   { errEl.textContent = 'Ingresa el nombre del cliente.'; errEl.style.display='block'; return; }
+    if (!email)    { errEl.textContent = 'Ingresa el email del cliente.'; errEl.style.display='block'; return; }
+    if (!telefono) { errEl.textContent = 'Ingresa el teléfono del cliente.'; errEl.style.display='block'; return; }
+    if (!svc)      { errEl.textContent = 'Selecciona el tipo de trámite.'; errEl.style.display='block'; return; }
+    if (!commune)  { errEl.textContent = 'Ingresa la comuna.'; errEl.style.display='block'; return; }
 
     let servicio_subtipo = null;
     if (svc === 'informe')          servicio_subtipo = document.getElementById('paAC_subtipoInf').value;
@@ -6997,9 +6999,8 @@ function communeMatchLabel(targetCommune, assignedCommune) {
           <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted);width:55%">Cliente</td><td style="padding:7px 10px;font-weight:700;">${nombre} ${_paAC_quote.apellido}</td></tr>
           <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted)">Email</td><td style="padding:7px 10px;">${email}</td></tr>
           <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted)">Trámite</td><td style="padding:7px 10px;font-weight:700;">${svcName} · ${commune}</td></tr>
-          <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted)">UF trámite</td><td style="padding:7px 10px;">${data.uf_total} UF · UF ${Math.round(data.uf).toLocaleString('es-CL')}</td></tr>
-          <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted);font-weight:700;">Precio total cliente</td><td style="padding:7px 10px;font-weight:900;font-size:0.88rem;">${clp(data.clp_total)}</td></tr>
-          <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted)">Pago E1 (hoy)</td><td style="padding:7px 10px;font-weight:700;color:var(--orange);">${clp(data.e1_clp)}</td></tr>
+          <tr style="background:var(--bg-soft)"><td style="padding:7px 10px;color:var(--muted);font-weight:700;">Precio total cliente</td><td style="padding:7px 10px;font-weight:900;font-size:0.88rem;">${clp(data.clp_total)}</td></tr>
+          <tr style="background:#fff"><td style="padding:7px 10px;color:var(--muted)">Pago E1 (hoy)</td><td style="padding:7px 10px;font-weight:700;color:var(--orange);">${clp(data.e1_clp)}</td></tr>
         </table>
         <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:var(--radius);padding:0.5rem 0;">
           <table style="width:100%;border-collapse:collapse;font-size:0.76rem;">
