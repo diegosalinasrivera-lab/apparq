@@ -3741,9 +3741,7 @@ function openChangeSvcModal() {
   csvcM2        = proj.m2 || 0;
   csvcCurrentSvc = proj.service_type;
   csvcOldTotal  = proj.total_clp || 0;
-  csvcYaPagado  = payments
-    .filter(p => p.external_ref === proj.project_number && p.status === 'approved')
-    .reduce((s, p) => s + (p.amount || 0), 0);
+  csvcYaPagado  = proj.arq_pago_e1 ? (proj.e1_clp || 0) : 0;
 
   document.getElementById('csvc-info').innerHTML =
     `<strong style="color:var(--orange)">${proj.project_number}</strong> &nbsp;·&nbsp;
@@ -3792,19 +3790,20 @@ function csvcOnSvcChange() {
 
   if (svc === 'regularizacion') {
     lbl.textContent = 'Sub-tipo de regularización';
-    sel.innerHTML = `<option value="obra-menor">Obra menor / permisos menores</option>
-                     <option value="obra-nueva-reg">Obra nueva / Ampliación no autorizada</option>`;
+    sel.innerHTML = `<option value="obra-menor">Obra menor</option>
+                     <option value="obra-nueva-reg-hasta140">Obra nueva ≤140m²</option>
+                     <option value="obra-nueva-reg-por-m2">Obra nueva >140m²</option>`;
     wrap.style.display = '';
   } else if (svc === 'informe') {
     lbl.textContent = 'Tipo de informe';
-    sel.innerHTML = `<option value="evaluacion">Evaluación de estado</option>
-                     <option value="factibilidad">Factibilidad</option>
-                     <option value="compraventa">Compraventa</option>`;
+    sel.innerHTML = `<option value="evaluacion">Evaluación normativa</option>
+                     <option value="factibilidad">Factibilidad con visita</option>
+                     <option value="compraventa">Informe compraventa</option>`;
     wrap.style.display = '';
   } else if (svc === 'declaracion-jurada') {
-    lbl.textContent = 'Tipo de declaración';
+    lbl.textContent = 'Tipo de declaración jurada';
     sel.innerHTML = `<option value="piscina_privada">Piscina privada</option>
-                     <option value="pergola_sombreadero">Pérgola / Sombreadero / Baño</option>
+                     <option value="pergola_sombreadero">Pérgola / sombreadero</option>
                      <option value="demolicion">Demolición</option>`;
     wrap.style.display = '';
   }
@@ -3824,7 +3823,11 @@ function csvcGetNewPrice() {
   const PRECIO_INF      = { evaluacion: 3, factibilidad: 6, compraventa: 8 };
   let ufAmt = 0;
   if      (svc === 'ley-del-mono')        ufAmt = m2 <= 90 ? PRECIO_LEY_MONO.hasta90 : PRECIO_LEY_MONO.hasta140;
-  else if (svc === 'regularizacion')      ufAmt = sub === 'obra-menor' ? PRECIO_REG['obra-menor'] : (m2 <= 140 ? PRECIO_REG['obra-nueva-reg-hasta140'] : PRECIO_REG['obra-nueva-reg-por-m2'] * m2);
+  else if (svc === 'regularizacion') {
+    if      (sub === 'obra-menor')              ufAmt = PRECIO_REG['obra-menor'];
+    else if (sub === 'obra-nueva-reg-hasta140') ufAmt = PRECIO_REG['obra-nueva-reg-hasta140'];
+    else if (sub === 'obra-nueva-reg-por-m2')   ufAmt = PRECIO_REG['obra-nueva-reg-por-m2'] * m2;
+  }
   else if (svc === 'ampliacion')          ufAmt = m2 <= 50 ? PRECIO_AMP.hasta50 : PRECIO_AMP.hasta100;
   else if (svc === 'declaracion-jurada') {
     if      (sub === 'piscina_privada')     ufAmt = PRECIO_DJ.piscina;
