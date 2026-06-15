@@ -1053,7 +1053,7 @@ export async function onRequest(context) {
              <tr><td style="padding:8px 12px;color:#718096;">E4 · Recepción final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.20))}</td></tr>`;
 
         await sendEmail({
-          to: proj.client_email,
+          to: [proj.client_email, 'hola@apparq.cl'],
           subject: `Actualización de tu trámite ${pnum} — APPARQ`,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -1123,7 +1123,7 @@ export async function onRequest(context) {
              <tr><td style="padding:8px 12px;color:#718096;">E4 · Recepción final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.20*ARQ_PCT))}</td></tr>`;
 
         await sendEmail({
-          to: proj.architect_email,
+          to: [proj.architect_email, 'hola@apparq.cl'],
           subject: `Cambio de tipo de trámite — ${pnum} · ${newName} — APPARQ`,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
