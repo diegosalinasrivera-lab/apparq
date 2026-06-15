@@ -2501,7 +2501,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       <!-- ── TRAER MI PROPIO CLIENTE ──────────────── -->
       <div style="margin-bottom:0.85rem;">
-        <button id="paAddClientBtn" onclick="paToggleAddClient()" style="width:100%;background:linear-gradient(135deg,#1a1a2e,#2d2d5e);color:#fff;border:none;border-radius:var(--radius);padding:0.7rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+        <button id="paAddClientBtn" style="width:100%;background:linear-gradient(135deg,#1a1a2e,#2d2d5e);color:#fff;border:none;border-radius:var(--radius);padding:0.7rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
           <span>🤝 Traer mi propio cliente</span>
           <span id="paAddClientChevron" style="font-size:0.7rem;transition:transform 0.2s;">▼</span>
         </button>
@@ -2519,7 +2519,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <input id="paAC_telefono" type="tel" placeholder="Teléfono cliente (+56 9...)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
 
             <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin:0.85rem 0 0.5rem;">Tipo de trámite</div>
-            <select id="paAC_svc" onchange="paAC_onSvcChange()" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
+            <select id="paAC_svc" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;">
               <option value="">Selecciona el trámite *</option>
               <option value="ley-del-mono">Ley del Mono</option>
               <option value="regularizacion">Regularización</option>
@@ -2565,12 +2565,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <input id="paAC_address" type="text" placeholder="Dirección (opcional)" style="width:100%;padding:0.5rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;background:#fff;box-sizing:border-box;margin-top:0.5rem;" />
 
             <div id="paAC_step1Err" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:0.76rem;color:#b91c1c;margin-top:0.6rem;"></div>
-            <button onclick="paAC_getQuote()" style="width:100%;background:var(--orange);color:#fff;border:none;border-radius:var(--radius);padding:0.65rem;font-size:0.82rem;font-weight:700;cursor:pointer;margin-top:0.75rem;">Ver cotización →</button>
+            <button id="paAC_quoteBtn" style="width:100%;background:var(--orange);color:#fff;border:none;border-radius:var(--radius);padding:0.65rem;font-size:0.82rem;font-weight:700;cursor:pointer;margin-top:0.75rem;">Ver cotización →</button>
           </div>
 
           <!-- Paso 2: resumen de cotización -->
           <div id="paAC_step2" style="display:none;">
-            <button onclick="paAC_backToStep1()" style="background:none;border:none;cursor:pointer;font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;padding:0;">← Modificar datos</button>
+            <button id="paAC_backBtn" style="background:none;border:none;cursor:pointer;font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;padding:0;">← Modificar datos</button>
             <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:0.6rem;">Resumen de cotización</div>
             <div id="paAC_quoteSummary"></div>
             <div id="paAC_step2Err" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:6px;padding:8px 12px;font-size:0.76rem;color:#b91c1c;margin-top:0.6rem;"></div>
@@ -2582,7 +2582,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div style="font-size:2rem;margin-bottom:0.5rem;">✅</div>
             <div style="font-size:0.88rem;font-weight:700;color:#059669;margin-bottom:0.4rem;">¡Cliente registrado!</div>
             <div id="paAC_successMsg" style="font-size:0.76rem;color:var(--muted);line-height:1.6;"></div>
-            <button onclick="paAC_reset()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.35rem 1rem;font-size:0.75rem;cursor:pointer;color:var(--muted);margin-top:0.75rem;">Agregar otro cliente</button>
+            <button id="paAC_resetBtn" style="background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.35rem 1rem;font-size:0.75rem;cursor:pointer;color:var(--muted);margin-top:0.75rem;">Agregar otro cliente</button>
           </div>
         </div>
       </div>
@@ -6920,13 +6920,19 @@ function communeMatchLabel(targetCommune, assignedCommune) {
   ══════════════════════════════════════════════ */
   let _paAC_quote = null; /* cotización en curso */
 
-  function paToggleAddClient() {
+  document.getElementById('paAddClientBtn').onclick = () => {
     const panel = document.getElementById('paAddClientPanel');
     const chevron = document.getElementById('paAddClientChevron');
     const open = panel.style.display === 'none';
     panel.style.display = open ? 'block' : 'none';
     chevron.style.transform = open ? 'rotate(180deg)' : '';
-  }
+  };
+
+  document.getElementById('paAC_svc').onchange = paAC_onSvcChange;
+  document.getElementById('paAC_quoteBtn').onclick = paAC_getQuote;
+  document.getElementById('paAC_backBtn').onclick = paAC_backToStep1;
+  document.getElementById('paAC_confirmBtn').onclick = paAC_confirm;
+  document.getElementById('paAC_resetBtn').onclick = paAC_reset;
 
   function paAC_onSvcChange() {
     const svc = document.getElementById('paAC_svc').value;
