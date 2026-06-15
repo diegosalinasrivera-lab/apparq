@@ -981,16 +981,21 @@ export async function onRequest(context) {
       if (!project_id || !new_service_type || !new_total_clp) {
         return json({ error: 'project_id, new_service_type y new_total_clp requeridos' }, 400);
       }
-      const projRes = await sb(`/projects?id=eq.${project_id}&select=id,project_number,service_type,servicio_subtipo&limit=1`);
+      const projRes = await sb(`/projects?id=eq.${project_id}&select=id,project_number,service_type,servicio_subtipo,client_email,client_nombre,client_apellido,architect_email,commune,m2&limit=1`);
       const proj = projRes.ok && Array.isArray(projRes.data) ? projRes.data[0] : null;
       if (!proj) return json({ error: 'Proyecto no encontrado' }, 404);
+
       const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
-      const is2 = new_service_type === 'informe' || new_service_type === 'declaracion-jurada';
+      const is2    = new_service_type === 'informe' || new_service_type === 'declaracion-jurada';
+      const e1Final = Math.round(new_e1_clp || (is2 ? new_total_clp * 0.50 : new_total_clp * 0.20));
+      const totalFinal = Math.round(new_total_clp);
+
       const patchBody = {
         service_type:     new_service_type,
         servicio_subtipo: new_subtipo || null,
-        total_clp:        Math.round(new_total_clp),
-        e1_clp:           Math.round(new_e1_clp || (is2 ? new_total_clp * 0.50 : new_total_clp * 0.20)),
+        total_clp:        totalFinal,
+        e1_clp:           e1Final,
+        num_etapas_pago:  is2 ? 2 : 4,
       };
       const { ok, data } = await sb(`/projects?id=eq.${proj.id}`, {
         method: 'PATCH',
@@ -998,15 +1003,179 @@ export async function onRequest(context) {
         prefer: 'return=minimal',
       });
       if (!ok) return json({ error: 'Error al actualizar proyecto', detail: data }, 500);
-      const oldName = SVC_LABELS[proj.service_type] || proj.service_type;
-      const newName = SVC_LABELS[new_service_type] || new_service_type;
-      const nota = `Cambio de tipo: ${oldName} → ${newName}. Nuevo total: $${Math.round(new_total_clp).toLocaleString('es-CL')}${motivo ? '. Motivo: ' + motivo : ''}`;
+
+      const oldName  = SVC_LABELS[proj.service_type] || proj.service_type;
+      const newName  = SVC_LABELS[new_service_type]  || new_service_type;
+      const pnum     = proj.project_number;
+      const clpFmt   = v => '$' + Math.round(v).toLocaleString('es-CL');
+      const clientName = `${proj.client_nombre || ''} ${proj.client_apellido || ''}`.trim();
+
+      /* Registrar en historial */
+      const nota = `Cambio de tipo: ${oldName} → ${newName}. Nuevo total: ${clpFmt(totalFinal)}. E1: ${clpFmt(e1Final)}${motivo ? '. ' + motivo : ''}`;
       await sb('/project_updates', {
         method: 'POST',
-        body: JSON.stringify({ project_number: proj.project_number, stage: 'cambio_tipo', stage_label: '🔄 Cambio de tipo de trámite', nota }),
+        body: JSON.stringify({ project_number: pnum, stage: 'cambio_tipo', stage_label: '🔄 Cambio de tipo de trámite', nota }),
         prefer: 'return=minimal',
       }).catch(() => {});
-      return json({ success: true });
+
+      /* Crear preferencia MP para el nuevo E1 */
+      const MP_TOKEN = env.MP_ACCESS_TOKEN || 'APP_USR-8464091449756756-032117-1cb0461b0053151dd99159498a8ebb3c-3280513372';
+      let init_point = null;
+      try {
+        const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${MP_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: [{ title: `APPARQ · ${pnum} · Pago E1 · ${newName}`, quantity: 1, unit_price: e1Final, currency_id: 'CLP' }],
+            payer: { email: proj.client_email },
+            back_urls: { success: 'https://apparq.cl/?pago=aprobado', pending: 'https://apparq.cl/?pago=pendiente', failure: 'https://apparq.cl/?pago=rechazado' },
+            auto_return: 'approved',
+            external_reference: pnum,
+            notification_url: 'https://apparq.cl/api/mp-webhook',
+            statement_descriptor: 'APPARQ',
+            payment_methods: { installments: 12 },
+          }),
+        });
+        if (mpRes.ok) { const d = await mpRes.json(); init_point = d.init_point; }
+        else console.error('MP preference error:', await mpRes.text());
+      } catch(e) { console.error('Error MP preference change_svc:', e); }
+
+      const RESEND_API_KEY = env.RESEND_API_KEY;
+
+      /* Email al cliente */
+      if (proj.client_email) {
+        const etapasCliente = is2
+          ? `<tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E1 · Inicio del trámite</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.50))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;">E2 · Entrega final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.50))}</td></tr>`
+          : `<tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E1 · Levantamiento</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.20))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E2 · Elaboración de planos</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.30))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E3 · Ingreso DOM</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.30))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;">E4 · Recepción final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.20))}</td></tr>`;
+
+        await sendEmail({
+          to: proj.client_email,
+          subject: `Actualización de tu trámite ${pnum} — APPARQ`,
+          html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;max-width:560px;width:100%;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <div style="color:#fff;font-size:20px;font-weight:800;">APPARQ</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:3px;">Plataforma de gestión de permisos</div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#1a1a2e;font-weight:700;margin:0 0 6px;">Hola ${clientName || 'cliente'},</p>
+    <p style="font-size:13px;color:#555;line-height:1.7;margin:0 0 20px;">Tu trámite <strong>${pnum}</strong> ha sido actualizado. El tipo de servicio cambió de <strong>${oldName}</strong> a <strong>${newName}</strong>.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;margin-bottom:20px;">
+      <tr><td style="padding:14px 16px;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:2px;">Nuevo tipo de trámite</div>
+        <div style="font-size:16px;font-weight:800;color:#1a1a2e;">${newName}</div>
+      </td></tr>
+      <tr><td style="padding:14px 16px;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:2px;">Total del trámite</div>
+        <div style="font-size:16px;font-weight:800;color:#1e40af;">${clpFmt(totalFinal)}</div>
+      </td></tr>
+      <tr><td style="padding:14px 16px;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:2px;">Primer pago a realizar (E1)</div>
+        <div style="font-size:16px;font-weight:800;color:#E8503A;">${clpFmt(e1Final)}</div>
+      </td></tr>
+    </table>
+
+    <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">Detalle de etapas de pago</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:24px;font-size:13px;">
+      ${etapasCliente}
+    </table>
+
+    ${init_point ? `
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;"><tr><td style="background:#E8503A;border-radius:8px;padding:14px 32px;">
+      <a href="${init_point}" style="color:#fff;text-decoration:none;font-size:15px;font-weight:700;">Pagar E1 ahora — ${clpFmt(e1Final)} →</a>
+    </td></tr></table>` : `
+    <p style="font-size:13px;color:#555;margin:0 0 24px;">Para realizar el pago, ingresa a <a href="https://www.apparq.cl" style="color:#1a1a2e;font-weight:700;">www.apparq.cl</a>.</p>`}
+
+    <p style="font-size:12px;color:#888;margin:0;">Cualquier consulta escríbenos a <a href="mailto:hola@apparq.cl" style="color:#1a1a2e;">hola@apparq.cl</a></p>
+  </td></tr>
+  <tr><td style="background:#f4f4f5;padding:14px 32px;text-align:center;">
+    <p style="font-size:11px;color:#aaa;margin:0;">APPARQ SpA · Santiago, Chile · <a href="https://www.apparq.cl" style="color:#aaa;">www.apparq.cl</a></p>
+  </td></tr>
+</table></td></tr></table></body></html>`,
+        }, RESEND_API_KEY);
+      }
+
+      /* Email al arquitecto */
+      if (proj.architect_email) {
+        const archRes = await sb(`/architects?email=eq.${encodeURIComponent(proj.architect_email)}&select=nombre,apellido,patente&limit=1`);
+        const arch = archRes.ok && Array.isArray(archRes.data) ? archRes.data[0] : null;
+        const ARQ_PCT  = arch?.patente ? 0.80 : 0.70;
+        const RETEN    = 0.1525;
+        const brutoBoleta = Math.round(totalFinal * ARQ_PCT);
+        const retencion   = Math.round(brutoBoleta * RETEN);
+        const netoArq     = brutoBoleta - retencion;
+        const archName    = arch ? `${arch.nombre} ${arch.apellido}`.trim() : 'Arquitecto';
+
+        const etapasArq = is2
+          ? `<tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E1 · Inicio</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.50*ARQ_PCT))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;">E2 · Entrega final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.50*ARQ_PCT))}</td></tr>`
+          : `<tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E1 · Levantamiento</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.20*ARQ_PCT))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E2 · Elaboración de planos</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.30*ARQ_PCT))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;border-bottom:1px solid #f0f0f0;">E3 · Ingreso DOM</td><td style="padding:8px 12px;font-weight:700;border-bottom:1px solid #f0f0f0;">${clpFmt(Math.round(totalFinal*0.30*ARQ_PCT))}</td></tr>
+             <tr><td style="padding:8px 12px;color:#718096;">E4 · Recepción final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.20*ARQ_PCT))}</td></tr>`;
+
+        await sendEmail({
+          to: proj.architect_email,
+          subject: `Cambio de tipo de trámite — ${pnum} · ${newName} — APPARQ`,
+          html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;max-width:560px;width:100%;">
+  <tr><td style="background:#1a1a2e;padding:24px 32px;">
+    <div style="color:#fff;font-size:20px;font-weight:800;">APPARQ</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:3px;">Plataforma de gestión de permisos</div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="font-size:15px;color:#1a1a2e;font-weight:700;margin:0 0 6px;">Hola ${archName},</p>
+    <p style="font-size:13px;color:#555;line-height:1.7;margin:0 0 20px;">El tipo de trámite del proyecto <strong>${pnum}</strong> (${proj.commune || ''}) fue actualizado de <strong>${oldName}</strong> a <strong>${newName}</strong>.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;margin-bottom:20px;">
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;">
+        <span style="font-size:12px;color:#64748b;">Nuevo tipo</span>
+        <span style="float:right;font-weight:700;color:#1a1a2e;">${newName}</span>
+      </td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;">
+        <span style="font-size:12px;color:#64748b;">Total del trámite</span>
+        <span style="float:right;font-weight:700;color:#1e40af;">${clpFmt(totalFinal)}</span>
+      </td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;">
+        <span style="font-size:12px;color:#64748b;">Bruto boleta (total)</span>
+        <span style="float:right;font-weight:700;">${clpFmt(brutoBoleta)}</span>
+      </td></tr>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #e2e8f0;">
+        <span style="font-size:12px;color:#64748b;">Retención SII (15,25%)</span>
+        <span style="float:right;font-weight:700;color:#dc2626;">- ${clpFmt(retencion)}</span>
+      </td></tr>
+      <tr><td style="padding:12px 16px;">
+        <span style="font-size:13px;font-weight:700;color:#059669;">Neto a recibir (total)</span>
+        <span style="float:right;font-size:15px;font-weight:800;color:#059669;">${clpFmt(netoArq)}</span>
+      </td></tr>
+    </table>
+
+    <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">Tus pagos por etapa (netos)</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:24px;font-size:13px;">
+      ${etapasArq}
+    </table>
+
+    <p style="font-size:12px;color:#888;margin:0;">Consultas: <a href="mailto:hola@apparq.cl" style="color:#1a1a2e;">hola@apparq.cl</a></p>
+  </td></tr>
+  <tr><td style="background:#f4f4f5;padding:14px 32px;text-align:center;">
+    <p style="font-size:11px;color:#aaa;margin:0;">APPARQ SpA · Santiago, Chile</p>
+  </td></tr>
+</table></td></tr></table></body></html>`,
+        }, RESEND_API_KEY);
+      }
+
+      return json({ success: true, init_point });
     }
 
     /* mark_lead_converted */
