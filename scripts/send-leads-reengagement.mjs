@@ -26,7 +26,7 @@ if (!leadsRes.ok) {
   console.error('❌  Error al obtener leads:', await leadsRes.text());
   process.exit(1);
 }
-const leads = await leadsRes.json();
+const { leads } = await leadsRes.json();
 console.log(`\nLeads no convertidos encontrados: ${leads.length}\n`);
 if (!leads.length) { console.log('Nada que enviar.'); process.exit(0); }
 

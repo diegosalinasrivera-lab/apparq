@@ -378,16 +378,6 @@ export async function onRequest(context) {
     }
   }
 
-  /* TEMP: export leads no convertidos para script de envío — eliminar tras uso */
-  if (request.method === 'GET') {
-    const _u = new URL(request.url);
-    if (_u.searchParams.get('section') === 'leads_export' && _u.searchParams.get('token') === 'apparq-leads-2026') {
-      const { ok, data } = await sb('/leads?converted=eq.false&select=id,email,svc,servicio_subtipo,m2,commune&order=created_at.desc&limit=1000');
-      if (!ok) return json({ error: 'Error' }, 500);
-      return json({ leads: data });
-    }
-  }
-
   /* Auth check */
   const adminEmail = await verifyAdmin(request.headers.get('Authorization'));
   if (!adminEmail) {
