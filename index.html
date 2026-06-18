@@ -3837,6 +3837,48 @@ document.querySelectorAll('.chip[data-dest]').forEach(c => {
   };
 });
 
+/* ── Precargar cotizador desde parámetros URL (?svc=&sub=&commune=&m2=) ── */
+(function preloadFromURL() {
+  const p = new URLSearchParams(window.location.search);
+  const svc     = p.get('svc');
+  const sub     = p.get('sub');
+  const commune = p.get('commune');
+  const m2      = parseInt(p.get('m2'), 10);
+  if (!svc) return;
+
+  window.history.replaceState({}, '', window.location.pathname);
+
+  const svcBtn = document.querySelector(`.sbtn[data-svc="${svc}"]`);
+  if (svcBtn) svcBtn.click();
+
+  if (sub) {
+    const subChip = document.querySelector(`.chip[data-sub="${sub}"]`);
+    if (subChip) subChip.click();
+  }
+
+  if (commune) {
+    S.commune = commune;
+    const addrEl = document.getElementById('addrInput');
+    if (addrEl && !addrEl.value.trim()) { addrEl.value = commune; S.addr = commune; }
+    const txt = document.getElementById('communeDDText');
+    const btn = document.getElementById('communeDDBtn');
+    if (txt) txt.textContent = commune;
+    if (btn) btn.classList.add('selected');
+  }
+
+  if (m2 > 0) {
+    const m2El = document.getElementById('m2Input');
+    if (m2El) { m2El.value = m2; S.m2 = m2; }
+  }
+
+  recalc();
+
+  setTimeout(() => {
+    const calc = document.querySelector('.calculator');
+    if (calc) calc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+})();
+
 /* ── Recalculate ──────────────────────────── */
 function isReady() {
   if (!S.svc) return false;
