@@ -17,19 +17,10 @@ if (existsSync(LOCK)) {
   process.exit(1);
 }
 
-const SUPABASE_URL = 'https://ibdafnzlsufsshczqvoa.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const RESEND_KEY   = 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
-
-if (!SUPABASE_KEY) {
-  console.error('❌  Falta SUPABASE_SERVICE_KEY. Ejecútalo así:');
-  console.error('    SUPABASE_SERVICE_KEY=tu_clave node scripts/send-leads-reengagement.mjs');
-  process.exit(1);
-}
+const RESEND_KEY = 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
 
 const leadsRes = await fetch(
-  `${SUPABASE_URL}/rest/v1/leads?converted=eq.false&select=id,email,svc,servicio_subtipo,m2,commune&order=created_at.desc`,
-  { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+  'https://apparq.pages.dev/api/admin-data?section=leads_export&token=apparq-leads-2026'
 );
 if (!leadsRes.ok) {
   console.error('❌  Error al obtener leads:', await leadsRes.text());
