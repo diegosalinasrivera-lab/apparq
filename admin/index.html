@@ -3410,6 +3410,7 @@ function renderLeadsTable() {
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           ${badge}
           ${btn}
+          <button class="btn btn-sm" style="font-size:13px;padding:4px 8px;background:transparent;border:1px solid #fca5a5;color:#ef4444;border-radius:6px;cursor:pointer;" onclick="deleteLead('${l.id}', '${l.email.replace(/'/g,"\\'")}')">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -3424,6 +3425,19 @@ async function toggleLeadConverted(id, converted) {
     if (idx >= 0) leads[idx].converted = converted;
     renderLeadsTable();
     showToast(converted ? 'Lead marcado como convertido' : 'Lead revertido a pendiente', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function deleteLead(id, email) {
+  if (!confirm(`¿Eliminar lead de ${email}? Esta acción no se puede deshacer.`)) return;
+  try {
+    const d = await apiPost({ action: 'delete_lead', id });
+    if (d.error) throw new Error(d.error);
+    leads = leads.filter(l => l.id != id);
+    renderLeadsTable();
+    showToast('Lead eliminado', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
   }

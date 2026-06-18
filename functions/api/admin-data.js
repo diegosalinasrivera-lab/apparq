@@ -1186,6 +1186,15 @@ export async function onRequest(context) {
       return json({ success: true, init_point });
     }
 
+    /* delete_lead */
+    if (action === 'delete_lead') {
+      const { id } = body;
+      if (!id) return json({ error: 'id requerido' }, 400);
+      const { ok, data } = await sb(`/leads?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' });
+      if (!ok) return json({ error: 'Error al eliminar lead', detail: data }, 500);
+      return json({ success: true });
+    }
+
     /* mark_lead_converted */
     if (action === 'mark_lead_converted') {
       const { id, converted } = body;
