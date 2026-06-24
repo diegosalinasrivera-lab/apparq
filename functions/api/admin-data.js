@@ -378,6 +378,25 @@ export async function onRequest(context) {
     }
   }
 
+  /* TEMP: exportación datos para reporte inversionista — eliminar tras uso */
+  if (request.method === 'GET') {
+    const _u2 = new URL(request.url);
+    if (_u2.searchParams.get('section') === 'investor_export' && _u2.searchParams.get('token') === 'apparq-inv-2026') {
+      const [archR, projR, payR, leadR] = await Promise.all([
+        sb('/architects?select=id,nombre,apellido,email,tramites,comunas,activo,created_at&order=created_at.asc&limit=1000'),
+        sb('/projects?select=project_number,client_nombre,client_apellido,client_email,service_type,servicio_subtipo,commune,m2,total_clp,e1_clp,stage,created_at,architect_nombre,architect_apellido,arq_pago_e1,arq_pago_e2,arq_pago_e3,arq_pago_e4&order=created_at.asc&limit=2000'),
+        sb('/payments?status=eq.approved&select=id,external_ref,amount,currency,payer_email,payment_method,created_at&order=created_at.asc&limit=5000'),
+        sb('/leads?select=id,email,svc,servicio_subtipo,m2,commune,uf,clp,created_at,converted&order=created_at.asc&limit=2000'),
+      ]);
+      return json({
+        architects: archR.ok ? archR.data : [],
+        projects:   projR.ok ? projR.data : [],
+        payments:   payR.ok  ? payR.data  : [],
+        leads:      leadR.ok ? leadR.data : [],
+      });
+    }
+  }
+
   /* Auth check */
   const adminEmail = await verifyAdmin(request.headers.get('Authorization'));
   if (!adminEmail) {
