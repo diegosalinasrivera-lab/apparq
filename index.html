@@ -16,39 +16,134 @@
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://apparq.cl/" />
 
+  <!-- Geo -->
+  <meta name="geo.region"   content="CL" />
+  <meta name="geo.placename" content="Chile" />
+
   <!-- Open Graph -->
   <meta property="og:type"        content="website" />
+  <meta property="og:locale"      content="es_CL" />
+  <meta property="og:site_name"   content="APPARQ" />
   <meta property="og:url"         content="https://apparq.cl/" />
   <meta property="og:title"       content="Regularizar Casa en Chile | Ampliación | APPARQ" />
   <meta property="og:description" content="Regulariza tu casa en Chile, tramita una ampliación sin permiso o solicita la recepción final de tu vivienda. Arquitectos verificados, precios online, todo Chile." />
   <meta property="og:image"       content="https://apparq.cl/og-image.png" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt"    content="APPARQ — Plataforma de regularización y permisos de arquitectura en Chile" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:title"       content="Regularizar Casa en Chile | Ampliación | APPARQ" />
   <meta name="twitter:description" content="Regulariza tu casa, tramita ampliación sin permiso o recepción final. Cotiza online gratis." />
+  <meta name="twitter:image"       content="https://apparq.cl/og-image.png" />
 
-  <!-- JSON-LD: LocalBusiness + FAQ -->
+  <!-- JSON-LD: LocalBusiness + Services + FAQ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "LocalBusiness",
+        "@id": "https://apparq.cl/#business",
         "name": "APPARQ",
         "url": "https://apparq.cl",
+        "logo": "https://apparq.cl/apparq_logo.svg",
         "description": "Plataforma de trámites de arquitectura en Chile. Regularización de viviendas, ampliaciones sin permiso, recepción final y permisos de edificación en todo Chile.",
+        "telephone": "+56942054581",
+        "email": "hola@apparq.cl",
+        "priceRange": "$$",
+        "currenciesAccepted": "CLP",
+        "paymentAccepted": "Tarjeta de crédito, tarjeta de débito",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "CL",
+          "addressRegion": "Región Metropolitana",
+          "addressLocality": "Santiago"
+        },
         "areaServed": {
-          "@type": "AdministrativeArea",
+          "@type": "Country",
           "name": "Chile"
         },
-        "serviceType": ["Regularización de vivienda", "Ampliación sin permiso", "Recepción final", "Permiso de edificación", "Obra nueva"],
-        "email": "hola@apparq.cl",
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Trámites de arquitectura",
+          "itemListElement": [
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Regularización de vivienda" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ley del Mono" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Ampliación sin permiso" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Obra nueva" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Informe de propiedad" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Declaración Jurada" } }
+          ]
+        },
         "contactPoint": {
           "@type": "ContactPoint",
+          "telephone": "+56942054581",
           "contactType": "customer service",
           "availableLanguage": "Spanish"
-        }
+        },
+        "sameAs": ["https://www.apparq.cl"]
+      },
+      {
+        "@type": "Service",
+        "@id": "https://apparq.cl/#regularizacion",
+        "name": "Regularización de vivienda en Chile",
+        "description": "Regulariza tu construcción ante la Dirección de Obras Municipales. Arquitecto verificado gestiona el expediente completo hasta obtener la recepción final.",
+        "provider": { "@id": "https://apparq.cl/#business" },
+        "areaServed": { "@type": "Country", "name": "Chile" },
+        "url": "https://apparq.cl/?svc=regularizacion",
+        "serviceType": "Regularización de vivienda"
+      },
+      {
+        "@type": "Service",
+        "@id": "https://apparq.cl/#ley-del-mono",
+        "name": "Ley del Mono — regularización de vivienda existente",
+        "description": "Regulariza tu vivienda construida sin permiso mediante la Ley de Regularización de Viviendas. Precio fijo, arquitecto asignado, seguimiento online.",
+        "provider": { "@id": "https://apparq.cl/#business" },
+        "areaServed": { "@type": "Country", "name": "Chile" },
+        "url": "https://apparq.cl/?svc=ley-del-mono",
+        "serviceType": "Regularización de vivienda"
+      },
+      {
+        "@type": "Service",
+        "@id": "https://apparq.cl/#ampliacion",
+        "name": "Ampliación sin permiso — regularización en Chile",
+        "description": "Regulariza una ampliación construida sin permiso de edificación. Arquitecto prepara los planos y gestiona el permiso ante la municipalidad.",
+        "provider": { "@id": "https://apparq.cl/#business" },
+        "areaServed": { "@type": "Country", "name": "Chile" },
+        "url": "https://apparq.cl/?svc=ampliacion",
+        "serviceType": "Ampliación sin permiso"
+      },
+      {
+        "@type": "Service",
+        "@id": "https://apparq.cl/#obra-nueva",
+        "name": "Permiso de edificación — obra nueva en Chile",
+        "description": "Obtén el permiso de edificación para tu obra nueva. Arquitecto gestiona el proyecto, planos y expediente ante la Dirección de Obras Municipales.",
+        "provider": { "@id": "https://apparq.cl/#business" },
+        "areaServed": { "@type": "Country", "name": "Chile" },
+        "url": "https://apparq.cl/?svc=obra-nueva",
+        "serviceType": "Permiso de edificación"
+      },
+      {
+        "@type": "Service",
+        "@id": "https://apparq.cl/#informe",
+        "name": "Informe de propiedad en Chile",
+        "description": "Informe técnico del estado real de una propiedad: normativa, recepciones, superficies, irregularidades. Ideal para compraventa o antes de iniciar un trámite.",
+        "provider": { "@id": "https://apparq.cl/#business" },
+        "areaServed": { "@type": "Country", "name": "Chile" },
+        "url": "https://apparq.cl/?svc=informe",
+        "serviceType": "Informe de propiedad"
+      },
+      {
+        "@type": "Service",
+        "@id": "https://apparq.cl/#declaracion-jurada",
+        "name": "Declaración Jurada — regularización de piscinas y pérgolas",
+        "description": "Regulariza piscinas privadas, pérgolas, sombreaderos o demoliciones mediante declaración jurada ante la municipalidad. Trámite rápido y sin visita al DOM.",
+        "provider": { "@id": "https://apparq.cl/#business" },
+        "areaServed": { "@type": "Country", "name": "Chile" },
+        "url": "https://apparq.cl/?svc=declaracion-jurada",
+        "serviceType": "Declaración Jurada"
       },
       {
         "@type": "FAQPage",
