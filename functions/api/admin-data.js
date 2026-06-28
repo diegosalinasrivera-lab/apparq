@@ -27,8 +27,7 @@ function clpFmt(n) {
 
 async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
   if (!RESEND_API_KEY) return;
-  const toStr = Array.isArray(to) ? to.join(',') : String(to);
-  const from = toStr.includes('hola@apparq.cl') ? 'APPARQ <no-reply@apparq.cl>' : 'APPARQ <hola@apparq.cl>';
+  const from = 'APPARQ <hola@apparq.cl>';
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -154,9 +153,9 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
     `,
   }, RESEND_API_KEY);
 
-  /* Email a APPARQ (recordatorio de pago) */
+  /* Email interno a APPARQ (recordatorio de pago) */
   await sendEmail({
-    to:      'hola@apparq.cl',
+    to:      'apparqpagos@gmail.com',
     subject: `⚠️ Pagar arquitecto · ${pnum} · ${architect.nombre} ${architect.apellido} · E1 vence ${payDueFmt}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#1a1a2e">
@@ -1061,7 +1060,7 @@ export async function onRequest(context) {
              <tr><td style="padding:8px 12px;color:#718096;">E4 · Recepción final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.20))}</td></tr>`;
 
         await sendEmail({
-          to: [proj.client_email, 'hola@apparq.cl'],
+          to: [proj.client_email],
           subject: `Actualización de tu trámite ${pnum} — APPARQ`,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -1131,7 +1130,7 @@ export async function onRequest(context) {
              <tr><td style="padding:8px 12px;color:#718096;">E4 · Recepción final</td><td style="padding:8px 12px;font-weight:700;">${clpFmt(Math.round(totalFinal*0.20*ARQ_PCT))}</td></tr>`;
 
         await sendEmail({
-          to: [proj.architect_email, 'hola@apparq.cl'],
+          to: [proj.architect_email],
           subject: `Cambio de tipo de trámite — ${pnum} · ${newName} — APPARQ`,
           html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">

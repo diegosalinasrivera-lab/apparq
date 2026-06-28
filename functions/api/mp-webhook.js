@@ -20,8 +20,7 @@ function corsResponse(body, status = 200) {
 async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
   if (!RESEND_API_KEY) return;
   try {
-    const toStr = Array.isArray(to) ? to.join(',') : String(to);
-    const from = toStr.includes('hola@apparq.cl') ? 'APPARQ <no-reply@apparq.cl>' : 'APPARQ <hola@apparq.cl>';
+    const from = 'APPARQ <hola@apparq.cl>';
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -430,9 +429,9 @@ export async function onRequest(context) {
                 }, RESEND_API_KEY);
               }
 
-              /* Email a hola@apparq.cl */
+              /* Email interno a APPARQ */
               await sendEmail({
-                to:      'hola@apparq.cl',
+                to:      'apparqpagos@gmail.com',
                 subject: `💰 Cobro adicional pagado — ${cobro.tramite_id} — ${cobro.descripcion} — ${clpFmt(cobro.valor_clp)}`,
                 html: `
                   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
@@ -523,9 +522,9 @@ export async function onRequest(context) {
               }, RESEND_API_KEY);
             }
 
-            /* Email a hola@apparq.cl */
+            /* Email interno a APPARQ */
             await sendEmail({
-              to: 'hola@apparq.cl',
+              to: 'apparqpagos@gmail.com',
               subject: `💰 Pago ${etapa.toUpperCase()} recibido — ${projectNumber} · $ ${Math.round(payment.transaction_amount).toLocaleString('es-CL')}`,
               html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
                 <div style="background:#1a1a2e;padding:22px 32px;border-radius:8px 8px 0 0">
@@ -621,7 +620,7 @@ export async function onRequest(context) {
 
               /* ── Email interno a APPARQ ── */
               await sendEmail({
-                to:      'hola@apparq.cl',
+                to:      'apparqpagos@gmail.com',
                 subject: esWaitlist
                   ? `⚠️ LISTA DE ESPERA — ${nombreCliente} · ${svcName} · ${p.commune} — SIN ARQUITECTO`
                   : `🚀 Nuevo trámite iniciado — ${nombreCliente} · ${svcName} · ${p.commune}`,
@@ -954,7 +953,7 @@ export async function onRequest(context) {
                 const payDueDate  = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
                 const payDueFmt   = payDueDate.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
                 await sendEmail({
-                  to:      'hola@apparq.cl',
+                  to:      'apparqpagos@gmail.com',
                   subject: `⚠️ Pagar arquitecto · ${p.project_number} · ${arqObj.nombre} ${arqObj.apellido} · E1 vence ${payDueFmt}`,
                   html: `
                     <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#1a1a2e">
@@ -1000,7 +999,7 @@ export async function onRequest(context) {
         const fecha     = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
 
         await sendEmail({
-          to:      'hola@apparq.cl',
+          to:      'apparqpagos@gmail.com',
           subject: `Nuevo pago recibido — ${monto} — ${referencia}`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
