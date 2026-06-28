@@ -1834,7 +1834,7 @@ function statusBadge(status) {
 
 function avatarHTML(arq) {
   if (arq.foto_url) {
-    return `<img src="${arq.foto_url}" class="avatar clickable" alt="${arq.nombre}" onclick="openPhotoLightbox(this.src)" />`;
+    return `<img src="${arq.foto_url}" class="avatar clickable" alt="${arq.nombre}" data-lightbox="1" />`;
   }
   const initials = ((arq.nombre||'').charAt(0) + (arq.apellido||'').charAt(0)).toUpperCase();
   return `<span class="avatar-placeholder">${initials}</span>`;
@@ -4144,6 +4144,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('photo-lightbox-close').addEventListener('click', closePhotoLightbox);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhotoLightbox(); });
+  document.addEventListener('click', e => {
+    const img = e.target.closest('img[data-lightbox]');
+    if (img) openPhotoLightbox(img.src);
+  });
 
   document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
   document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
