@@ -372,8 +372,64 @@ export async function onRequest(context) {
               <p style="margin-bottom:0;font-size:0.85rem;color:#718096;">Dudas: <a href="mailto:hola@apparq.cl" style="color:#E8503A;">hola@apparq.cl</a></p>
             </div></div>`,
         }, RESEND_API_KEY);
+
+        /* 3 — Email interno a APPARQ */
+        const clp2       = project.total_clp || 0;
+        const e1_2       = project.e1_clp    || 0;
+        const ARQ_PCT2   = architect.patente ? 0.80 : 0.70;
+        const arqTotal2  = Math.round(clp2 * ARQ_PCT2);
+        const payDue2    = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+        const payDueFmt2 = payDue2.toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+        const clpFmt2    = n => '$' + Math.round(n).toLocaleString('es-CL');
+        const etapasAdm  = `
+          <tr><td style="padding:6px 10px;color:#718096">E1 · Levantamiento</td><td style="padding:6px 10px;font-weight:700;color:#059669">${clpFmt2(Math.round(e1_2*ARQ_PCT2))}</td><td style="padding:6px 10px;font-weight:700;color:#E8503A">${payDueFmt2}</td></tr>
+          <tr style="background:#f7fafc"><td style="padding:6px 10px;color:#718096">E2 · Planos</td><td style="padding:6px 10px;font-weight:700">${clpFmt2(Math.round(clp2*0.30*ARQ_PCT2))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E2</td></tr>
+          <tr><td style="padding:6px 10px;color:#718096">E3 · Ingreso DOM</td><td style="padding:6px 10px;font-weight:700">${clpFmt2(Math.round(clp2*0.30*ARQ_PCT2))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E3</td></tr>
+          <tr style="background:#f7fafc"><td style="padding:6px 10px;color:#718096">E4 · Recepción</td><td style="padding:6px 10px;font-weight:700">${clpFmt2(Math.round(clp2*0.20*ARQ_PCT2))}</td><td style="padding:6px 10px;color:#718096">Al pagar cliente E4</td></tr>`;
+        sendEmail({
+          to:      'apparqpagos@gmail.com',
+          subject: `⚠️ Pagar arquitecto · ${pnum} · ${architect.nombre} ${architect.apellido} · E1 vence ${payDueFmt2}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#1a1a2e">
+              <div style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0">
+                <h1 style="color:#fff;margin:0;font-size:20px">APPARQ · Pago pendiente a arquitecto</h1>
+                <p style="color:#a0aec0;margin:6px 0 0;font-size:13px">Recordatorio automático</p>
+              </div>
+              <div style="background:#fff;padding:28px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+                  <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096;width:40%">N° Trámite</td><td style="padding:7px 10px;font-weight:700;color:#E8503A">${pnum}</td></tr>
+                  <tr><td style="padding:7px 10px;color:#718096">Servicio</td><td style="padding:7px 10px">${svcName}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Arquitecto</td><td style="padding:7px 10px;font-weight:700">${architect.nombre} ${architect.apellido} — ${architect.email}</td></tr>
+                  <tr><td style="padding:7px 10px;color:#718096">% honorarios</td><td style="padding:7px 10px">${Math.round(ARQ_PCT2*100)}% ${architect.patente ? '(con patente)' : '(sin patente)'}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px">${clientName}</td></tr>
+                  <tr><td style="padding:7px 10px;color:#718096">Total cliente</td><td style="padding:7px 10px">${clpFmt2(clp2)}</td></tr>
+                  <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Total arquitecto</td><td style="padding:7px 10px;font-weight:700">${clpFmt2(arqTotal2)}</td></tr>
+                </table>
+                <h3 style="font-size:13px;color:#1a1a2e;margin-bottom:8px">📅 Calendario de pagos</h3>
+                <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+                  <thead><tr style="background:#1a1a2e;color:#fff">
+                    <th style="padding:7px 10px;text-align:left">Etapa</th>
+                    <th style="padding:7px 10px;text-align:left">Monto arquitecto</th>
+                    <th style="padding:7px 10px;text-align:left">Fecha estimada</th>
+                  </tr></thead>
+                  <tbody>${etapasAdm}
+                    <tr style="border-top:2px solid #e2e8f0">
+                      <td style="padding:8px 10px;font-weight:800">TOTAL</td>
+                      <td style="padding:8px 10px;font-weight:800">${clpFmt2(arqTotal2)}</td><td></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:8px;padding:14px 18px;margin-top:20px">
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#92400E">⚠️ Pago E1 — vence ${payDueFmt2} — ${clpFmt2(Math.round(clp2*0.20*ARQ_PCT2))}</p>
+                  <p style="margin:6px 0 0;font-size:12px;color:#78350F;line-height:1.6">Verificar que el arquitecto envíe datos bancarios y boleta de honorarios antes de transferir.</p>
+                </div>
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0 10px">
+                <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ · Sistema de notificaciones internas</p>
+              </div>
+            </div>`,
+        }, RESEND_API_KEY).catch(e => console.error('sendInternalAssignEmail error:', e));
       }
-      return json({ success: true, emails_sent: 2, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
+      return json({ success: true, emails_sent: 3, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
     }
   }
 
