@@ -389,6 +389,30 @@
       object-fit: cover;
       display: inline-block;
     }
+    .avatar.clickable { cursor: zoom-in; }
+    /* ── PHOTO LIGHTBOX ─────────────────────── */
+    #photo-lightbox {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center;
+      cursor: zoom-out;
+    }
+    #photo-lightbox.hidden { display: none; }
+    #photo-lightbox img {
+      max-width: 90vw; max-height: 90vh;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      object-fit: contain;
+      cursor: default;
+    }
+    #photo-lightbox-close {
+      position: absolute; top: 16px; right: 20px;
+      background: rgba(255,255,255,0.15); border: none;
+      color: #fff; font-size: 22px; line-height: 1;
+      width: 40px; height: 40px; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    #photo-lightbox-close:hover { background: rgba(255,255,255,0.3); }
     .avatar-placeholder {
       width: 36px;
       height: 36px;
@@ -1711,6 +1735,11 @@
       </div>
     </div>
   </div>
+
+<div id="photo-lightbox" class="hidden">
+  <button id="photo-lightbox-close">✕</button>
+  <img id="photo-lightbox-img" src="" alt="Foto arquitecto" />
+</div>
 </div>
 
 <!-- ── TOAST CONTAINER ────────────────────────── -->
@@ -1805,7 +1834,7 @@ function statusBadge(status) {
 
 function avatarHTML(arq) {
   if (arq.foto_url) {
-    return `<img src="${arq.foto_url}" class="avatar" alt="${arq.nombre}" />`;
+    return `<img src="${arq.foto_url}" class="avatar clickable" alt="${arq.nombre}" onclick="openPhotoLightbox(this.src)" />`;
   }
   const initials = ((arq.nombre||'').charAt(0) + (arq.apellido||'').charAt(0)).toUpperCase();
   return `<span class="avatar-placeholder">${initials}</span>`;
@@ -4060,6 +4089,14 @@ function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
 }
 
+function openPhotoLightbox(src) {
+  document.getElementById('photo-lightbox-img').src = src;
+  document.getElementById('photo-lightbox').classList.remove('hidden');
+}
+function closePhotoLightbox() {
+  document.getElementById('photo-lightbox').classList.add('hidden');
+}
+
 /* ══════════════════════════════════════════════════
    MOBILE SIDEBAR
 ══════════════════════════════════════════════════ */
@@ -4102,6 +4139,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Hamburger
+  document.getElementById('photo-lightbox').addEventListener('click', e => {
+    if (e.target !== document.getElementById('photo-lightbox-img')) closePhotoLightbox();
+  });
+  document.getElementById('photo-lightbox-close').addEventListener('click', closePhotoLightbox);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhotoLightbox(); });
+
   document.getElementById('hamburger-btn').addEventListener('click', openSidebar);
   document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
 
