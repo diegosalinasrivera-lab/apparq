@@ -81,6 +81,53 @@ function instruccionesArqHtml(nombreArq, pnum) {
     </div>`;
 }
 
+/* ── HTML reutilizable: instrucciones de pago para el cliente ── */
+function instruccionesClienteHtml(nombreCliente, pnum) {
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+      <div style="background:#E8503A;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+        <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:13px">Información importante sobre tu trámite</p>
+      </div>
+      <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+        <h2 style="margin-top:0;color:#1a1a2e">Hola ${nombreCliente} 👋</h2>
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;">Queremos recordarte algo muy importante para que tu trámite <strong style="color:#E8503A">${pnum}</strong> avance sin problemas:</p>
+
+        <div style="background:#FEF2F2;border:2px solid #FCA5A5;border-radius:8px;padding:20px 24px;margin:24px 0">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:800;color:#DC2626">🚫 Nunca pagues directamente al arquitecto</p>
+          <p style="margin:0;font-size:13px;color:#7F1D1D;line-height:1.7;">
+            Todos los pagos de tu trámite deben realizarse <strong>exclusivamente a través de la plataforma APPARQ</strong>. No realices transferencias ni pagos directos al arquitecto ni a ninguna cuenta personal.<br><br>
+            Los pagos fuera de la plataforma <strong>no tienen respaldo, no activan el avance del trámite y no están protegidos</strong> por APPARQ.
+          </p>
+        </div>
+
+        <div style="background:#F0FDF4;border:2px solid #86EFAC;border-radius:8px;padding:20px 24px;margin:24px 0">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:800;color:#15803D">✅ Paga siempre por la plataforma</p>
+          <p style="margin:0;font-size:13px;color:#166534;line-height:1.7;">
+            Cuando llegue el momento de pagar la siguiente etapa, recibirás un <strong>cobro automático por email</strong> con el link de pago seguro. Solo debes hacer clic y pagar desde ahí.<br><br>
+            Así tu pago queda registrado, el trámite avanza automáticamente y los archivos de tu proyecto se liberan de forma segura.
+          </p>
+        </div>
+
+        <div style="background:#FFF7ED;border:1.5px solid #FCD34D;border-radius:8px;padding:16px 20px;margin:24px 0">
+          <p style="margin:0;font-size:13px;font-weight:700;color:#92400E">⚡ Resumen</p>
+          <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#78350F;line-height:2">
+            <li>Pagos → siempre por el link que llega a tu email</li>
+            <li>Nunca transferencias directas al arquitecto</li>
+            <li>¿Dudas sobre un cobro? Escríbenos antes de pagar</li>
+          </ul>
+        </div>
+
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;">Puedes revisar el estado de tu trámite en cualquier momento en <a href="https://apparq.cl/portal" style="color:#E8503A;font-weight:700;">apparq.cl/portal</a> con tu email.</p>
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;">Ante cualquier consulta, escríbenos a <a href="mailto:hola@apparq.cl" style="color:#E8503A;">hola@apparq.cl</a>.</p>
+
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
+        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8<br>
+        <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+      </div>
+    </div>`;
+}
+
 /* ── Envía emails de pago al arquitecto + recordatorio a APPARQ ── */
 async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
   const clp        = project.total_clp || 0;
@@ -249,6 +296,16 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
       </div>
     `,
   }, RESEND_API_KEY);
+
+  /* Email instrucciones de pago al cliente */
+  if (project.client_email) {
+    const clientName = `${project.client_nombre || ''} ${project.client_apellido || ''}`.trim();
+    await sendEmail({
+      to:      project.client_email,
+      subject: `💳 Importante: realiza tus pagos siempre por la plataforma — ${pnum}`,
+      html:    instruccionesClienteHtml(clientName || 'cliente', pnum),
+    }, RESEND_API_KEY);
+  }
 }
 
 /* ── Verify JWT and return user email ─────────── */
@@ -487,8 +544,17 @@ export async function onRequest(context) {
               </div>
             </div>`,
         }, RESEND_API_KEY).catch(e => console.error('sendInternalAssignEmail error:', e));
+
+        /* 5 — Email instrucciones de pago al cliente */
+        if (project.client_email) {
+          sendEmail({
+            to:      project.client_email,
+            subject: `💳 Importante: realiza tus pagos siempre por la plataforma — ${pnum}`,
+            html:    instruccionesClienteHtml(clientName || 'cliente', pnum),
+          }, RESEND_API_KEY).catch(e => console.error('sendClientPaymentInstrEmail error:', e));
+        }
       }
-      return json({ success: true, emails_sent: 4, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
+      return json({ success: true, emails_sent: 5, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
     }
   }
 
