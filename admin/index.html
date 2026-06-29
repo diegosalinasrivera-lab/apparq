@@ -925,6 +925,12 @@
                 <div class="stat-sub">Pagos aprobados</div>
               </div>
               <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-label">Pendiente de cobro</div>
+                <div class="stat-value" id="stat-pendiente-clientes" style="color:#E8503A;">—</div>
+                <div class="stat-sub">Clientes activos</div>
+              </div>
+              <div class="stat-card">
                 <div class="stat-icon">📅</div>
                 <div class="stat-label">Trámites este Mes</div>
                 <div class="stat-value" id="stat-mes">—</div>
@@ -1983,7 +1989,8 @@ async function loadDashboard() {
     document.getElementById('stat-arquitectos').textContent = d.totalArchitectos ?? '—';
     document.getElementById('stat-activos').textContent     = d.tramitesActivos ?? '—';
     document.getElementById('stat-cobros-adicionales').textContent = d.cobrosAdicionalesPendientes ?? '—';
-    document.getElementById('stat-recaudado').textContent   = fmtCLP(d.recaudadoTotal);
+    document.getElementById('stat-recaudado').textContent          = fmtCLP(d.recaudadoTotal);
+    document.getElementById('stat-pendiente-clientes').textContent = fmtCLP(d.pendienteClientes);
     document.getElementById('stat-mes').textContent         = d.tramitesMes ?? '—';
     document.getElementById('stat-leads').textContent       = d.totalLeads ?? '—';
     if (d.leadsNoConvertidos != null) {

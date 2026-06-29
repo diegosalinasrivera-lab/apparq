@@ -870,6 +870,9 @@ export async function onRequest(context) {
       const totalArchitectos   = architects.length;
       const tramitesActivos             = projects.filter(p => p.stage && p.stage !== 'completado').length;
       const cobrosAdicionalesPendientes = cobrosAdicionales.length;
+      const activoTotal    = projects.filter(p => p.stage !== 'pendiente_pago' && p.stage !== 'completado').reduce((s, p) => s + (p.total_clp || 0), 0);
+      const cobradoTotal   = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
+      const pendienteClientes = Math.round(Math.max(0, activoTotal - cobradoTotal));
       const recaudadoTotal     = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
       const tramitesMes        = projects.filter(p => p.created_at >= monthStart).length;
       const totalLeads         = leads.length;
@@ -892,7 +895,7 @@ export async function onRequest(context) {
       const recentProjects = projects.slice(0, 10);
       const recentPayments = payments.slice(0, 5);
 
-      return json({ totalArchitectos, tramitesActivos, cobrosAdicionalesPendientes, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
+      return json({ totalArchitectos, tramitesActivos, cobrosAdicionalesPendientes, recaudadoTotal, pendienteClientes, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
     }
 
     if (section === 'cobros') {
