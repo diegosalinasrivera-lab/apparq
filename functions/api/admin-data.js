@@ -850,7 +850,7 @@ export async function onRequest(context) {
       /* Fetch all in parallel */
       const [archRes, projRes, payRes, leadRes, funnelRes] = await Promise.all([
         sb('/architects?select=id,activo'),
-        sb('/projects?select=id,project_number,client_nombre,client_apellido,client_email,service_type,commune,address,architect_nombre,architect_apellido,architect_email,stage,total_clp,created_at,cliente_contactado&order=created_at.desc&limit=500'),
+        sb('/projects?select=id,project_number,client_nombre,client_apellido,client_email,service_type,commune,address,architect_nombre,architect_apellido,architect_email,stage,total_clp,created_at,cliente_contactado,cobro_adicional_pendiente&order=created_at.desc&limit=500'),
         sb('/payments?select=id,amount,status,payer_email,payment_method,created_at&order=created_at.desc&limit=500'),
         sb('/leads?select=id,converted,created_at'),
         sb('/funnel_events?select=event_type,created_at'),
@@ -866,7 +866,8 @@ export async function onRequest(context) {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       const totalArchitectos   = architects.length;
-      const tramitesActivos    = projects.filter(p => p.stage && p.stage !== 'completado').length;
+      const tramitesActivos           = projects.filter(p => p.stage && p.stage !== 'completado').length;
+      const cobrosAdicionalesPendientes = projects.filter(p => p.cobro_adicional_pendiente).length;
       const recaudadoTotal     = payments.filter(p => p.status === 'approved').reduce((s, p) => s + (p.amount || 0), 0);
       const tramitesMes        = projects.filter(p => p.created_at >= monthStart).length;
       const totalLeads         = leads.length;
@@ -889,7 +890,7 @@ export async function onRequest(context) {
       const recentProjects = projects.slice(0, 10);
       const recentPayments = payments.slice(0, 5);
 
-      return json({ totalArchitectos, tramitesActivos, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
+      return json({ totalArchitectos, tramitesActivos, cobrosAdicionalesPendientes, recaudadoTotal, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
     }
 
     if (section === 'cobros') {

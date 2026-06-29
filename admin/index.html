@@ -911,6 +911,7 @@
                 <div class="stat-icon">📋</div>
                 <div class="stat-label">Trámites Activos</div>
                 <div class="stat-value" id="stat-activos">—</div>
+                <div class="stat-sub" id="stat-cobros-adicionales" style="display:none;color:#E8503A;font-weight:600;"></div>
               </div>
               <div class="stat-card">
                 <div class="stat-icon">💰</div>
@@ -1976,6 +1977,11 @@ async function loadDashboard() {
     const d = await apiGet('dashboard');
     document.getElementById('stat-arquitectos').textContent = d.totalArchitectos ?? '—';
     document.getElementById('stat-activos').textContent     = d.tramitesActivos ?? '—';
+    if (d.cobrosAdicionalesPendientes > 0) {
+      const el = document.getElementById('stat-cobros-adicionales');
+      el.textContent = d.cobrosAdicionalesPendientes + ' con cobro adicional';
+      el.style.display = '';
+    }
     document.getElementById('stat-recaudado').textContent   = fmtCLP(d.recaudadoTotal);
     document.getElementById('stat-mes').textContent         = d.tramitesMes ?? '—';
     document.getElementById('stat-leads').textContent       = d.totalLeads ?? '—';
