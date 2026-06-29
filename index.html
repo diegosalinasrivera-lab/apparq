@@ -1343,6 +1343,22 @@
     .wiz-btn-next:hover    { opacity: 0.9; box-shadow: 0 6px 20px rgba(232,80,58,0.45); }
     .wiz-btn-next:disabled { background: var(--border); box-shadow: none; color: var(--light); cursor: default; }
 
+    /* ── HAMBURGER ── */
+    .nav-burger {
+      display: none;
+      background: none; border: none; cursor: pointer;
+      padding: 8px; margin-right: -8px;
+      flex-direction: column; gap: 5px; align-items: center;
+    }
+    .nav-burger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--dark); border-radius: 2px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-burger.open span:nth-child(2) { opacity: 0; }
+    .nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
     /* ── RESPONSIVE ─────────────────────────── */
     @media (max-width: 960px) {
       .hero-inner { grid-template-columns: 1fr; }
@@ -1353,8 +1369,45 @@
       .services-grid { grid-template-columns: 1fr; }
       .service-grid { grid-template-columns: repeat(3,1fr); }
     }
-    @media (max-width: 600px) {
-      .nav-link { display: none; }
+    @media (max-width: 640px) {
+      /* Nav hamburger */
+      .nav-burger { display: flex; }
+      .uf-chip { display: none; }
+      .nav-links {
+        display: none;
+        position: fixed; top: 60px; left: 0; right: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--border-light);
+        flex-direction: column;
+        padding: 0.75rem;
+        gap: 0.25rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+        z-index: 300;
+      }
+      .nav-links.mobile-open { display: flex; }
+      .nav-link {
+        display: block; width: 100%;
+        text-align: left;
+        padding: 0.7rem 0.85rem;
+        border-radius: var(--radius);
+        background: none; border: none;
+        font-size: 0.9rem; font-weight: 500; color: var(--mid);
+        cursor: pointer; font-family: inherit; text-decoration: none;
+      }
+      .nav-link:hover { background: var(--bg-soft); }
+      #navClienteBtn {
+        border: 1.5px solid var(--border) !important;
+        width: 100% !important; text-align: left !important;
+        padding: 0.7rem 0.85rem !important;
+        border-radius: var(--radius) !important;
+        margin: 0 !important;
+      }
+      .nav-cta {
+        margin-left: 0; display: block; width: 100%;
+        text-align: center; padding: 0.8rem 1.5rem;
+        border-radius: var(--radius);
+      }
+      /* Content */
       .hero h1 { font-size: 2rem; }
       .steps-grid { grid-template-columns: 1fr; }
       .calc-card { padding: 1.25rem; }
@@ -1390,9 +1443,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a href="/estudios" class="nav-link">Soy estudio</a>
         <button class="nav-cta" id="navArqBtn">Soy Arquitecto</button>
       </div>
+      <button class="nav-burger" id="navBurger" aria-label="Menú" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
+<script>
+  (function() {
+    const burger = document.getElementById('navBurger');
+    const navLinks = document.querySelector('nav .nav-links');
+    if (!burger || !navLinks) return;
+    burger.addEventListener('click', () => {
+      const open = burger.classList.toggle('open');
+      navLinks.classList.toggle('mobile-open', open);
+      burger.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', e => {
+      if (!burger.contains(e.target) && !navLinks.contains(e.target)) {
+        burger.classList.remove('open');
+        navLinks.classList.remove('mobile-open');
+        burger.setAttribute('aria-expanded', 'false');
+      }
+    });
+    navLinks.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', () => {
+        burger.classList.remove('open');
+        navLinks.classList.remove('mobile-open');
+      });
+    });
+  })();
+</script>
 
 <!-- ── HERO ─────────────────────────────────────── -->
 <section class="hero">
