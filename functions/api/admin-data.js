@@ -36,6 +36,51 @@ async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
   if (!res.ok) console.error('Resend error admin-data:', await res.text());
 }
 
+/* ── HTML reutilizable: instrucciones de operación para el arquitecto ── */
+function instruccionesArqHtml(nombreArq, pnum) {
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+      <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+        <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+        <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Portal Arquitecto · Instrucciones operativas</p>
+      </div>
+      <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+        <h2 style="margin-top:0;color:#1a1a2e">Hola ${nombreArq} 👋</h2>
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;">Con motivo de tu incorporación al trámite <strong style="color:#E8503A">${pnum}</strong>, te recordamos dos aspectos clave del flujo de trabajo en APPARQ:</p>
+
+        <div style="background:#EFF6FF;border:2px solid #93C5FD;border-radius:8px;padding:20px 24px;margin:24px 0">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:800;color:#1E40AF">📁 1. Sube los archivos siempre a través de la plataforma</p>
+          <p style="margin:0;font-size:13px;color:#1e3a8a;line-height:1.7;">
+            Todos los documentos, planos e informes que generes para el cliente deben subirse exclusivamente a través de tu <strong>portal de arquitecto</strong> en <a href="https://apparq.cl/portal-arquitecto" style="color:#E8503A;font-weight:700;">apparq.cl/portal-arquitecto</a>.<br><br>
+            Esto garantiza que el cliente solo pueda descargar los archivos <strong>una vez que haya pagado la etapa correspondiente</strong>. Si envías los archivos directamente (por email u otro medio), perdemos ese resguardo y el cobro queda sin protección.
+          </p>
+        </div>
+
+        <div style="background:#F0FDF4;border:2px solid #86EFAC;border-radius:8px;padding:20px 24px;margin:24px 0">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:800;color:#15803D">✅ 2. Marca las etapas como completadas en la plataforma</p>
+          <p style="margin:0;font-size:13px;color:#166534;line-height:1.7;">
+            Cuando termines una etapa de trabajo, indícalo en el portal. Ese es el gatillador que activa el <strong>cobro automático al cliente por la etapa siguiente</strong>.<br><br>
+            Si no marcas la etapa como completada, el sistema no sabe que debe cobrar la siguiente cuota y el flujo de pagos se detiene. Por favor hazlo apenas entregues cada fase.
+          </p>
+        </div>
+
+        <div style="background:#FFF7ED;border:1.5px solid #FCD34D;border-radius:8px;padding:16px 20px;margin:24px 0">
+          <p style="margin:0;font-size:13px;font-weight:700;color:#92400E">⚡ Resumen rápido</p>
+          <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#78350F;line-height:2">
+            <li>Archivos → siempre por el portal, nunca por email directo</li>
+            <li>Etapa terminada → márcala en el portal para gatillar el cobro siguiente</li>
+          </ul>
+        </div>
+
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;">Cualquier duda sobre el uso del portal o el estado del trámite, escríbenos a <a href="mailto:hola@apparq.cl" style="color:#E8503A;">hola@apparq.cl</a>.</p>
+
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0 16px">
+        <p style="font-size:11px;color:#a0aec0;margin:0">APPARQ SpA · RUT 78.441.391-8<br>
+        <a href="mailto:hola@apparq.cl" style="color:#667eea">hola@apparq.cl</a></p>
+      </div>
+    </div>`;
+}
+
 /* ── Envía emails de pago al arquitecto + recordatorio a APPARQ ── */
 async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
   const clp        = project.total_clp || 0;
@@ -151,6 +196,13 @@ async function sendPaymentEmails({ project, architect, RESEND_API_KEY }) {
         </div>
       </div>
     `,
+  }, RESEND_API_KEY);
+
+  /* Email instrucciones plataforma al arquitecto */
+  await sendEmail({
+    to:      architect.email,
+    subject: `📋 Instrucciones de operación en APPARQ — ${pnum}`,
+    html:    instruccionesArqHtml(architect.nombre, pnum),
   }, RESEND_API_KEY);
 
   /* Email interno a APPARQ (recordatorio de pago) */
@@ -373,7 +425,14 @@ export async function onRequest(context) {
             </div></div>`,
         }, RESEND_API_KEY);
 
-        /* 3 — Email interno a APPARQ */
+        /* 3 — Email instrucciones plataforma al arquitecto */
+        await sendEmail({
+          to:      architect.email,
+          subject: `📋 Instrucciones de operación en APPARQ — ${pnum}`,
+          html:    instruccionesArqHtml(architect.nombre, pnum),
+        }, RESEND_API_KEY);
+
+        /* 4 — Email interno a APPARQ */
         const clp2       = project.total_clp || 0;
         const e1_2       = project.e1_clp    || 0;
         const ARQ_PCT2   = architect.patente ? 0.80 : 0.70;
@@ -429,7 +488,7 @@ export async function onRequest(context) {
             </div>`,
         }, RESEND_API_KEY).catch(e => console.error('sendInternalAssignEmail error:', e));
       }
-      return json({ success: true, emails_sent: 3, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
+      return json({ success: true, emails_sent: 4, project: pnum, architect: `${architect.nombre} ${architect.apellido}` });
     }
   }
 
