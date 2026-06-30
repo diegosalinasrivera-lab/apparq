@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>APPARQ — Pitch Deck Pre-Seed 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --orange:  #E8503A;
+    --dark:    #0F1623;
+    --navy:    #1a1a2e;
+    --green:   #059669;
+    --amber:   #D97706;
+    --purple:  #7C3AED;
+    --light:   #F8FAFC;
+    --mid:     #64748B;
+    --border:  #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #1a1a2e;
+    color: #1a1a2e;
+  }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(15,22,35,.92); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; gap: 12px;
+  }
+  #nav .logo { color: #fff; font-weight: 800; font-size: 15px; letter-spacing: .02em; display:flex;align-items:center;gap:8px; }
+  #nav .logo svg { width:22px;height:22px; }
+  #slide-counter { color: rgba(255,255,255,.5); font-size: 13px; font-weight: 500; }
+  #nav-btns { display:flex;gap:8px; }
+  #nav-btns button {
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    color: #fff; border-radius: 6px; padding: 6px 14px; font-size: 13px;
+    font-family: inherit; cursor: pointer; transition: background .15s;
+  }
+  #nav-btns button:hover { background: rgba(255,255,255,.15); }
+  #nav-btns button.primary { background: var(--orange); border-color: var(--orange); font-weight: 700; }
+  #nav-btns button.primary:hover { background: #d4432d; }
+
+  /* ── SLIDES CONTAINER ── */
+  #deck { padding-top: 52px; }
+
+  .slide {
+    width: 100%; min-height: calc(100vh - 52px);
+    display: none; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  /* ── BACKGROUNDS ── */
+  .bg-dark    { background: var(--dark); color: #fff; }
+  .bg-navy    { background: var(--navy); color: #fff; }
+  .bg-white   { background: #fff; color: var(--dark); }
+  .bg-light   { background: var(--light); color: var(--dark); }
+  .bg-orange  { background: var(--orange); color: #fff; }
+
+  /* ── SLIDE INNER ── */
+  .slide-inner {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; padding: 60px 80px;
+    max-width: 1200px; margin: 0 auto; width: 100%;
+  }
+  .slide-inner.wide { max-width: 1400px; }
+
+  /* ── TYPOGRAPHY ── */
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; opacity: .5; margin-bottom: 14px;
+  }
+  .slide-title {
+    font-size: clamp(28px, 4vw, 48px); font-weight: 900;
+    line-height: 1.1; margin-bottom: 20px;
+  }
+  .slide-sub {
+    font-size: clamp(15px, 1.8vw, 20px); font-weight: 400;
+    line-height: 1.6; opacity: .75; max-width: 720px;
+  }
+  .highlight { color: var(--orange); }
+  .highlight-green { color: var(--green); }
+  .highlight-amber { color: var(--amber); }
+
+  /* ── DIVIDER ── */
+  .divider { width: 48px; height: 4px; background: var(--orange); border-radius: 2px; margin: 20px 0; }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px; padding: 28px 24px;
+  }
+  .card.light {
+    background: #fff; border: 1.5px solid var(--border);
+    color: var(--dark); border-radius: 16px; padding: 28px 24px;
+  }
+  .card.orange-border { border-color: var(--orange); }
+  .card.green-border  { border-color: var(--green); }
+  .card-icon { font-size: 32px; margin-bottom: 14px; }
+  .card-num  { font-size: clamp(32px,4vw,52px); font-weight: 900; line-height: 1; }
+  .card-label{ font-size: 12px; font-weight: 700; text-transform: uppercase;
+               letter-spacing: .08em; opacity: .55; margin-top: 6px; }
+  .card-title{ font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+  .card-body { font-size: 13.5px; line-height: 1.65; opacity: .75; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    padding: 10px 14px; border-bottom: 1.5px solid var(--border);
+    color: var(--mid);
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr.highlight-row td { background: #FFF7ED; font-weight: 700; }
+  tr.green-row td { background: #D1FAE5; font-weight: 700; }
+  .num { font-weight: 700; }
+  .green { color: var(--green); }
+  .orange { color: var(--orange); }
+  .red { color: #DC2626; }
+  .muted { color: var(--mid); font-size: 12px; }
+
+  /* ── FUNNEL ── */
+  .funnel { display: flex; flex-direction: column; gap: 0; }
+  .funnel-step {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 20px; border-radius: 10px; margin-bottom: 6px;
+  }
+  .funnel-num { font-size: 28px; font-weight: 900; min-width: 70px; }
+  .funnel-label { font-size: 14px; font-weight: 600; }
+  .funnel-sub { font-size: 12px; opacity: .6; }
+  .funnel-bar { height: 6px; border-radius: 3px; background: var(--orange); margin-top: 4px; }
+
+  /* ── TIMELINE ── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-row {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .tl-row:last-child { border-bottom: none; }
+  .tl-date { font-size: 12px; font-weight: 700; color: var(--orange); min-width: 80px; padding-top: 2px; }
+  .tl-content { font-size: 14px; line-height: 1.6; }
+  .tl-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px; margin-right: 6px;
+  }
+  .badge-green { background: #D1FAE5; color: #065F46; }
+  .badge-orange { background: #FFF7ED; color: #92400E; }
+  .badge-blue { background: #EFF6FF; color: #1D4ED8; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { margin-top: 6px; }
+  .progress-bar {
+    height: 5px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--orange), #F87171);
+  }
+
+  /* ── BIG STAT ── */
+  .big-stat { text-align: center; }
+  .big-stat .num { font-size: clamp(48px, 7vw, 80px); font-weight: 900; line-height: 1; }
+  .big-stat .label { font-size: 13px; font-weight: 600; opacity: .55; margin-top: 8px; }
+
+  /* ── PILL / TAG ── */
+  .pill {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 4px 12px; border-radius: 20px;
+    background: rgba(232,80,58,.15); color: var(--orange);
+    border: 1px solid rgba(232,80,58,.3); margin-right: 6px; margin-bottom: 6px;
+  }
+  .pill.green { background: rgba(5,150,105,.12); color: var(--green); border-color: rgba(5,150,105,.3); }
+  .pill.blue  { background: rgba(37,99,235,.1);  color: #2563EB; border-color: rgba(37,99,235,.25); }
+  .pill.purple{ background: rgba(124,58,237,.1); color: var(--purple); border-color: rgba(124,58,237,.3); }
+
+  /* ── QUOTE BOX ── */
+  .quote-box {
+    border-left: 4px solid var(--orange); padding: 16px 20px;
+    background: rgba(232,80,58,.08); border-radius: 0 10px 10px 0;
+    font-size: 15px; font-style: italic; line-height: 1.7;
+  }
+
+  /* ── LOGO SLIDE ── */
+  .logo-mark {
+    width: 64px; height: 64px; margin-bottom: 24px;
+  }
+
+  /* ── DECORATION CIRCLES ── */
+  .deco {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,80,58,.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── USE-OF-FUNDS BAR ── */
+  .fund-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .fund-label { font-size: 13px; font-weight: 600; min-width: 200px; }
+  .fund-bar-wrap { flex: 1; background: rgba(255,255,255,.1); border-radius: 4px; height: 10px; }
+  .fund-bar { height: 10px; border-radius: 4px; }
+  .fund-pct { font-size: 12px; font-weight: 700; min-width: 38px; text-align: right; opacity: .7; }
+  .fund-amt { font-size: 12px; opacity: .55; min-width: 90px; text-align: right; }
+
+  /* ── PRINT ── */
+  @media print {
+    @page { size: 25.40cm 14.29cm; margin: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    #nav { display: none !important; }
+    #hint { display: none !important; }
+    #deck { padding-top: 0; }
+    .slide { display: flex !important; min-height: 100vh; page-break-after: always; break-after: page; }
+    .slide:last-child { page-break-after: auto; break-after: auto; }
+  }
+
+  /* ── KEYBOARD HINT ── */
+  #hint {
+    position: fixed; bottom: 16px; right: 20px;
+    font-size: 11px; color: rgba(255,255,255,.3);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div id="nav">
+  <div class="logo">
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="20,4 36,34 4,34" fill="none" stroke="#E8503A" stroke-width="3.5" stroke-linejoin="round"/>
+      <line x1="20" y1="14" x2="20" y2="26" stroke="#E8503A" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="20" cy="30" r="2" fill="#E8503A"/>
+    </svg>
+    APPARQ
+  </div>
+  <span id="slide-counter">1 / 15</span>
+  <div id="nav-btns">
+    <button onclick="prev()">← Anterior</button>
+    <button onclick="next()">Siguiente →</button>
+    <button class="primary" onclick="window.print()">⬇ Exportar PDF</button>
+  </div>
+</div>
+
+<div id="deck">
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 1 — PORTADA
+═══════════════════════════════════════════ -->
+<div class="slide bg-dark active" id="s1">
+  <div class="deco" style="width:600px;height:600px;top:-200px;right:-200px;"></div>
+  <div class="deco" style="width:400px;height:400px;bottom:-150px;left:-100px;background:radial-gradient(circle,rgba(124,58,237,.12) 0%,transparent 70%);"></div>
+  <div class="slide-inner" style="justify-content:space-between;padding-top:80px;padding-bottom:80px;">
+    <div>
+      <svg class="logo-mark" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="40,6 74,70 6,70" fill="none" stroke="#E8503A" stroke-width="5" stroke-linejoin="round"/>
+        <line x1="40" y1="26" x2="40" y2="52" stroke="#E8503A" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="40" cy="60" r="4" fill="#E8503A"/>
+      </svg>
+      <div class="eyebrow" style="color:rgba(255,255,255,.4);">Pre-Seed · Mayo 2026</div>
+      <div class="slide-title" style="font-size:clamp(40px,6vw,72px);color:#fff;max-width:700px;">
+        El marketplace que<br/><span class="highlight">digitaliza los trámites</span><br/>de arquitectura en Chile.
+      </div>
+      <div class="slide-sub" style="margin-top:20px;color:rgba(255,255,255,.6);max-width:580px;">
+        APPARQ conecta propietarios con arquitectos para tramitar regularizaciones, Ley del Mono y obras nuevas — 100% online, precio fijo, sin burocracia.
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:40px;border-top:1px solid rgba(255,255,255,.1);">
+      <div style="color:rgba(255,255,255,.5);font-size:13px;">apparq.cl &nbsp;·&nbsp; hola@apparq.cl</div>
+      <div style="display:flex;gap:48px;align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Buscamos levantar</div>
+          <div style="font-size:36px;font-weight:900;color:#fff;">$150.000.000 CLP</div>
+        </div>
+        <div style="width:1px;height:48px;background:rgba(255,255,255,.15);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Valorización post-money</div>
+          <div style="font-size:36px;font-weight:900;color:var(--orange);">$2.250.000.000 CLP</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 2 — PROBLEMA
+═══════════════════════════════════════════ -->
+<div class="slide bg-white" id="s2">
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:var(--orange);">El Problema</div>
+    <div class="slide-title">En Chile hay <span class="highlight">+600.000 propiedades</span><br/>sin regularizar. Nadie sabe cómo resolverlo.</div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:32px;gap:20px;">
+      <div class="card light" style="border-top:4px solid var(--orange);">
+        <div class="card-icon">🏚️</div>
+        <div class="card-title">El proceso es opaco</div>
+        <div class="card-body">El propietario no sabe qué trámite necesita, cuánto cuesta ni cuánto demora. Depende de recomendaciones de boca a boca para encontrar un arquitecto.</div>
+      </div>
+      <div class="card light" style="border-top:4px solid var(--orange);">
+        <div class="card-icon">📋</div>
+        <div class="card-title">La burocracia paraliza</div>
+        <div class="card-body">Municipios, DOM, SERVIU, SII — cada trámite cruza múltiples instituciones. El 70% de las personas desiste antes de completarlo.</div>
+      </div>
+      <div class="card light" style="border-top:4px solid var(--orange);">
+        <div class="card-icon">💸</div>
+        <div class="card-title">El costo es impredecible</div>
+        <div class="card-body">Sin precio fijo ni transparencia, los honorarios varían entre arquitectos y el cliente nunca sabe si está pagando el precio justo.</div>
+      </div>
+    </div>
+    <div class="quote-box" style="margin-top:32px;background:#FFF5F5;border-color:var(--orange);">
+      "600.000+ propiedades sin regularizar en Chile. Cada una es un bien raíz que no puede venderse, heredarse ni remodelarse legalmente — hasta ahora."
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 3 — IMPACTO SOCIAL
+═══════════════════════════════════════════ -->
+<div class="slide bg-dark" id="s3-social">
+  <div class="deco" style="width:500px;height:500px;top:-100px;right:-100px;"></div>
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:rgba(255,255,255,.4);">Impacto Social</div>
+    <div class="slide-title" style="color:#fff;">Una vivienda regularizada<br/>es una vivienda <span class="highlight">segura y vendible.</span></div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:28px;">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:48px;font-weight:900;color:#fff;line-height:1;">+600K</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6;">propiedades sin<br/>regularizar en Chile</div>
+      </div>
+      <div class="card" style="text-align:center;border-color:var(--orange);">
+        <div style="font-size:48px;font-weight:900;color:var(--orange);line-height:1;">50%+</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6;">del parque habitacional<br/>sin recepción final</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:48px;font-weight:900;color:var(--green);line-height:1;">$0</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6;">costo de marketing<br/>para captar arquitectos</div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:20px;gap:20px;">
+      <div class="card" style="background:rgba(232,80,58,.08);border-color:rgba(232,80,58,.25);">
+        <div style="font-size:14px;font-weight:800;color:var(--orange);margin-bottom:10px;">🏠 El problema humano</div>
+        <div class="card-body">Sin recepción final, una vivienda no puede venderse ni hipotecarse legalmente. Millones de familias están atrapadas en irregularidad por no saber cómo — ni cuánto cuesta — regularizar.</div>
+      </div>
+      <div class="card" style="background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.25);">
+        <div style="font-size:14px;font-weight:800;color:var(--green);margin-bottom:10px;">✅ Lo que APPARQ resuelve</div>
+        <div class="card-body">Democratiza el acceso a tramitación formal. Precio transparente, arquitecto asignado, proceso claro. El propietario de cualquier NSE puede regularizar su vivienda con un click.</div>
+      </div>
+    </div>
+    <div class="quote-box" style="margin-top:20px;color:rgba(255,255,255,.8);">
+      APPARQ no solo resuelve un problema de mercado — contribuye directamente a la formalización del parque habitacional chileno, alineado con la política pública vigente (Ley del Mono, DDU 542/543).
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 4 — SOLUCIÓN
+═══════════════════════════════════════════ -->
+<div class="slide bg-light" id="s3">
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:var(--orange);">La Solución</div>
+    <div class="slide-title">APPARQ hace en <span class="highlight">3 pasos</span> lo que<br/>antes tomaba meses de gestión manual.</div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:32px;">
+      <div style="position:relative;">
+        <div style="background:var(--orange);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;margin-bottom:16px;">1</div>
+        <div class="card-icon">🧮</div>
+        <div class="card-title" style="font-size:18px;font-weight:800;margin-bottom:8px;">Cotiza online en 2 minutos</div>
+        <div class="card-body">El propietario ingresa m², tipo de construcción y comuna. Recibe precio fijo en UF al instante. Sin registro, sin llamadas.</div>
+        <div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:100%;"></div></div>
+      </div>
+      <div>
+        <div style="background:var(--dark);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;margin-bottom:16px;">2</div>
+        <div class="card-icon">🏗️</div>
+        <div class="card-title" style="font-size:18px;font-weight:800;margin-bottom:8px;">Arquitecto asignado automáticamente</div>
+        <div class="card-body">APPARQ asigna el arquitecto más cercano y disponible. El cliente no busca — APPARQ conecta. 85 arquitectos en red.</div>
+        <div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:100%;background:var(--dark);"></div></div>
+      </div>
+      <div>
+        <div style="background:var(--green);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;margin-bottom:16px;">3</div>
+        <div class="card-icon">📱</div>
+        <div class="card-title" style="font-size:18px;font-weight:800;margin-bottom:8px;">Seguimiento digital end-to-end</div>
+        <div class="card-body">Portal en tiempo real, pagos por etapas, documentos digitales. El cliente sabe exactamente en qué está su trámite, siempre.</div>
+        <div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:100%;background:var(--green);"></div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;">
+      <span class="pill">Cotizador online</span>
+      <span class="pill">Asignación automática</span>
+      <span class="pill">Portal arquitecto</span>
+      <span class="pill">Portal cliente</span>
+      <span class="pill green">Pagos por etapas</span>
+      <span class="pill green">IA integrada 24/7</span>
+      <span class="pill blue">Dashboard admin</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 4 — MERCADO
+═══════════════════════════════════════════ -->
+<div class="slide bg-dark" id="s4">
+  <div class="deco" style="width:500px;height:500px;top:-100px;right:-100px;"></div>
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:rgba(255,255,255,.4);">Mercado</div>
+    <div class="slide-title" style="color:#fff;">Un mercado de <span class="highlight">$138M USD</span> en Chile<br/>respaldado por política pública activa.</div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:32px;">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:12px;">TAM — Mercado Total</div>
+        <div style="font-size:48px;font-weight:900;color:#fff;">$138M</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6;">~600K propiedades sin regularizar<br/>(est. sector) × $230 USD ingreso APPARQ</div>
+      </div>
+      <div class="card" style="text-align:center;border-color:var(--orange);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:12px;">SAM — Mercado Alcanzable</div>
+        <div style="font-size:48px;font-weight:900;color:var(--orange);">$34,5M</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6;">150K propiedades que activarán<br/>trámite en 5 años × $230 USD</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:12px;">SOM — Meta Año 3</div>
+        <div style="font-size:48px;font-weight:900;color:var(--green);">$800K</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6;">~290 trámites/mes al año 3<br/>basado en proyecciones reales</div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:24px;">
+      <div class="card" style="flex-direction:row;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:28px;">🏛️</div>
+        <div><div style="font-weight:700;font-size:14px;margin-bottom:4px;">Ley del Mono vigente</div><div style="font-size:12px;opacity:.55;line-height:1.5;">Política pública activa. El Estado quiere que la gente regularice.</div></div>
+      </div>
+      <div class="card" style="flex-direction:row;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:28px;">📈</div>
+        <div><div style="font-weight:700;font-size:14px;margin-bottom:4px;">Boom inmobiliario</div><div style="font-size:12px;opacity:.55;line-height:1.5;">Precios subieron +40% en 5 años. Los dueños quieren formalizar para vender.</div></div>
+      </div>
+      <div class="card" style="flex-direction:row;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:28px;">🌎</div>
+        <div><div style="font-weight:700;font-size:14px;margin-bottom:4px;">LatAm replica el problema</div><div style="font-size:12px;opacity:.55;line-height:1.5;">Colombia, Perú, México. Mismo mercado, mayor escala. Expansión natural.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 5 — COMPETENCIA
+═══════════════════════════════════════════ -->
+<div class="slide bg-white" id="s5">
+  <div class="slide-inner wide">
+    <div class="eyebrow" style="color:var(--orange);">Competencia</div>
+    <div class="slide-title">Nadie más resuelve esto<br/><span class="highlight">de principio a fin.</span></div>
+    <div class="divider"></div>
+    <div style="margin-top:28px;overflow-x:auto;">
+      <table style="font-size:13.5px;min-width:600px;">
+        <thead>
+          <tr>
+            <th style="min-width:200px;">Dimensión clave</th>
+            <th style="text-align:center;background:#FFF5F2;color:var(--orange);font-weight:800;border-radius:8px 8px 0 0;padding:12px;">APPARQ</th>
+            <th style="text-align:center;">Arquitecto independiente</th>
+            <th style="text-align:center;">Habitissimo / Homie</th>
+            <th style="text-align:center;">Oficina de arquitectura</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Precio fijo y transparente</td>
+            <td style="text-align:center;background:#FFF5F2;font-size:18px;">✅</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+          </tr>
+          <tr>
+            <td>Asignación automática</td>
+            <td style="text-align:center;background:#FFF5F2;font-size:18px;">✅</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">⚠️</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+          </tr>
+          <tr>
+            <td>Especializado en trámites</td>
+            <td style="text-align:center;background:#FFF5F2;font-size:18px;">✅</td>
+            <td style="text-align:center;font-size:18px;">⚠️</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">⚠️</td>
+          </tr>
+          <tr>
+            <td>Seguimiento digital end-to-end</td>
+            <td style="text-align:center;background:#FFF5F2;font-size:18px;">✅</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+          </tr>
+          <tr>
+            <td>Pagos por etapas con garantía</td>
+            <td style="text-align:center;background:#FFF5F2;font-size:18px;">✅</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+          </tr>
+          <tr>
+            <td>100% online, sin reuniones</td>
+            <td style="text-align:center;background:#FFF5F2;font-size:18px;">✅</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+            <td style="text-align:center;font-size:18px;">⚠️</td>
+            <td style="text-align:center;font-size:18px;">❌</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;">
+      <div class="quote-box">
+        "El mercado informal no es la competencia — es el problema. Ninguna plataforma existente resuelve trámites de arquitectura con precio fijo y proceso digitalizado."
+      </div>
+      <div class="card light" style="border-left:4px solid var(--green);">
+        <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px;">🏆 Ventaja competitiva sostenible</div>
+        <ul style="list-style:none;font-size:13px;line-height:1.9;color:var(--mid);">
+          <li>✓ Red de 85 arquitectos — costosa de replicar</li>
+          <li>✓ Precio fijo en UF — requiere dominio del proceso</li>
+          <li>✓ Datos de conversión y trámites — moat de datos</li>
+          <li>✓ Fundador arquitecto — conoce el proceso por dentro</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 6 — PRODUCTO
+═══════════════════════════════════════════ -->
+<div class="slide bg-white" id="s5">
+  <div class="slide-inner wide">
+    <div class="eyebrow" style="color:var(--orange);">Producto</div>
+    <div class="slide-title">Una plataforma completa construida en <span class="highlight">60 días</span><br/>por un solo fundador.</div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px;">
+      <div class="card light" style="border-left:4px solid var(--orange);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:24px;">🧮</div>
+          <div style="font-weight:800;font-size:16px;">Cotizador Inteligente</div>
+          <span class="pill" style="margin:0;font-size:10px;">Clientes</span>
+        </div>
+        <div class="card-body">Precio fijo en UF por tipo de trámite y m². Sin registro, resultado inmediato. Funciona 24/7 como captador de leads calificados.</div>
+      </div>
+      <div class="card light" style="border-left:4px solid var(--dark);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:24px;">🏗️</div>
+          <div style="font-weight:800;font-size:16px;">Portal Arquitecto</div>
+          <span class="pill blue" style="margin:0;font-size:10px;">Arquitectos</span>
+        </div>
+        <div class="card-body">Gestión completa de trámites, etapas de pago, documentos y comunicación con el cliente. Protocolo de descarte y cambio de tipo integrado.</div>
+      </div>
+      <div class="card light" style="border-left:4px solid var(--green);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:24px;">👤</div>
+          <div style="font-weight:800;font-size:16px;">Portal Cliente</div>
+          <span class="pill green" style="margin:0;font-size:10px;">Propietarios</span>
+        </div>
+        <div class="card-body">Seguimiento en tiempo real, historial de pagos, consultas al arquitecto y asistente IA que responde dudas frecuentes 24/7.</div>
+      </div>
+      <div class="card light" style="border-left:4px solid var(--purple);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:24px;">⚙️</div>
+          <div style="font-weight:800;font-size:16px;">Dashboard Admin</div>
+          <span class="pill purple" style="margin:0;font-size:10px;">APPARQ</span>
+        </div>
+        <div class="card-body">Asignación automática, pagos por etapas, finanzas en tiempo real, funnel de conversión, métricas de tracción y gestión de arquitectos.</div>
+      </div>
+    </div>
+    <div class="quote-box" style="margin-top:24px;">
+      Stack: Cloudflare Pages · Supabase · Resend · Claude AI — $207 USD/mes en infraestructura para operar la plataforma completa.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 6 — MODELO DE NEGOCIO
+═══════════════════════════════════════════ -->
+<div class="slide bg-navy" id="s6">
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:rgba(255,255,255,.4);">Modelo de Negocio</div>
+    <div class="slide-title" style="color:#fff;">Transaccional, predecible<br/>y con <span class="highlight">92% de gross margin.</span></div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-top:28px;gap:32px;align-items:start;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:16px;">Flujo de dinero por trámite</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;opacity:.6;">Cliente paga total</div><div style="font-size:11px;opacity:.4;">Precio fijo en UF</div></div>
+            <div style="font-size:22px;font-weight:900;color:#fff;">$922 USD</div>
+          </div>
+          <div style="text-align:center;font-size:18px;opacity:.3;">↓</div>
+          <div style="background:rgba(232,80,58,.15);border:1px solid rgba(232,80,58,.3);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;color:var(--orange);font-weight:700;">APPARQ retiene (25%)</div><div style="font-size:11px;opacity:.5;">Comisión de plataforma</div></div>
+            <div style="font-size:22px;font-weight:900;color:var(--orange);">$230 USD</div>
+          </div>
+          <div style="text-align:center;font-size:18px;opacity:.3;">↓</div>
+          <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;opacity:.6;">Arquitecto recibe (75%)</div><div style="font-size:11px;opacity:.4;">Por etapas según avance</div></div>
+            <div style="font-size:22px;font-weight:900;color:rgba(255,255,255,.7);">$692 USD</div>
+          </div>
+          <div style="text-align:center;font-size:18px;opacity:.3;">↓</div>
+          <div style="background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;color:var(--green);font-weight:700;">Costo marginal APPARQ</div><div style="font-size:11px;opacity:.5;">Infra tech por trámite</div></div>
+            <div style="font-size:22px;font-weight:900;color:var(--green);">~$3 USD</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:16px;">Tickets por tipo de servicio</div>
+        <table style="color:#fff;">
+          <thead>
+            <tr>
+              <th style="color:rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.1);">Servicio</th>
+              <th style="color:rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.1);text-align:right;">Cliente paga</th>
+              <th style="color:rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.1);text-align:right;">APPARQ recibe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border-color:rgba(255,255,255,.07);font-size:13px;">Ley del Mono</td><td style="border-color:rgba(255,255,255,.07);text-align:right;font-size:13px;">$588–$798</td><td style="border-color:rgba(255,255,255,.07);text-align:right;color:var(--orange);font-weight:700;font-size:13px;">$147–$200</td></tr>
+            <tr><td style="border-color:rgba(255,255,255,.07);font-size:13px;">Regularización</td><td style="border-color:rgba(255,255,255,.07);text-align:right;font-size:13px;">$500–$1.200</td><td style="border-color:rgba(255,255,255,.07);text-align:right;color:var(--orange);font-weight:700;font-size:13px;">$125–$300</td></tr>
+            <tr><td style="border-color:rgba(255,255,255,.07);font-size:13px;">Obra Nueva</td><td style="border-color:rgba(255,255,255,.07);text-align:right;font-size:13px;">$1.470+</td><td style="border-color:rgba(255,255,255,.07);text-align:right;color:var(--orange);font-weight:700;font-size:13px;">$368+</td></tr>
+            <tr><td style="border-color:rgba(255,255,255,.07);font-size:13px;">Ampliación</td><td style="border-color:rgba(255,255,255,.07);text-align:right;font-size:13px;">$630–$1.000</td><td style="border-color:rgba(255,255,255,.07);text-align:right;color:var(--orange);font-weight:700;font-size:13px;">$157–$250</td></tr>
+          </tbody>
+        </table>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;">
+          <div class="card" style="text-align:center;padding:16px;">
+            <div style="font-size:32px;font-weight:900;color:var(--green);">92%</div>
+            <div style="font-size:11px;opacity:.5;margin-top:4px;text-transform:uppercase;letter-spacing:.06em;">Gross Margin</div>
+          </div>
+          <div class="card" style="text-align:center;padding:16px;">
+            <div style="font-size:32px;font-weight:900;color:var(--orange);">4.6x</div>
+            <div style="font-size:11px;opacity:.5;margin-top:4px;text-transform:uppercase;letter-spacing:.06em;">LTV / CAC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 7 — TRACCIÓN
+═══════════════════════════════════════════ -->
+<div class="slide bg-white" id="s7">
+  <div class="slide-inner wide">
+    <div class="eyebrow" style="color:var(--orange);">Tracción · Datos Reales</div>
+    <div class="slide-title">$2.500 USD contratados en <span class="highlight">60 días</span>.<br/>85 arquitectos listos. $0 invertido en marketing.</div>
+    <div class="divider"></div>
+    <div class="grid-4" style="margin-top:24px;">
+      <div class="card light" style="text-align:center;border-top:3px solid var(--orange);">
+        <div style="font-size:40px;font-weight:900;color:var(--dark);">60</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-top:6px;">Días operando</div>
+      </div>
+      <div class="card light" style="text-align:center;border-top:3px solid var(--green);">
+        <div style="font-size:40px;font-weight:900;color:var(--green);">$2.500</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-top:6px;">USD contratados</div>
+      </div>
+      <div class="card light" style="text-align:center;border-top:3px solid var(--dark);">
+        <div style="font-size:40px;font-weight:900;color:var(--dark);">85</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-top:6px;">Arquitectos en red</div>
+      </div>
+      <div class="card light" style="text-align:center;border-top:3px solid var(--amber);">
+        <div style="font-size:40px;font-weight:900;color:var(--amber);">12%</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-top:6px;">Conversión CTA→Pago</div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:20px;gap:20px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:14px;">Funnel de conversión real</div>
+        <div class="funnel">
+          <div class="funnel-step" style="background:#FFF5F5;">
+            <div class="funnel-num" style="color:var(--dark);">25</div>
+            <div><div class="funnel-label">Click "Comenzar trámite"</div><div class="funnel-sub">Visitantes orgánicos sin pauta</div><div class="funnel-bar" style="width:100%;margin-top:6px;"></div></div>
+          </div>
+          <div class="funnel-step" style="background:#FFF7F0;">
+            <div class="funnel-num" style="color:var(--orange);">7</div>
+            <div><div class="funnel-label">Completaron formulario</div><div class="funnel-sub">28% de los que hicieron click</div><div class="funnel-bar" style="width:28%;background:var(--orange);margin-top:6px;"></div></div>
+          </div>
+          <div class="funnel-step" style="background:#F0FFF8;">
+            <div class="funnel-num" style="color:var(--green);">3</div>
+            <div><div class="funnel-label">Pagaron y tienen trámite activo</div><div class="funnel-sub">43% de los que llenaron · 12% del total</div><div class="funnel-bar" style="width:12%;background:var(--green);margin-top:6px;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:14px;">Timeline de tracción</div>
+        <div class="timeline">
+          <div class="tl-row">
+            <div class="tl-date">Mar 2026</div>
+            <div class="tl-content"><span class="tl-badge badge-blue">Lanzamiento</span>Producto en producción. Primer pago recibido.</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-date">Abr 2026</div>
+            <div class="tl-content"><span class="tl-badge badge-orange">Arquitectos</span>Red de 0 → 85 arquitectos inscritos.</div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-date">May 2026</div>
+            <div class="tl-content"><span class="tl-badge badge-green">Tracción</span>3 clientes pagadores · $553 USD cobrados · $1.947 en pipeline · 16 leads orgánicos captados.</div>
+          </div>
+        </div>
+        <div style="margin-top:20px;background:#F0FDF4;border:1.5px solid #D1FAE5;border-radius:12px;padding:16px 18px;">
+          <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:6px;">💎 El argumento más poderoso</div>
+          <div style="font-size:13px;color:#065F46;line-height:1.6;">85 arquitectos listos y sin trabajo esperando demanda. <strong>El problema de supply — que mata al 90% de los marketplaces — ya está resuelto.</strong> Cada peso en marketing se convierte directamente en trámites.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 8 — GO-TO-MARKET
+═══════════════════════════════════════════ -->
+<div class="slide bg-light" id="s8">
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:var(--orange);">Go-to-Market</div>
+    <div class="slide-title">Orgánico primero. Paid cuando<br/>el <span class="highlight">unit economics lo justifique.</span></div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:28px;gap:16px;">
+      <div class="card light" style="border-top:4px solid var(--orange);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);margin-bottom:12px;">Fase 1 · Hoy (mes 1–6)</div>
+        <div class="card-title">Validación orgánica</div>
+        <ul style="list-style:none;font-size:13.5px;line-height:1.9;color:var(--mid);">
+          <li>🔍 SEO: "regularizar casa Chile", "Ley del Mono 2026"</li>
+          <li>📣 Comunidades propietarios en redes sociales</li>
+          <li>🤝 Boca a boca entre arquitectos</li>
+          <li>🎁 Referidos: cliente refiere → ambos obtienen descuento</li>
+          <li>📊 Optimizar funnel 12% → 18%</li>
+        </ul>
+      </div>
+      <div class="card light" style="border-top:4px solid var(--dark);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--dark);margin-bottom:12px;">Fase 2 · Con inversión (mes 7–18)</div>
+        <div class="card-title">Escala paid</div>
+        <ul style="list-style:none;font-size:13.5px;line-height:1.9;color:var(--mid);">
+          <li>📱 Meta + Google Ads ($800 USD/mes)</li>
+          <li>🎬 Contenido educativo: "¿Necesitas regularizar?"</li>
+          <li>🏠 Alianzas con corredoras de propiedades</li>
+          <li>⚖️ Partnerships con notarías y municipios</li>
+        </ul>
+      </div>
+      <div class="card light" style="border-top:4px solid var(--green);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green);margin-bottom:12px;">Fase 3 · Expansión (mes 18+)</div>
+        <div class="card-title">Regiones y LatAm</div>
+        <ul style="list-style:none;font-size:13.5px;line-height:1.9;color:var(--mid);">
+          <li>🗺️ Regiones con mayor backlog de regularizaciones</li>
+          <li>🌎 Colombia y Perú como primeros mercados LatAm</li>
+          <li>🤖 IA para automatizar más del flujo</li>
+          <li>📐 Integración con DOM municipales</li>
+        </ul>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px;">
+      <div class="card light" style="text-align:center;padding:16px;">
+        <div style="font-size:24px;font-weight:900;color:var(--dark);">$50 USD</div>
+        <div style="font-size:11px;color:var(--mid);margin-top:4px;">CAC estimado con pauta</div>
+      </div>
+      <div class="card light" style="text-align:center;padding:16px;">
+        <div style="font-size:24px;font-weight:900;color:var(--orange);">$230 USD</div>
+        <div style="font-size:11px;color:var(--mid);margin-top:4px;">LTV por trámite</div>
+      </div>
+      <div class="card light" style="text-align:center;padding:16px;">
+        <div style="font-size:24px;font-weight:900;color:var(--green);">4.6x</div>
+        <div style="font-size:11px;color:var(--mid);margin-top:4px;">LTV / CAC</div>
+      </div>
+      <div class="card light" style="text-align:center;padding:16px;">
+        <div style="font-size:24px;font-weight:900;color:var(--dark);">12%</div>
+        <div style="font-size:11px;color:var(--mid);margin-top:4px;">Conversión actual (orgánico)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 9 — EQUIPO
+═══════════════════════════════════════════ -->
+<div class="slide bg-dark" id="s9">
+  <div class="deco" style="width:500px;height:500px;bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(124,58,237,.12) 0%,transparent 70%);"></div>
+  <div class="slide-inner" style="justify-content:center;">
+    <div class="eyebrow" style="color:rgba(255,255,255,.4);">Equipo</div>
+    <div class="slide-title" style="color:#fff;">Un fundador que construyó el producto<br/>y consiguió los primeros clientes <span class="highlight">solo.</span></div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-top:32px;gap:32px;align-items:start;">
+      <div class="card" style="padding:32px;">
+        <div style="width:72px;height:72px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:20px;">👤</div>
+        <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Diego Salinas Rivera</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.5);margin-bottom:20px;">Arquitecto · CEO &amp; Founder · apparq.cl</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:rgba(255,255,255,.7);">
+            <span style="color:var(--orange);font-size:16px;margin-top:1px;">✓</span>
+            <strong style="color:#fff;">Arquitecto titulado</strong> — conoce el proceso de trámites por dentro, no lo supone
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:rgba(255,255,255,.7);">
+            <span style="color:var(--orange);font-size:16px;margin-top:1px;">✓</span>
+            Experiencia en empresas
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:rgba(255,255,255,.7);">
+            <span style="color:var(--orange);font-size:16px;margin-top:1px;">✓</span>
+            Construyó la plataforma completa en 60 días usando IA y herramientas modernas — sin equipo de desarrollo
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:rgba(255,255,255,.7);">
+            <span style="color:var(--orange);font-size:16px;margin-top:1px;">✓</span>
+            Captó los primeros 3 clientes y reclutó 85 arquitectos sin equipo ni marketing
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card" style="background:rgba(232,80,58,.12);border-color:rgba(232,80,58,.25);">
+          <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:8px;">¿Por qué este fundador gana?</div>
+          <div style="font-size:13.5px;color:rgba(255,255,255,.7);line-height:1.7;">Fundador que conoce el problema desde adentro y construyó la solución sin depender de un equipo técnico. <strong style="color:#fff;">El dominio del proceso regulatorio es la ventaja real — no la tecnología.</strong></div>
+        </div>
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:14px;">Incorporaciones con la inversión</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+              <div style="color:rgba(255,255,255,.8);">🤝 Co-fundador comercial</div>
+              <div style="color:var(--orange);font-weight:700;">Inmediato</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+              <div style="color:rgba(255,255,255,.8);">👤 Ejecutivo Comercial / CS</div>
+              <div style="color:var(--orange);font-weight:700;">Mes 10</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+              <div style="color:rgba(255,255,255,.8);">🎨 Marketing / Contenido</div>
+              <div style="color:var(--orange);font-weight:700;">Mes 14</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 10 — FINANCIERO
+═══════════════════════════════════════════ -->
+<div class="slide bg-white" id="s10">
+  <div class="slide-inner wide">
+    <div class="eyebrow" style="color:var(--orange);">Proyecciones Financieras · Datos Reales</div>
+    <div class="slide-title">Break-even en <span class="highlight">Mes 6.</span> ARR de $116K al año.</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-top:20px;gap:24px;align-items:start;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:12px;">Proyección 18 meses post-inversión</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Mes</th><th>Trámites</th><th style="text-align:right;">Ingreso APPARQ</th><th style="text-align:right;">Burn</th><th style="text-align:right;">Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="muted">Hoy</td><td>3</td><td style="text-align:right;" class="num">$690</td><td style="text-align:right;">$600</td><td style="text-align:right;" class="orange">−$90</td></tr>
+            <tr><td class="muted">Mes 3</td><td>10</td><td style="text-align:right;" class="num">$2.300</td><td style="text-align:right;">$3.900</td><td style="text-align:right;" class="red">−$1.600</td></tr>
+            <tr class="highlight-row"><td>Mes 6 ✦</td><td><strong>20</strong></td><td style="text-align:right;"><strong>$4.600</strong></td><td style="text-align:right;"><strong>$3.900</strong></td><td style="text-align:right;" class="green"><strong>+$700</strong></td></tr>
+            <tr><td class="muted">Mes 9</td><td>30</td><td style="text-align:right;" class="num">$6.900</td><td style="text-align:right;">$4.500</td><td style="text-align:right;" class="green">+$2.400</td></tr>
+            <tr class="green-row"><td>Mes 12</td><td><strong>42</strong></td><td style="text-align:right;"><strong>$9.660</strong></td><td style="text-align:right;"><strong>$6.600</strong></td><td style="text-align:right;" class="green"><strong>+$3.060</strong></td></tr>
+            <tr><td class="muted">Mes 15</td><td>50</td><td style="text-align:right;" class="num">$11.500</td><td style="text-align:right;">$7.000</td><td style="text-align:right;" class="green">+$4.500</td></tr>
+            <tr class="green-row"><td>Mes 18</td><td><strong>58</strong></td><td style="text-align:right;"><strong>$13.340</strong></td><td style="text-align:right;"><strong>$7.200</strong></td><td style="text-align:right;" class="green"><strong>+$6.140</strong></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:11px;color:var(--mid);margin-top:8px;">✦ Break-even operacional. Ingreso APPARQ = 25% del ticket de $922 USD/trámite</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="card light" style="text-align:center;border-top:3px solid var(--orange);">
+            <div style="font-size:28px;font-weight:900;color:var(--orange);">Mes 6</div>
+            <div style="font-size:11px;color:var(--mid);margin-top:4px;font-weight:600;">Break-even</div>
+          </div>
+          <div class="card light" style="text-align:center;border-top:3px solid var(--green);">
+            <div style="font-size:28px;font-weight:900;color:var(--green);">$116K</div>
+            <div style="font-size:11px;color:var(--mid);margin-top:4px;font-weight:600;">ARR Mes 12</div>
+          </div>
+          <div class="card light" style="text-align:center;border-top:3px solid var(--dark);">
+            <div style="font-size:28px;font-weight:900;color:var(--dark);">$160K</div>
+            <div style="font-size:11px;color:var(--mid);margin-top:4px;font-weight:600;">ARR Mes 18</div>
+          </div>
+          <div class="card light" style="text-align:center;border-top:3px solid var(--amber);">
+            <div style="font-size:28px;font-weight:900;color:var(--amber);">20 meses</div>
+            <div style="font-size:11px;color:var(--mid);margin-top:4px;font-weight:600;">Runway total</div>
+          </div>
+        </div>
+        <div class="card light" style="border-top:3px solid var(--dark);">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:12px;">Burn rate actual vs post-inversión</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+            <div style="display:flex;justify-content:space-between;"><span>Tech stack</span><span class="num">$207/mes</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Sueldo fundador</span><span class="num">$3.000.000/mes</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Marketing digital</span><span class="num">$1.500.000/mes</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Gastos empresa</span><span class="num">$950.000/mes</span></div>
+            <div style="display:flex;justify-content:space-between;border-top:1.5px solid var(--border);padding-top:8px;margin-top:4px;font-weight:800;"><span>Total burn</span><span>~$5.450.000/mes</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 11 — USO DE FONDOS
+═══════════════════════════════════════════ -->
+<div class="slide bg-navy" id="s11">
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:rgba(255,255,255,.4);">Uso de Fondos</div>
+    <div class="slide-title" style="color:#fff;">$150.000.000 CLP · <span class="highlight">3 hitos concretos</span><br/>en 20 meses de runway.</div>
+    <div class="divider"></div>
+    <div class="grid-2" style="margin-top:28px;gap:40px;align-items:center;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:20px;">Distribución del capital</div>
+        <div>
+          <div class="fund-row">
+            <div class="fund-label">💼 Sueldo fundador (20 meses · $3.000.000/mes)</div>
+            <div class="fund-bar-wrap"><div class="fund-bar" style="width:40%;background:var(--orange);"></div></div>
+            <div class="fund-pct">40%</div>
+            <div class="fund-amt">$60.000.000</div>
+          </div>
+          <div class="fund-row">
+            <div class="fund-label">📣 Marketing &amp; adquisición</div>
+            <div class="fund-bar-wrap"><div class="fund-bar" style="width:20%;background:#F87171;"></div></div>
+            <div class="fund-pct">20%</div>
+            <div class="fund-amt">$30.000.000</div>
+          </div>
+          <div class="fund-row">
+            <div class="fund-label">👥 Primera contratación (mes 10)</div>
+            <div class="fund-bar-wrap"><div class="fund-bar" style="width:17%;background:var(--amber);"></div></div>
+            <div class="fund-pct">17%</div>
+            <div class="fund-amt">$25.000.000</div>
+          </div>
+          <div class="fund-row">
+            <div class="fund-label">📋 Gastos empresa + legal</div>
+            <div class="fund-bar-wrap"><div class="fund-bar" style="width:13%;background:#60A5FA;"></div></div>
+            <div class="fund-pct">13%</div>
+            <div class="fund-amt">$19.000.000</div>
+          </div>
+          <div class="fund-row">
+            <div class="fund-label">⚙️ Tech &amp; infraestructura</div>
+            <div class="fund-bar-wrap"><div class="fund-bar" style="width:10%;background:var(--green);"></div></div>
+            <div class="fund-pct">10%</div>
+            <div class="fund-amt">$16.000.000</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:4px;">3 hitos que alcanzaremos</div>
+        <div class="card" style="border-color:rgba(232,80,58,.3);background:rgba(232,80,58,.08);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:13px;font-weight:800;color:var(--orange);">🎯 Hito 1</div>
+            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">Mes 6</div>
+          </div>
+          <div style="font-size:13.5px;color:rgba(255,255,255,.75);line-height:1.6;">20+ trámites activos · $3.800.000/mes ingreso · CAC validado · Break-even operacional</div>
+        </div>
+        <div class="card" style="border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.08);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:13px;font-weight:800;color:var(--green);">🎯 Hito 2</div>
+            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">Mes 12</div>
+          </div>
+          <div style="font-size:13.5px;color:rgba(255,255,255,.75);line-height:1.6;">40+ trámites/mes · $7.700.000/mes ingreso · Primer empleado incorporado · ARR $92.000.000 CLP</div>
+        </div>
+        <div class="card" style="border-color:rgba(124,58,237,.3);background:rgba(124,58,237,.08);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:13px;font-weight:800;color:#A78BFA);">🎯 Hito 3</div>
+            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);">Mes 18</div>
+          </div>
+          <div style="font-size:13.5px;color:rgba(255,255,255,.75);line-height:1.6;">$11.500.000/mes ingreso · ARR $138.000.000 CLP · Listo para levantar Serie A · Expansión regional iniciada</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 13 — DEFENSIBILIDAD
+═══════════════════════════════════════════ -->
+<div class="slide bg-white" id="s13">
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:var(--orange);">Defensibilidad</div>
+    <div class="slide-title">La barrera no es técnica.<br/><span class="highlight">Es la red.</span></div>
+    <div class="divider"></div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-top:28px;">
+      <div class="card light" style="border-left:4px solid var(--orange);display:flex;gap:20px;align-items:flex-start;">
+        <div style="font-size:36px;min-width:48px;">🏙️</div>
+        <div>
+          <div class="card-title" style="font-size:16px;margin-bottom:8px;">Red de 85 arquitectos validados por comuna</div>
+          <div class="card-body">Cada arquitecto incorporado representa capital intelectual acumulado sobre la DOM local. Conoce a los inspectores, los requisitos específicos y los tiempos reales de cada municipio. Eso no se replica en semanas. <strong>85 arquitectos en 60 días, sin invertir en marketing.</strong></div>
+        </div>
+      </div>
+      <div class="card light" style="border-left:4px solid var(--dark);display:flex;gap:20px;align-items:flex-start;">
+        <div style="font-size:36px;min-width:48px;">📋</div>
+        <div>
+          <div class="card-title" style="font-size:16px;margin-bottom:8px;">Conocimiento regulatorio profundo</div>
+          <div class="card-body">APPARQ domina DDU 542/543, Ley del Mono, requisitos DOM por comuna. El cotizador con precio exacto — no referencial — es posible solo porque el fundador entiende el proceso desde adentro. Eso tarda años en construirse.</div>
+        </div>
+      </div>
+      <div class="card light" style="border-left:4px solid var(--green);display:flex;gap:20px;align-items:flex-start;">
+        <div style="font-size:36px;min-width:48px;">🔄</div>
+        <div>
+          <div class="card-title" style="font-size:16px;margin-bottom:8px;">Efecto de red que crece solo</div>
+          <div class="card-body">Más arquitectos → mayor cobertura geográfica → más clientes posibles. Más clientes → más atractivo para arquitectos. El moat crece con cada usuario incorporado — y los 85 llegaron sin un peso en marketing.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 14 — ESCALABILIDAD
+═══════════════════════════════════════════ -->
+<div class="slide bg-navy" id="s14">
+  <div class="deco" style="width:400px;height:400px;bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(232,80,58,.12) 0%,transparent 70%);"></div>
+  <div class="slide-inner">
+    <div class="eyebrow" style="color:rgba(255,255,255,.4);">Escalabilidad</div>
+    <div class="slide-title" style="color:#fff;">Chile es el piloto.<br/>El modelo DOM existe en <span class="highlight">toda LATAM.</span></div>
+    <div class="divider"></div>
+    <div class="grid-3" style="margin-top:28px;">
+      <div class="card" style="border-top:4px solid var(--orange);position:relative;">
+        <div style="position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);background:rgba(232,80,58,.15);padding:3px 8px;border-radius:20px;">Hoy</div>
+        <div style="font-size:22px;margin-bottom:12px;">🇨🇱</div>
+        <div class="card-title">Chile · RM</div>
+        <div class="card-body">Plataforma operativa. 85 arquitectos. 3 clientes pagantes. Expansión a todas las comunas de Chile con la red actual.</div>
+        <div style="margin-top:16px;font-size:12px;font-weight:700;color:var(--orange);">TAM Chile: $138M USD</div>
+      </div>
+      <div class="card" style="border-top:4px solid rgba(255,255,255,.3);">
+        <div style="position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);padding:3px 8px;border-radius:20px;">Año 2</div>
+        <div style="font-size:22px;margin-bottom:12px;">🇨🇱</div>
+        <div class="card-title">Chile · Nacional</div>
+        <div class="card-body">Consolidar en Valparaíso, Biobío y Maule. Meta: 500+ proyectos tramitados. ARR $160K. Listo para Serie A.</div>
+        <div style="margin-top:16px;font-size:12px;font-weight:700;color:rgba(255,255,255,.4);">Cobertura nacional</div>
+      </div>
+      <div class="card" style="border-top:4px solid rgba(255,255,255,.3);">
+        <div style="position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);padding:3px 8px;border-radius:20px;">Año 3+</div>
+        <div style="font-size:22px;margin-bottom:12px;">🌎</div>
+        <div class="card-title">Expansión LATAM</div>
+        <div class="card-body">México (licencias municipales), Colombia (curadurías urbanas), Perú (municipalidades). Mismo problema, mismo modelo, mayor escala.</div>
+        <div style="margin-top:16px;font-size:12px;font-weight:700;color:rgba(255,255,255,.4);">Mercado potencial: $1B+</div>
+      </div>
+    </div>
+    <div class="quote-box" style="margin-top:24px;color:rgba(255,255,255,.8);">
+      El modelo es digital y asset-light: escalar a un nuevo país no requiere infraestructura física, solo validación regulatoria local y onboarding de arquitectos. El playbook es replicable.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 15 — EL ASK
+═══════════════════════════════════════════ -->
+<div class="slide bg-orange" id="s12">
+  <div class="deco" style="width:600px;height:600px;top:-200px;right:-200px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);"></div>
+  <div class="deco" style="width:400px;height:400px;bottom:-150px;left:-100px;background:radial-gradient(circle,rgba(0,0,0,.15) 0%,transparent 70%);"></div>
+  <div class="slide-inner" style="justify-content:space-between;padding-top:80px;padding-bottom:80px;">
+    <div>
+      <div class="eyebrow" style="color:rgba(255,255,255,.6);">El Ask</div>
+      <div class="slide-title" style="color:#fff;font-size:clamp(36px,5vw,64px);">Buscamos <strong>$150.000.000 CLP</strong><br/>para llevar APPARQ<br/>al siguiente nivel.</div>
+    </div>
+    <div class="grid-2" style="gap:20px;margin:24px 0;max-width:600px;">
+      <div style="background:rgba(255,255,255,.15);border-radius:16px;padding:28px 24px;text-align:center;border:1px solid rgba(255,255,255,.2);">
+        <div style="font-size:13px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Ronda Pre-Seed</div>
+        <div style="font-size:44px;font-weight:900;color:#fff;">$150.000.000</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:6px;">CLP</div>
+      </div>
+      <div style="background:rgba(255,255,255,.15);border-radius:16px;padding:28px 24px;text-align:center;border:1px solid rgba(255,255,255,.2);">
+        <div style="font-size:13px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Valorización post-money</div>
+        <div style="font-size:44px;font-weight:900;color:var(--orange);">$2.250.000.000</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:6px;">CLP</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.12);border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,.2);margin-bottom:24px;">
+      <div style="font-size:15px;color:#fff;font-weight:700;margin-bottom:8px;">¿Por qué ahora?</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.7;">El mercado está listo, la Ley del Mono tiene prórroga activa, el producto funciona y tenemos los primeros clientes sin haber gastado un peso en publicidad. <strong>Cada mes sin inversión es tracción perdida.</strong></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:24px;border-top:1px solid rgba(255,255,255,.2);">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;">Diego Salinas Rivera</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.65);">CEO &amp; Founder · APPARQ</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:15px;font-weight:700;color:#fff;">hola@apparq.cl</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.65);">apparq.cl</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #deck -->
+
+<div id="hint">← → o click en botones para navegar · PDF para exportar</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('slide-counter');
+  let cur = 0;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    counter.textContent = `${cur + 1} / ${slides.length}`;
+    window.scrollTo(0, 0);
+  }
+
+  function next() { show(cur + 1); }
+  function prev() { show(cur - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev();
+  });
+</script>
+</body>
+</html>
