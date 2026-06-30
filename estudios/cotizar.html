@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cotizar trámite — APPARQ para Estudios</title>
+  <meta name="robots" content="noindex" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #E8503A;
+      --dark:   #111827;
+      --mid:    #374151;
+      --muted:  #6B7280;
+      --light:  #9CA3AF;
+      --border: #E5E7EB;
+      --border-light: #F3F4F6;
+      --bg:     #FFFFFF;
+      --bg-soft:#F9FAFB;
+      --radius: 12px;
+      --radius-pill: 999px;
+      --grad:   linear-gradient(135deg,#E8503A 0%,#FF7255 100%);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 clamp(1rem,4vw,2.5rem);
+      display: flex; align-items: center;
+      justify-content: space-between; height: 60px;
+    }
+    .logo { display:flex; align-items:center; gap:8px; text-decoration:none; }
+    .logo-icon { width:28px; height:28px; flex-shrink:0; }
+    .logo-wm { font-size:1rem; font-weight:900; letter-spacing:.08em; color:var(--dark); }
+    .nav-links { display:flex; align-items:center; gap:4px; }
+    .nav-link {
+      padding:.45rem .85rem; border-radius:var(--radius-pill);
+      font-size:.875rem; font-weight:500; color:var(--muted);
+      text-decoration:none; transition:background .15s,color .15s;
+    }
+    .nav-link:hover { background:var(--bg-soft); color:var(--dark); }
+    .nav-link-active {
+      padding:.45rem .9rem; border-radius:var(--radius-pill);
+      font-size:.875rem; font-weight:700; color:var(--dark);
+      text-decoration:none; background:var(--bg-soft); border:1.5px solid var(--border);
+    }
+    .nav-burger {
+      display:none; background:none; border:none; cursor:pointer;
+      padding:8px; margin-right:-8px; flex-direction:column; gap:5px; align-items:center;
+    }
+    .nav-burger span { display:block; width:22px; height:2px; background:var(--dark); border-radius:2px; transition:transform .2s,opacity .2s; }
+    .nav-burger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+    .nav-burger.open span:nth-child(2) { opacity:0; }
+    .nav-burger.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+    @media (max-width:640px) {
+      .nav-burger { display:flex; }
+      .nav-links {
+        display:none; position:fixed; top:60px; left:0; right:0;
+        background:#fff; border-bottom:1px solid var(--border-light);
+        flex-direction:column; padding:.75rem; gap:.25rem;
+        box-shadow:0 8px 24px rgba(0,0,0,.1); z-index:300;
+      }
+      .nav-links.open { display:flex; }
+      .nav-link, .nav-link-active { display:block; width:100%; padding:.7rem .85rem; border-radius:var(--radius); }
+    }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap {
+      background:var(--bg-soft); border-bottom:1px solid var(--border-light);
+      padding:1.25rem clamp(1rem,4vw,2.5rem);
+    }
+    .progress-inner { max-width:600px; margin:0 auto; }
+    .progress-label {
+      font-size:.75rem; font-weight:700; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.06em; margin-bottom:.6rem;
+    }
+    .progress-bar { height:4px; background:var(--border); border-radius:2px; }
+    .progress-fill { height:4px; background:var(--grad); border-radius:2px; transition:width .3s; }
+
+    /* ── LAYOUT ── */
+    .page-wrap { max-width:600px; margin:0 auto; padding:2.5rem clamp(1rem,4vw,2rem) 4rem; }
+
+    /* ── STEP HEADER ── */
+    .step-eyebrow { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--orange); margin-bottom:.5rem; }
+    .step-h2 { font-size:1.4rem; font-weight:800; line-height:1.25; margin-bottom:.5rem; }
+    .step-sub { font-size:.9rem; color:var(--muted); line-height:1.6; margin-bottom:1.75rem; }
+
+    /* ── SERVICE GRID (paso 1) ── */
+    .svc-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.6rem; margin-bottom:1.5rem; }
+    .svc-btn {
+      padding:.75rem 1rem; border-radius:var(--radius);
+      border:1.5px solid var(--border); background:#fff;
+      font-family:inherit; font-size:.875rem; font-weight:600; color:var(--mid);
+      cursor:pointer; text-align:left; transition:border-color .15s,background .15s,color .15s;
+      line-height:1.3;
+    }
+    .svc-btn:hover { border-color:#D1D5DB; background:var(--bg-soft); }
+    .svc-btn.selected { border-color:var(--orange); background:#FFF5F3; color:var(--orange); }
+
+    /* ── SUB-TYPE (paso 1) ── */
+    .sub-panel { display:none; background:var(--bg-soft); border-radius:var(--radius); padding:1rem; margin-bottom:1rem; }
+    .sub-panel.visible { display:block; }
+    .sub-panel label { display:block; font-size:.85rem; font-weight:700; color:var(--mid); margin-bottom:.5rem; }
+    .sub-radio-group { display:flex; flex-direction:column; gap:.4rem; }
+    .sub-radio { display:flex; align-items:center; gap:.6rem; cursor:pointer; }
+    .sub-radio input[type=radio] { accent-color:var(--orange); width:16px; height:16px; flex-shrink:0; }
+    .sub-radio span { font-size:.875rem; color:var(--mid); font-weight:500; }
+
+    /* ── FIELDS ── */
+    .field { margin-bottom:1.1rem; }
+    .field label { display:block; font-size:.8rem; font-weight:700; color:var(--mid); margin-bottom:.35rem; }
+    .field input, .field select, .field textarea {
+      width:100%; padding:.65rem .85rem;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      font-family:inherit; font-size:.9rem; color:var(--dark);
+      background:#fff; transition:border-color .15s;
+      appearance:none; -webkit-appearance:none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline:none; border-color:var(--orange);
+    }
+    .field textarea { resize:vertical; min-height:80px; }
+    .field-hint { font-size:.75rem; color:var(--light); margin-top:.3rem; }
+
+    /* ── COMMUNE SELECT ── */
+    .commune-search {
+      width:100%; padding:.65rem .85rem;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      font-family:inherit; font-size:.9rem; color:var(--dark);
+      background:#fff; margin-bottom:.4rem;
+    }
+    .commune-search:focus { outline:none; border-color:var(--orange); }
+    .commune-list {
+      max-height:180px; overflow-y:auto;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      background:#fff; display:none;
+    }
+    .commune-list.open { display:block; }
+    .commune-opt {
+      padding:.55rem .85rem; font-size:.875rem; color:var(--mid);
+      cursor:pointer; transition:background .1s;
+    }
+    .commune-opt:hover { background:var(--bg-soft); }
+    .commune-opt.selected { background:#FFF5F3; color:var(--orange); font-weight:600; }
+
+    /* ── PRICE BOX (paso 2) ── */
+    .price-box { background:var(--bg-soft); border:1.5px solid var(--border); border-radius:16px; padding:1.75rem; margin-bottom:1.5rem; }
+    .price-label { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:.4rem; }
+    .price-total { font-size:2.2rem; font-weight:900; color:var(--dark); line-height:1; }
+    .price-uf { font-size:.8rem; color:var(--light); margin-top:.25rem; }
+    .stages-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; margin-top:1.25rem; }
+    .stage-item { background:#fff; border:1px solid var(--border); border-radius:10px; padding:.75rem; }
+    .stage-name { font-size:.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+    .stage-amt { font-size:.95rem; font-weight:700; color:var(--dark); margin-top:.2rem; }
+    .stage-item.e1 { border-color:#D1FAE5; background:#F0FDF4; }
+    .stage-item.e1 .stage-name { color:#059669; }
+    .stage-item.e1 .stage-amt { color:#059669; }
+
+    /* ── CONTACTO TIPO (paso 3) ── */
+    .radio-card-group { display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.25rem; }
+    .radio-card {
+      display:flex; align-items:flex-start; gap:.75rem;
+      padding:1rem 1.1rem; border:1.5px solid var(--border);
+      border-radius:var(--radius); cursor:pointer; transition:border-color .15s,background .15s;
+    }
+    .radio-card:hover { border-color:#D1D5DB; background:var(--bg-soft); }
+    .radio-card.selected { border-color:var(--orange); background:#FFF5F3; }
+    .radio-card input { accent-color:var(--orange); margin-top:3px; flex-shrink:0; }
+    .radio-card-body { flex:1; }
+    .radio-card-title { font-size:.9rem; font-weight:700; color:var(--dark); }
+    .radio-card-sub { font-size:.8rem; color:var(--muted); margin-top:.2rem; line-height:1.4; }
+
+    /* ── PAY BOX (paso 4) ── */
+    .pay-box { background:var(--bg-soft); border:1.5px solid var(--border); border-radius:16px; padding:1.75rem; margin-bottom:1.5rem; }
+    .pay-label { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:.3rem; }
+    .pay-amount { font-size:2rem; font-weight:900; color:var(--dark); }
+    .pay-desc { font-size:.82rem; color:var(--muted); margin-top:.4rem; line-height:1.5; }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      display:block; width:100%; padding:.85rem 1.5rem;
+      background:var(--grad); color:#fff; border:none;
+      border-radius:var(--radius-pill); font-family:inherit;
+      font-size:.95rem; font-weight:700; cursor:pointer;
+      transition:opacity .15s; text-align:center; text-decoration:none;
+    }
+    .btn-primary:disabled { opacity:.45; cursor:default; }
+    .btn-primary:not(:disabled):hover { opacity:.9; }
+    .btn-mp {
+      display:flex; align-items:center; justify-content:center; gap:.5rem;
+      width:100%; padding:.9rem 1.5rem;
+      background:#009EE3; color:#fff; border:none;
+      border-radius:var(--radius-pill); font-family:inherit;
+      font-size:.95rem; font-weight:700; cursor:pointer;
+      transition:opacity .15s;
+    }
+    .btn-mp:disabled { opacity:.45; cursor:default; }
+    .btn-mp:not(:disabled):hover { opacity:.9; }
+    .btn-back {
+      background:none; border:none; font-family:inherit;
+      font-size:.85rem; color:var(--muted); cursor:pointer;
+      padding:.4rem 0; margin-top:.75rem; display:block; width:100%; text-align:center;
+    }
+    .btn-back:hover { color:var(--dark); }
+
+    /* ── ERROR ── */
+    .error-msg { background:#FEF2F2; border:1px solid #FECACA; border-radius:var(--radius); padding:.75rem 1rem; font-size:.85rem; color:#B91C1C; margin-bottom:1rem; display:none; }
+    .error-msg.visible { display:block; }
+
+    /* ── DIVIDER ── */
+    .divider { height:1px; background:var(--border); margin:1.5rem 0; }
+
+    /* ── SUCCESS ── */
+    .success-wrap { text-align:center; padding:2rem 0; }
+    .success-icon { font-size:3rem; margin-bottom:1rem; }
+    .success-h { font-size:1.4rem; font-weight:800; margin-bottom:.5rem; }
+    .success-sub { font-size:.9rem; color:var(--muted); line-height:1.6; }
+    .project-num { font-size:1.5rem; font-weight:900; color:var(--orange); letter-spacing:2px; margin:.75rem 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="/">
+      <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="16,2 30,28 2,28" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linejoin="round"/>
+        <line x1="10" y1="22" x2="22" y2="22" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-wm">APPARQ</span>
+    </a>
+    <div class="nav-links" id="cotNavLinks">
+      <a href="/" class="nav-link">Mi trámite</a>
+      <a href="/#como-funciona" class="nav-link">Soy arquitecto</a>
+      <a href="/estudios" class="nav-link-active">Soy estudio</a>
+      <a href="https://wa.me/56942054581" target="_blank" rel="noopener" class="nav-link">Hablar con el equipo</a>
+    </div>
+    <button class="nav-burger" id="cotBurger" aria-label="Menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── PROGRESS ── -->
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="progress-label" id="progLabel">Paso 1 de 4 — Trámite</div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:25%"></div></div>
+  </div>
+</div>
+
+<!-- ── CONTENIDO ── -->
+<div class="page-wrap">
+
+  <!-- ════ PASO 1: TRÁMITE ════ -->
+  <div id="step1">
+    <div class="step-eyebrow">Paso 1 de 4</div>
+    <h2 class="step-h2">¿Qué trámite necesitas gestionar?</h2>
+    <p class="step-sub">Selecciona el tipo de trámite y la ubicación de la propiedad.</p>
+
+    <div class="svc-grid">
+      <button class="svc-btn" data-svc="regularizacion">Regularización</button>
+      <button class="svc-btn" data-svc="ampliacion">Ampliación</button>
+      <button class="svc-btn" data-svc="declaracion-jurada">Decl. Jurada</button>
+      <button class="svc-btn" data-svc="obra-nueva">Obra Nueva</button>
+      <button class="svc-btn" data-svc="informe">Informe</button>
+      <button class="svc-btn" data-svc="ley-del-mono">Ley del Mono</button>
+    </div>
+
+    <!-- Sub-tipo: Regularización -->
+    <div class="sub-panel" id="sub-regularizacion">
+      <label>Tipo de regularización</label>
+      <div class="sub-radio-group">
+        <label class="sub-radio"><input type="radio" name="reg-sub" value="obra-menor"><span>Obra menor (hasta 100 m²)</span></label>
+        <label class="sub-radio"><input type="radio" name="reg-sub" value="obra-nueva-reg"><span>Obra nueva (regularización)</span></label>
+      </div>
+    </div>
+
+    <!-- Sub-tipo: Declaración Jurada -->
+    <div class="sub-panel" id="sub-declaracion-jurada">
+      <label>Tipo de declaración</label>
+      <div class="sub-radio-group">
+        <label class="sub-radio"><input type="radio" name="dj-sub" value="piscina_privada"><span>Piscina privada</span></label>
+        <label class="sub-radio"><input type="radio" name="dj-sub" value="pergola_sombreadero"><span>Pérgola / sombreadero</span></label>
+        <label class="sub-radio"><input type="radio" name="dj-sub" value="demolicion"><span>Demolición</span></label>
+      </div>
+    </div>
+
+    <!-- Sub-tipo: Informe -->
+    <div class="sub-panel" id="sub-informe">
+      <label>Tipo de informe</label>
+      <div class="sub-radio-group">
+        <label class="sub-radio"><input type="radio" name="inf-sub" value="evaluacion"><span>Evaluación normativa</span></label>
+        <label class="sub-radio"><input type="radio" name="inf-sub" value="factibilidad"><span>Factibilidad</span></label>
+        <label class="sub-radio"><input type="radio" name="inf-sub" value="compraventa"><span>Compraventa</span></label>
+      </div>
+    </div>
+
+    <!-- m² -->
+    <div class="field" id="field-m2" style="display:none">
+      <label>Superficie a tramitar (m²)</label>
+      <input type="number" id="m2Input" min="1" max="9999" placeholder="Ej: 85" />
+    </div>
+
+    <!-- Dirección -->
+    <div class="field">
+      <label>Dirección de la propiedad</label>
+      <input type="text" id="addrInput" placeholder="Ej: Av. Providencia 1234" />
+    </div>
+
+    <!-- Comuna -->
+    <div class="field">
+      <label>Comuna</label>
+      <input type="text" class="commune-search" id="communeSearch" placeholder="Buscar comuna…" autocomplete="off" />
+      <div class="commune-list" id="communeList"></div>
+      <input type="hidden" id="communeVal" />
+    </div>
+
+    <div class="error-msg" id="err1"></div>
+    <button class="btn-primary" id="btn1" disabled>Ver precio exacto</button>
+  </div>
+
+  <!-- ════ PASO 2: PRECIO ════ -->
+  <div id="step2" style="display:none">
+    <div class="step-eyebrow">Paso 2 de 4</div>
+    <h2 class="step-h2">Precio exacto del trámite</h2>
+    <p class="step-sub">Sin letra chica. Este es el precio total del trámite para tu cliente.</p>
+
+    <div class="price-box">
+      <div class="price-label">Total del trámite</div>
+      <div class="price-total" id="p2Total">—</div>
+      <div class="price-uf" id="p2UF"></div>
+      <div class="divider"></div>
+      <div class="stages-grid" id="p2Stages"></div>
+    </div>
+
+    <div class="field">
+      <label>Servicio</label>
+      <input type="text" id="p2Svc" readonly style="background:var(--bg-soft);color:var(--muted);" />
+    </div>
+    <div class="field">
+      <label>Propiedad</label>
+      <input type="text" id="p2Addr" readonly style="background:var(--bg-soft);color:var(--muted);" />
+    </div>
+
+    <button class="btn-primary" id="btn2">Continuar con los datos del estudio</button>
+    <button class="btn-back" onclick="goStep(1)">Volver</button>
+  </div>
+
+  <!-- ════ PASO 3: DATOS DEL ESTUDIO ════ -->
+  <div id="step3" style="display:none">
+    <div class="step-eyebrow">Paso 3 de 4</div>
+    <h2 class="step-h2">Datos del estudio</h2>
+    <p class="step-sub">Esta información se usará para la facturación y para coordinar el trámite.</p>
+
+    <div class="field">
+      <label>Nombre del estudio</label>
+      <input type="text" id="estNombre" placeholder="Ej: Estudio García Arquitectos" />
+    </div>
+    <div class="field">
+      <label>RUT del estudio</label>
+      <input type="text" id="estRut" placeholder="Ej: 76.123.456-7" />
+      <div class="field-hint">La facturación se emitirá a nombre del estudio.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="step-eyebrow" style="margin-bottom:.75rem">Persona de contacto para este trámite</div>
+    <div class="radio-card-group">
+      <label class="radio-card" id="rcA">
+        <input type="radio" name="contacto-tipo" value="arquitecto_estudio" />
+        <div class="radio-card-body">
+          <div class="radio-card-title">Arquitecto del estudio</div>
+          <div class="radio-card-sub">El arquitecto a cargo del proyecto coordinará directamente con APPARQ.</div>
+        </div>
+      </label>
+      <label class="radio-card" id="rcB">
+        <input type="radio" name="contacto-tipo" value="cliente_final" />
+        <div class="radio-card-body">
+          <div class="radio-card-title">Cliente final del estudio</div>
+          <div class="radio-card-sub">El propietario de la vivienda recibirá las comunicaciones del trámite.</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="field">
+      <label>Nombre del contacto</label>
+      <input type="text" id="ctcNombre" placeholder="Nombre completo" />
+    </div>
+    <div class="field">
+      <label>Email del contacto</label>
+      <input type="email" id="ctcEmail" placeholder="correo@ejemplo.cl" />
+    </div>
+    <div class="field">
+      <label>Teléfono del contacto</label>
+      <input type="tel" id="ctcTel" placeholder="9 1234 5678" />
+    </div>
+
+    <div class="field">
+      <label>Notas o instrucciones especiales <span style="font-weight:400;color:var(--light)">(opcional)</span></label>
+      <textarea id="ctcNotas" placeholder="Ej: El propietario viaja en noviembre, coordinar antes. Acceso por puerta lateral."></textarea>
+    </div>
+
+    <div class="error-msg" id="err3"></div>
+    <button class="btn-primary" id="btn3">Continuar al pago</button>
+    <button class="btn-back" onclick="goStep(2)">Volver</button>
+  </div>
+
+  <!-- ════ PASO 4: PAGO ════ -->
+  <div id="step4" style="display:none">
+    <div class="step-eyebrow">Paso 4 de 4</div>
+    <h2 class="step-h2">Pago inicial del trámite</h2>
+    <p class="step-sub">El primer pago (E1) activa el trámite y la asignación del arquitecto.</p>
+
+    <div class="pay-box">
+      <div class="pay-label">Pago E1 — primer cuota</div>
+      <div class="pay-amount" id="p4E1">—</div>
+      <div class="pay-desc" id="p4Desc"></div>
+    </div>
+
+    <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:1.5rem;font-size:.82rem;color:var(--muted);line-height:1.6;">
+      El pago se procesa de forma segura vía Mercado Pago. Las etapas restantes (E2, E3, E4) se pagan al alcanzar cada hito del trámite.
+    </div>
+
+    <div class="error-msg" id="err4"></div>
+    <button class="btn-mp" id="btnPagar">
+      <svg width="20" height="20" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#fff" opacity=".15"/><path d="M13 27.5c0-6.351 4.925-11.5 11-11.5s11 5.149 11 11.5H13z" fill="#fff"/></svg>
+      Pagar con Mercado Pago
+    </button>
+    <button class="btn-back" onclick="goStep(3)">Volver</button>
+  </div>
+
+  <!-- ════ ÉXITO ════ -->
+  <div id="stepOk" style="display:none">
+    <div class="success-wrap">
+      <div class="success-icon">✓</div>
+      <h2 class="success-h">Trámite iniciado</h2>
+      <div class="project-num" id="okNum"></div>
+      <p class="success-sub">
+        Hemos recibido el pago. Asignaremos un arquitecto en las próximas 24 horas
+        y nos comunicaremos con el contacto designado.
+      </p>
+      <div style="margin-top:2rem;">
+        <a href="/estudios" class="btn-primary" style="text-align:center;">Volver a APPARQ para Estudios</a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script src="/js/prices.js"></script>
+<script>
+/* ── Estado global ── */
+let S = {
+  svc: null, svcSub: null, m2: null,
+  commune: '', address: '',
+  uf: 39841,
+  mat: null, dest: [], djElig: null, djObra: null,
+};
+
+const SVC_LABELS = {
+  'ley-del-mono':       'Ley del Mono',
+  regularizacion:       'Regularización',
+  ampliacion:           'Ampliación',
+  'declaracion-jurada': 'Declaración Jurada',
+  'obra-nueva':         'Obra Nueva',
+  informe:              'Informe de Propiedad',
+};
+
+const STEP_META = [
+  null,
+  { label: 'Paso 1 de 4 — Trámite',    pct: 25 },
+  { label: 'Paso 2 de 4 — Precio',      pct: 50 },
+  { label: 'Paso 3 de 4 — Estudio',     pct: 75 },
+  { label: 'Paso 4 de 4 — Pago',        pct: 100 },
+];
+
+const REGIONES_COMUNAS = {
+  'Arica y Parinacota':['Arica','Camarones','General Lagos','Putre'],
+  'Tarapacá':['Alto Hospicio','Camiña','Colchane','Huara','Iquique','Pica','Pozo Almonte'],
+  'Antofagasta':['Antofagasta','Calama','María Elena','Mejillones','Ollagüe','San Pedro de Atacama','Sierra Gorda','Taltal','Tocopilla'],
+  'Atacama':['Alto del Carmen','Caldera','Chañaral','Copiapó','Diego de Almagro','Freirina','Huasco','Tierra Amarilla','Vallenar'],
+  'Coquimbo':['Andacollo','Canela','Combarbalá','Coquimbo','Illapel','La Higuera','La Serena','Los Vilos','Monte Patria','Ovalle','Paiguano','Punitaqui','Río Hurtado','Salamanca','Vicuña'],
+  'Valparaíso':['Algarrobo','Cabildo','Calle Larga','Cartagena','Casablanca','Catemu','Concón','El Quisco','El Tabo','Hijuelas','Isla de Pascua','Juan Fernández','La Cruz','La Ligua','Limache','Llaillay','Los Andes','Nogales','Olmué','Panquehue','Papudo','Petorca','Puchuncaví','Putaendo','Quillota','Quintero','Rinconada','San Antonio','San Esteban','San Felipe','Santa María','Santo Domingo','Valparaíso','Viña del Mar','Zapallar'],
+  'Metropolitana':['Alhué','Buin','Calera de Tango','Cerrillos','Cerro Navia','Colina','Conchalí','Curacaví','El Bosque','El Monte','Estación Central','Huechuraba','Independencia','Isla de Maipo','La Cisterna','La Florida','La Granja','La Pintana','La Reina','Lampa','Las Condes','Lo Barnechea','Lo Espejo','Lo Prado','Macul','Maipú','María Pinto','Melipilla','Ñuñoa','Padre Hurtado','Paine','Pedro Aguirre Cerda','Peñaflor','Peñalolén','Pirque','Providencia','Pudahuel','Puente Alto','Quilicura','Quinta Normal','Recoleta','Renca','San Bernardo','San Joaquín','San José de Maipo','San Miguel','San Pedro','San Ramón','Santiago','Talagante','Tiltil','Vitacura'],
+  "O'Higgins":['Chépica','Chimbarongo','Codegua','Coinco','Coltauco','Doñihue','Graneros','La Estrella','Las Cabras','Litueche','Lolol','Machalí','Malloa','Marchihue','Mostazal','Nancagua','Navidad','Olivar','Palmilla','Paredones','Peralillo','Peumo','Pichidegua','Pichilemu','Placilla','Pumanque','Quinta de Tilcoco','Rancagua','Rengo','Requínoa','San Fernando','San Vicente','Santa Cruz'],
+  'Maule':['Cauquenes','Chanco','Colbún','Constitución','Curicó','Curepto','Empedrado','Hualañé','Licantén','Linares','Longaví','Maule','Molina','Parral','Pelarco','Pelluhue','Pencahue','Rauco','Retiro','Río Claro','Romeral','Sagrada Familia','San Clemente','San Javier','San Rafael','Talca','Teno','Vichuquén','Villa Alegre','Yerbas Buenas'],
+  'Ñuble':['Bulnes','Chillán','Chillán Viejo','Cobquecura','Coelemu','Coihueco','El Carmen','Ninhue','Ñiquén','Pemuco','Pinto','Portezuelo','Quillón','Quirihue','Ránquil','San Carlos','San Fabián','San Ignacio','San Nicolás','Treguaco','Yungay'],
+  'Biobío':['Alto Biobío','Antuco','Arauco','Cabrero','Cañete','Concepción','Contulmo','Coronel','Curanilahue','Chiguayante','Florida','Hualpén','Hualqui','Laja','Lebu','Los Álamos','Los Ángeles','Lota','Mulchén','Nacimiento','Negrete','Penco','Quilaco','Quilleco','San Pedro de la Paz','San Rosendo','Santa Bárbara','Santa Juana','Talcahuano','Tirúa','Tomé','Tucapel','Yumbel'],
+  'Araucanía':['Angol','Carahue','Cholchol','Collipulli','Cunco','Curacautín','Curarrehue','Ercilla','Freire','Galvarino','Gorbea','Lautaro','Loncoche','Lonquimay','Los Sauces','Lumaco','Melipeuco','Nueva Imperial','Padre las Casas','Perquenco','Pitrufquén','Pucón','Purén','Renaico','Saavedra','Temuco','Teodoro Schmidt','Toltén','Traiguén','Victoria','Vilcún','Villarrica'],
+  'Los Ríos':['Corral','Futrono','La Unión','Lago Ranco','Lanco','Los Lagos','Máfil','Mariquina','Paillaco','Panguipulli','Río Bueno','Valdivia'],
+  'Los Lagos':['Ancud','Calbuco','Castro','Chaitén','Chonchi','Cochamó','Curaco de Vélez','Dalcahue','Fresia','Frutillar','Futaleufú','Hualaihué','Llanquihue','Los Muermos','Maullín','Osorno','Palena','Puerto Montt','Puerto Octay','Puerto Varas','Puqueldón','Purranque','Puyehue','Queilén','Quellón','Quemchi','Quinchao','Río Negro','San Juan de la Costa','San Pablo'],
+  'Aysén':['Aysén','Chile Chico','Cisnes','Cochrane','Coyhaique','Guaitecas','Lago Verde','O\'Higgins','Río Ibáñez','Tortel'],
+  'Magallanes':['Antártica','cabo de Hornos','Laguna Blanca','Natales','Porvenir','Primavera','Punta Arenas','Río Verde','San Gregorio','Timaukel','Torres del Paine'],
+};
+
+const ALL_COMUNAS = Object.values(REGIONES_COMUNAS).flat().sort();
+
+/* ── UF ── */
+(async () => {
+  try {
+    const d = await (await fetch('/api/get-uf')).json();
+    if (d?.uf) { S.uf = d.uf; return; }
+  } catch (_) {}
+  try {
+    const d = await (await fetch('https://mindicador.cl/api/uf')).json();
+    if (d?.serie?.[0]?.valor) S.uf = d.serie[0].valor;
+  } catch (_) {}
+})();
+
+/* ── Navegación de pasos ── */
+function goStep(n) {
+  [1,2,3,4,'Ok'].forEach(id => {
+    const el = document.getElementById('step' + id);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('step' + n).style.display = '';
+  const m = STEP_META[n];
+  if (m) {
+    document.getElementById('progLabel').textContent = m.label;
+    document.getElementById('progFill').style.width = m.pct + '%';
+    document.querySelector('.progress-wrap').style.display = '';
+  } else {
+    document.querySelector('.progress-wrap').style.display = 'none';
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Helpers ── */
+const clpFmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('visible');
+}
+function clearErr(id) { document.getElementById(id).classList.remove('visible'); }
+
+/* ── PASO 1: servicio + sub-tipo + comuna ── */
+const svcButtons = document.querySelectorAll('.svc-btn');
+svcButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    svcButtons.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    S.svc = btn.dataset.svc;
+    S.svcSub = null;
+    document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false);
+
+    const needsM2 = ['regularizacion','ampliacion','obra-nueva','ley-del-mono','declaracion-jurada'].includes(S.svc);
+    document.getElementById('field-m2').style.display = needsM2 ? '' : 'none';
+
+    const subId = 'sub-' + S.svc;
+    const sub = document.getElementById(subId);
+    if (sub) sub.classList.add('visible');
+
+    checkStep1Ready();
+  });
+});
+
+document.querySelectorAll('input[name=reg-sub]').forEach(r => r.addEventListener('change', () => {
+  S.svcSub = r.value; checkStep1Ready();
+}));
+document.querySelectorAll('input[name=dj-sub]').forEach(r => r.addEventListener('change', () => {
+  S.svcSub = r.value; checkStep1Ready();
+}));
+document.querySelectorAll('input[name=inf-sub]').forEach(r => r.addEventListener('change', () => {
+  S.svcSub = r.value; checkStep1Ready();
+}));
+
+document.getElementById('m2Input').addEventListener('input', e => {
+  S.m2 = parseInt(e.target.value) || null; checkStep1Ready();
+});
+
+document.getElementById('addrInput').addEventListener('input', e => {
+  S.address = e.target.value.trim(); checkStep1Ready();
+});
+
+/* Commune search */
+const communeSearch = document.getElementById('communeSearch');
+const communeList   = document.getElementById('communeList');
+const communeVal    = document.getElementById('communeVal');
+
+communeSearch.addEventListener('input', () => {
+  const q = communeSearch.value.toLowerCase().trim();
+  if (!q) { communeList.classList.remove('open'); return; }
+  const matches = ALL_COMUNAS.filter(c => c.toLowerCase().includes(q)).slice(0, 20);
+  communeList.innerHTML = matches.map(c => `<div class="commune-opt" data-val="${c}">${c}</div>`).join('');
+  communeList.classList.toggle('open', matches.length > 0);
+});
+
+communeList.addEventListener('click', e => {
+  const opt = e.target.closest('.commune-opt');
+  if (!opt) return;
+  const val = opt.dataset.val;
+  S.commune = val;
+  communeVal.value = val;
+  communeSearch.value = val;
+  communeList.querySelectorAll('.commune-opt').forEach(o => o.classList.remove('selected'));
+  opt.classList.add('selected');
+  communeList.classList.remove('open');
+  checkStep1Ready();
+});
+
+document.addEventListener('click', e => {
+  if (!communeSearch.contains(e.target) && !communeList.contains(e.target)) {
+    communeList.classList.remove('open');
+  }
+});
+
+function checkStep1Ready() {
+  const ready = isReady() && !!S.commune && !!S.address;
+  document.getElementById('btn1').disabled = !ready;
+}
+
+document.getElementById('btn1').addEventListener('click', () => {
+  clearErr('err1');
+  if (!isReady() || !S.commune || !S.address) {
+    showErr('err1', 'Completa todos los campos antes de continuar.'); return;
+  }
+  fillStep2();
+  goStep(2);
+});
+
+/* ── PASO 2: precio ── */
+function fillStep2() {
+  const { uf, clp } = calcTotal();
+  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
+  const stages = S.svc === 'informe' ? STAGES_INFORME : S.svc === 'declaracion-jurada' ? STAGES_DJ : STAGES_NORMAL;
+
+  document.getElementById('p2Total').textContent = clpFmt(clp);
+  document.getElementById('p2UF').textContent = uf.toFixed(2) + ' UF · valor hoy';
+  document.getElementById('p2Svc').value = SVC_LABELS[S.svc] || S.svc;
+  document.getElementById('p2Addr').value = S.address + ', ' + S.commune;
+
+  document.getElementById('p2Stages').innerHTML = stages.map((st, i) => `
+    <div class="stage-item${i === 0 ? ' e1' : ''}">
+      <div class="stage-name">${st.name}</div>
+      <div class="stage-amt">${clpFmt(clp * st.pct)}</div>
+    </div>`).join('');
+}
+
+document.getElementById('btn2').addEventListener('click', () => { goStep(3); });
+
+/* ── PASO 3: datos del estudio ── */
+document.querySelectorAll('input[name=contacto-tipo]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+    r.closest('.radio-card').classList.add('selected');
+  });
+});
+
+document.getElementById('btn3').addEventListener('click', () => {
+  clearErr('err3');
+  const estNombre  = document.getElementById('estNombre').value.trim();
+  const estRut     = document.getElementById('estRut').value.trim();
+  const ctcTipo    = document.querySelector('input[name=contacto-tipo]:checked')?.value;
+  const ctcNombre  = document.getElementById('ctcNombre').value.trim();
+  const ctcEmail   = document.getElementById('ctcEmail').value.trim();
+  const ctcTel     = document.getElementById('ctcTel').value.trim();
+
+  if (!estNombre) { showErr('err3', 'Ingresa el nombre del estudio.'); return; }
+  if (!estRut)    { showErr('err3', 'Ingresa el RUT del estudio.'); return; }
+  if (!ctcTipo)   { showErr('err3', 'Selecciona el tipo de contacto.'); return; }
+  if (!ctcNombre) { showErr('err3', 'Ingresa el nombre del contacto.'); return; }
+  if (!ctcEmail || !ctcEmail.includes('@')) { showErr('err3', 'Ingresa un email válido.'); return; }
+  if (!ctcTel)    { showErr('err3', 'Ingresa el teléfono del contacto.'); return; }
+
+  fillStep4();
+  goStep(4);
+});
+
+/* ── PASO 4: pago ── */
+function fillStep4() {
+  const { clp } = calcTotal();
+  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
+  const e1 = Math.round(clp * e1pct);
+  document.getElementById('p4E1').textContent = clpFmt(e1);
+  document.getElementById('p4Desc').innerHTML =
+    `${SVC_LABELS[S.svc] || S.svc} · ${S.address}, ${S.commune}` +
+    `<br>Total del trámite: <strong>${clpFmt(clp)}</strong> · Pago hoy: <strong>${clpFmt(e1)}</strong>`;
+}
+
+document.getElementById('btnPagar').addEventListener('click', async () => {
+  clearErr('err4');
+  const btn = document.getElementById('btnPagar');
+  btn.disabled = true;
+  btn.textContent = 'Creando trámite…';
+
+  const estNombre = document.getElementById('estNombre').value.trim();
+  const estRut    = document.getElementById('estRut').value.trim();
+  const ctcTipo   = document.querySelector('input[name=contacto-tipo]:checked')?.value;
+  const ctcNombre = document.getElementById('ctcNombre').value.trim();
+  const ctcEmail  = document.getElementById('ctcEmail').value.trim();
+  const ctcTel    = document.getElementById('ctcTel').value.trim();
+  const notas     = document.getElementById('ctcNotas').value.trim();
+
+  const { clp } = calcTotal();
+  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
+  const e1 = Math.round(clp * e1pct);
+
+  const resetBtn = () => {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="#fff" opacity=".15"/><path d="M13 27.5c0-6.351 4.925-11.5 11-11.5s11 5.149 11 11.5H13z" fill="#fff"/></svg> Pagar con Mercado Pago`;
+  };
+
+  try {
+    /* 1 — Pre-crear proyecto estudio en Supabase */
+    const preRes = await fetch('/api/pre-create-estudio-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre:         ctcNombre,
+        apellido:       '',
+        email:          ctcEmail,
+        telefono:       ctcTel,
+        direccion:      S.address,
+        estudio_nombre: estNombre,
+        estudio_rut:    estRut,
+        contacto_tipo:  ctcTipo,
+        notas,
+        svc:              S.svc,
+        servicio_subtipo: S.svcSub || null,
+        m2:               S.m2,
+        commune:          S.commune,
+        clp,
+        e1,
+      }),
+    });
+    const preData = await preRes.json();
+    if (!preRes.ok || !preData.project_number) {
+      throw new Error(preData.error || 'Error al registrar el trámite.');
+    }
+    const projectNumber = preData.project_number;
+
+    /* 2 — Crear preferencia Mercado Pago */
+    btn.textContent = 'Conectando con Mercado Pago…';
+    const mpRes = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount:      e1,
+        description: `APPARQ · ${SVC_LABELS[S.svc] || S.svc}${S.m2 ? ' ' + S.m2 + 'm²' : ''} · ${S.commune}`,
+        email:       ctcEmail,
+        reference:   projectNumber,
+      }),
+    });
+    const mpData = await mpRes.json();
+    if (!mpRes.ok || mpData.error) throw new Error(mpData.error || 'Error en Mercado Pago.');
+
+    /* 3 — Redirigir al checkout */
+    window.location.href = mpData.init_point;
+
+  } catch (err) {
+    showErr('err4', err.message || 'No se pudo iniciar el pago. Intenta de nuevo.');
+    resetBtn();
+  }
+});
+
+/* ── Confirmar pago al volver de MP ── */
+(function checkReturnFromMP() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('pago') === 'aprobado') {
+    document.getElementById('okNum').textContent = params.get('ref') || '';
+    goStep('Ok');
+  }
+})();
+
+/* ── Hamburger ── */
+(function() {
+  const burger   = document.getElementById('cotBurger');
+  const navLinks = document.getElementById('cotNavLinks');
+  if (!burger || !navLinks) return;
+  burger.addEventListener('click', () => {
+    const open = burger.classList.toggle('open');
+    navLinks.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', e => {
+    if (!burger.contains(e.target) && !navLinks.contains(e.target)) {
+      burger.classList.remove('open');
+      navLinks.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>
