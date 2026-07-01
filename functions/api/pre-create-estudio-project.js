@@ -3,18 +3,20 @@
    Crea un proyecto B2B (estudio de arquitectura) en Supabase
    con stage = 'pendiente_pago', sin firma digital.
    Guarda metadatos del estudio en tabla `proyectos_estudio`.
+   Crea/actualiza cuenta del estudio en tabla `estudios_accounts`.
 
    POST /api/pre-create-estudio-project
    Body: {
      nombre, apellido, email, telefono,   ← contacto del trámite
      estudio_nombre, estudio_rut,          ← facturación
+     password,                             ← contraseña portal (texto plano, se hashea aquí)
      contacto_tipo,                        ← 'arquitecto_estudio' | 'cliente_final'
      notas,                                ← instrucciones libres (opcional)
      svc, servicio_subtipo, m2, commune, clp, e1,
      direccion
    }
 
-   SQL para crear la tabla proyectos_estudio (ejecutar en Supabase SQL Editor):
+   SQL para crear tablas (ejecutar en Supabase SQL Editor):
    ──────────────────────────────────────────────────
    create table if not exists proyectos_estudio (
      id              uuid primary key default gen_random_uuid(),
@@ -25,8 +27,27 @@
      notas           text,
      created_at      timestamptz default now()
    );
+
+   create table if not exists estudios_accounts (
+     id             uuid primary key default gen_random_uuid(),
+     email          text unique not null,
+     password_hash  text not null,
+     estudio_nombre text,
+     estudio_rut    text,
+     created_at     timestamptz default now()
+   );
    ──────────────────────────────────────────────────
 ══════════════════════════════════════════════════ */
+
+async function hashPassword(password, email) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: enc.encode(email.toLowerCase()), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -55,7 +76,7 @@ export async function onRequest(context) {
     const body = await request.json();
     const {
       nombre, apellido, email, telefono, direccion,
-      estudio_nombre, estudio_rut,
+      estudio_nombre, estudio_rut, password,
       contacto_tipo, notas,
       svc, servicio_subtipo, m2, commune, clp, e1,
     } = body;
@@ -159,6 +180,30 @@ export async function onRequest(context) {
       });
     } catch (metaErr) {
       console.warn('proyectos_estudio insert failed (tabla puede no existir aún):', metaErr.message);
+    }
+
+    /* ── UPSERT en estudios_accounts (cuenta del portal) ── */
+    if (password) {
+      try {
+        const hash = await hashPassword(password, emailLower);
+        await fetch(`${SUPABASE_URL}/rest/v1/estudios_accounts`, {
+          method: 'POST',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type':  'application/json',
+            'Prefer':        'resolution=merge-duplicates,return=minimal',
+          },
+          body: JSON.stringify({
+            email:          emailLower,
+            password_hash:  hash,
+            estudio_nombre: estudio_nombre || '',
+            estudio_rut:    estudio_rut    || '',
+          }),
+        });
+      } catch (accErr) {
+        console.warn('estudios_accounts upsert failed:', accErr.message);
+      }
     }
 
     return corsResponse({ ok: true, project_number: projectNumber, project_id: projectId });

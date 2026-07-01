@@ -1,13 +1,23 @@
 /* ══════════════════════════════════════════════════
    APPARQ — Cloudflare Pages Function: portal-estudio
    Portal B2B para estudios de arquitectura.
-   Login: email + RUT del estudio (client_email + client_rut en projects).
+   Login: email + contraseña (verificada contra estudios_accounts).
    Retorna todos los trámites del estudio con etapa y actualizaciones.
 
    POST /api/portal-estudio
-   Body: { email, rut }              → lista de proyectos del estudio
-   Body: { email, rut, action:'get-updates', project_number } → updates de un trámite
+   Body: { email, password }              → lista de proyectos del estudio
+   Body: { email, password, action:'get-updates', project_number } → updates
 ══════════════════════════════════════════════════ */
+
+async function hashPassword(password, email) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: enc.encode(email.toLowerCase()), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': 'https://apparq.cl',
@@ -50,10 +60,25 @@ export async function onRequest({ request, env }) {
   let body;
   try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
-  const email = (body.email || '').trim().toLowerCase();
-  const rut   = (body.rut   || '').trim().replace(/\./g, '').toUpperCase();
+  const email    = (body.email    || '').trim().toLowerCase();
+  const password = (body.password || '').trim();
 
-  if (!email || !rut) return json({ error: 'Email y RUT requeridos' }, 400);
+  if (!email || !password) return json({ error: 'Email y contraseña requeridos' }, 400);
+
+  /* ── Verificar contraseña contra estudios_accounts ── */
+  const accRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/estudios_accounts?email=eq.${encodeURIComponent(email)}&select=password_hash,estudio_nombre&limit=1`,
+    { headers }
+  );
+  const accounts = accRes.ok ? await accRes.json() : [];
+  if (!accounts.length) return json({ error: 'No existe una cuenta con ese email.' }, 404);
+
+  const expectedHash = await hashPassword(password, email);
+  if (accounts[0].password_hash !== expectedHash) {
+    return json({ error: 'Contraseña incorrecta.' }, 401);
+  }
+
+  const estudio_nombre_account = accounts[0].estudio_nombre || '';
 
   /* ── get-updates: actualizaciones de un trámite específico ── */
   if (body.action === 'get-updates') {
@@ -62,7 +87,7 @@ export async function onRequest({ request, env }) {
 
     /* Verificar que el trámite pertenece al estudio */
     const verRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(num)}&client_email=eq.${encodeURIComponent(email)}&client_rut=ilike.${encodeURIComponent(rut)}&select=id&limit=1`,
+      `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(num)}&client_email=eq.${encodeURIComponent(email)}&select=id&limit=1`,
       { headers }
     );
     const ver = verRes.ok ? await verRes.json() : [];
@@ -78,7 +103,7 @@ export async function onRequest({ request, env }) {
 
   /* ── default: listar todos los trámites del estudio ── */
   const projRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/projects?client_email=eq.${encodeURIComponent(email)}&client_rut=ilike.${encodeURIComponent(rut)}&order=created_at.desc&select=*`,
+    `${SUPABASE_URL}/rest/v1/projects?client_email=eq.${encodeURIComponent(email)}&order=created_at.desc&select=*`,
     { headers }
   );
   if (!projRes.ok) return json({ error: 'Error consultando proyectos' }, 500);
@@ -105,16 +130,5 @@ export async function onRequest({ request, env }) {
     };
   });
 
-  /* Nombre del estudio desde proyectos_estudio (primer registro) */
-  let estudio_nombre = '';
-  try {
-    const estRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/proyectos_estudio?project_number=eq.${encodeURIComponent(projects[0].project_number)}&select=estudio_nombre&limit=1`,
-      { headers }
-    );
-    const est = estRes.ok ? await estRes.json() : [];
-    if (est.length) estudio_nombre = est[0].estudio_nombre || '';
-  } catch (_) {}
-
-  return json({ projects: enriched, estudio_nombre });
+  return json({ projects: enriched, estudio_nombre: estudio_nombre_account });
 }

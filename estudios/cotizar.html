@@ -408,6 +408,15 @@
       <input type="email" id="ctcEmail" placeholder="correo@ejemplo.cl" />
     </div>
     <div class="field">
+      <label>Contraseña para el portal</label>
+      <input type="password" id="ctcPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+      <div class="field-hint">Con esta contraseña podrás revisar el avance de tus trámites en <strong>apparq.cl/estudios/portal</strong>.</div>
+    </div>
+    <div class="field">
+      <label>Confirmar contraseña</label>
+      <input type="password" id="ctcPasswordConfirm" placeholder="Repite la contraseña" autocomplete="new-password" />
+    </div>
+    <div class="field">
       <label>Teléfono del contacto</label>
       <input type="tel" id="ctcTel" placeholder="9 1234 5678" />
     </div>
@@ -678,6 +687,10 @@ document.getElementById('btn3').addEventListener('click', () => {
   if (!ctcTipo)   { showErr('err3', 'Selecciona el tipo de contacto.'); return; }
   if (!ctcNombre) { showErr('err3', 'Ingresa el nombre del contacto.'); return; }
   if (!ctcEmail || !ctcEmail.includes('@')) { showErr('err3', 'Ingresa un email válido.'); return; }
+  const ctcPwd = document.getElementById('ctcPassword').value;
+  const ctcPwdC = document.getElementById('ctcPasswordConfirm').value;
+  if (!ctcPwd || ctcPwd.length < 6) { showErr('err3', 'La contraseña debe tener al menos 6 caracteres.'); return; }
+  if (ctcPwd !== ctcPwdC) { showErr('err3', 'Las contraseñas no coinciden.'); return; }
   if (!ctcTel)    { showErr('err3', 'Ingresa el teléfono del contacto.'); return; }
 
   fillStep4();
@@ -705,9 +718,10 @@ document.getElementById('btnPagar').addEventListener('click', async () => {
   const estRut    = document.getElementById('estRut').value.trim();
   const ctcTipo   = document.querySelector('input[name=contacto-tipo]:checked')?.value;
   const ctcNombre = document.getElementById('ctcNombre').value.trim();
-  const ctcEmail  = document.getElementById('ctcEmail').value.trim();
-  const ctcTel    = document.getElementById('ctcTel').value.trim();
-  const notas     = document.getElementById('ctcNotas').value.trim();
+  const ctcEmail    = document.getElementById('ctcEmail').value.trim();
+  const ctcPassword = document.getElementById('ctcPassword').value;
+  const ctcTel      = document.getElementById('ctcTel').value.trim();
+  const notas       = document.getElementById('ctcNotas').value.trim();
 
   const { clp } = calcTotal();
   const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
@@ -731,6 +745,7 @@ document.getElementById('btnPagar').addEventListener('click', async () => {
         direccion:      S.address,
         estudio_nombre: estNombre,
         estudio_rut:    estRut,
+        password:       ctcPassword,
         contacto_tipo:  ctcTipo,
         notas,
         svc:              S.svc,

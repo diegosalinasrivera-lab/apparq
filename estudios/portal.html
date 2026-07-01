@@ -240,16 +240,15 @@
     <div class="login-card">
       <div class="login-icon">🏛️</div>
       <h1>Portal de tu estudio</h1>
-      <p>Ingresa con el email y RUT del estudio para ver el avance de todos tus trámites.</p>
+      <p>Ingresa con el email y contraseña que creaste al solicitar tu primer trámite.</p>
 
       <div class="field">
         <label>Email de contacto</label>
         <input type="email" id="inp-email" placeholder="tu@estudio.cl" autocomplete="email" />
       </div>
       <div class="field">
-        <label>RUT del estudio</label>
-        <input type="text" id="inp-rut" placeholder="12.345.678-9" autocomplete="off" />
-        <span class="hint">Con o sin puntos, con guión</span>
+        <label>Contraseña</label>
+        <input type="password" id="inp-password" placeholder="Tu contraseña del portal" autocomplete="current-password" />
       </div>
       <button class="btn-login" id="btn-login" onclick="login()">Ver mis trámites</button>
       <div class="login-error" id="login-error"></div>
@@ -298,22 +297,22 @@
 
   /* ── LOGIN ── */
   async function login() {
-    const email = document.getElementById('inp-email').value.trim().toLowerCase();
-    const rut   = rutLimpio(document.getElementById('inp-rut').value.trim());
-    const errEl = document.getElementById('login-error');
-    const btn   = document.getElementById('btn-login');
+    const email    = document.getElementById('inp-email').value.trim().toLowerCase();
+    const password = document.getElementById('inp-password').value;
+    const errEl    = document.getElementById('login-error');
+    const btn      = document.getElementById('btn-login');
 
     errEl.style.display = 'none';
-    if (!email || !rut) { mostrarError('Completa email y RUT.'); return; }
+    if (!email || !password) { mostrarError('Completa email y contraseña.'); return; }
 
     btn.disabled = true;
-    btn.textContent = 'Buscando…';
+    btn.textContent = 'Verificando…';
 
     try {
       const res  = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, rut }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
 
@@ -322,7 +321,7 @@
         return;
       }
 
-      SESSION = { email, rut };
+      SESSION = { email, password };
       localStorage.setItem('apparq_estudio', JSON.stringify(SESSION));
       renderDashboard(data);
 
@@ -427,9 +426,9 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'get-updates',
-          email:  SESSION.email,
-          rut:    SESSION.rut,
+          action:    'get-updates',
+          email:     SESSION.email,
+          password:  SESSION.password,
           project_number: projectNumber,
         }),
       });
@@ -479,14 +478,14 @@
     if (!saved) return;
     try {
       SESSION = JSON.parse(saved);
-      document.getElementById('inp-email').value = SESSION.email;
-      document.getElementById('inp-rut').value   = SESSION.rut;
+      document.getElementById('inp-email').value    = SESSION.email;
+      document.getElementById('inp-password').value = SESSION.password;
       await login();
     } catch (_) { localStorage.removeItem('apparq_estudio'); }
   })();
 
   /* Enter para login */
-  ['inp-email','inp-rut'].forEach(id => {
+  ['inp-email','inp-password'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') login();
     });
