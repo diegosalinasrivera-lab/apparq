@@ -189,6 +189,15 @@
       color: #fff;
     }
     .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+    .nav-separator {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.28);
+      padding: 12px 10px 4px;
+      pointer-events: none;
+    }
     .sidebar-footer {
       padding: 12px;
       border-top: 1px solid rgba(255,255,255,0.08);
@@ -857,21 +866,32 @@
         <div class="nav-item active" data-section="dashboard">
           <span class="nav-icon">📊</span> Dashboard
         </div>
-        <div class="nav-item" data-section="arquitectos">
-          <span class="nav-icon">👷</span> Arquitectos
-        </div>
+
+        <div class="nav-separator">Tramitación</div>
         <div class="nav-item" data-section="tramites">
           <span class="nav-icon">📋</span> Trámites
           <span id="descarte-badge" style="display:none;margin-left:auto;background:#DC2626;color:#fff;border-radius:9999px;font-size:10px;font-weight:800;padding:1px 6px;line-height:1.6;"></span>
         </div>
-        <div class="nav-item" data-section="pagos">
-          <span class="nav-icon">💰</span> Pagos
-        </div>
-        <div class="nav-item" data-section="leads">
-          <span class="nav-icon">🎯</span> Leads
+        <div class="nav-item" data-section="estudios">
+          <span class="nav-icon">🏛️</span> Estudios
         </div>
         <div class="nav-item" data-section="cobros">
           <span class="nav-icon">💳</span> Cobros adicionales
+        </div>
+
+        <div class="nav-separator">Red</div>
+        <div class="nav-item" data-section="arquitectos">
+          <span class="nav-icon">👷</span> Arquitectos
+        </div>
+
+        <div class="nav-separator">Captación</div>
+        <div class="nav-item" data-section="leads">
+          <span class="nav-icon">🎯</span> Leads
+        </div>
+
+        <div class="nav-separator">Finanzas</div>
+        <div class="nav-item" data-section="pagos">
+          <span class="nav-icon">💰</span> Pagos
         </div>
         <div class="nav-item" data-section="finanzas">
           <span class="nav-icon">📈</span> Finanzas
@@ -1557,6 +1577,93 @@
         Guardar Arquitecto
       </button>
     </div>
+        <!-- ESTUDIOS -->
+        <div id="section-estudios" class="section">
+          <div class="section-header">
+            <h2>Estudios de Arquitectura</h2>
+          </div>
+
+          <!-- KPIs -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.5rem;">
+            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">🏛️</div>
+              <div>
+                <div id="kpi-est-total" style="font-size:2.2rem;font-weight:900;color:#1a1a2e;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Estudios inscritos</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #BFDBFE;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">📋</div>
+              <div>
+                <div id="kpi-est-tramites" style="font-size:2.2rem;font-weight:900;color:#1D4ED8;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Trámites B2B</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #D1FAE5;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">💰</div>
+              <div>
+                <div id="kpi-est-gmv" style="font-size:2.2rem;font-weight:900;color:#059669;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">GMV B2B</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-tabs -->
+          <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.25rem;">
+            <button id="estab-cuentas" onclick="switchEstudioTab('cuentas')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid #E8503A;color:#E8503A;margin-bottom:-2px;">🏛️ Estudios inscritos</button>
+            <button id="estab-tramites" onclick="switchEstudioTab('tramites')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">📋 Trámites B2B</button>
+          </div>
+
+          <div id="est-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+
+          <!-- TAB: Estudios inscritos -->
+          <div id="estab-content-cuentas" style="display:none;">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Estudio</th>
+                      <th>Email</th>
+                      <th>RUT</th>
+                      <th style="text-align:center;">Trámites</th>
+                      <th>Inscrito</th>
+                    </tr>
+                  </thead>
+                  <tbody id="est-cuentas-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Trámites B2B -->
+          <div id="estab-content-tramites" style="display:none;">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>N° Trámite</th>
+                      <th>Estudio</th>
+                      <th>Tipo</th>
+                      <th>Dirección / Comuna</th>
+                      <th>Arquitecto</th>
+                      <th>Etapa</th>
+                      <th style="text-align:right;">Total</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="est-tramites-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div><!-- /section-estudios -->
+
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1946,11 +2053,12 @@ function showApp(email) {
 ══════════════════════════════════════════════════ */
 const SECTION_TITLES = {
   dashboard:   'Dashboard',
-  arquitectos: 'Arquitectos',
   tramites:    'Trámites',
-  pagos:       'Pagos',
-  leads:       'Leads del Cotizador',
+  estudios:    'Estudios de Arquitectura',
   cobros:      'Cobros Adicionales',
+  arquitectos: 'Arquitectos',
+  leads:       'Leads del Cotizador',
+  pagos:       'Pagos',
   finanzas:    'Finanzas',
 };
 
@@ -1970,11 +2078,12 @@ function navigateTo(section) {
 
   // load data
   if (section === 'dashboard')    loadDashboard();
-  if (section === 'arquitectos')  loadArchitects();
   if (section === 'tramites')     loadTramites();
-  if (section === 'pagos')        { arqPagosLoaded = false; loadPagos(); }
-  if (section === 'leads')        loadLeads();
+  if (section === 'estudios')     loadEstudios();
   if (section === 'cobros')       loadCobros();
+  if (section === 'arquitectos')  loadArchitects();
+  if (section === 'leads')        loadLeads();
+  if (section === 'pagos')        { arqPagosLoaded = false; loadPagos(); }
   if (section === 'finanzas')     loadFinanzas();
 }
 
@@ -3775,6 +3884,129 @@ function renderFinanzas() {
   document.getElementById('fin-total-egresos').textContent  = fmtCLP(d.totals.egresos);
   document.getElementById('fin-total-utilidad').textContent = fmtCLP(d.totals.utilidad);
   document.getElementById('fin-total-margen').textContent   = `${totalMargen}%`;
+}
+
+/* ══════════════════════════════════════════════════
+   ESTUDIOS
+══════════════════════════════════════════════════ */
+let estudiosData = null;
+let estudioTabActual = 'cuentas';
+
+const SVC_LABEL_EST = {
+  regularizacion: 'Regularización',
+  ampliacion: 'Ampliación',
+  'obra-nueva': 'Obra Nueva',
+  informe: 'Informe de Prop.',
+  'declaracion-jurada': 'Decl. Jurada',
+};
+const STAGE_LABEL_EST = {
+  pendiente_pago: 'Pendiente pago',
+  levantamiento: 'Levantamiento',
+  elaboracion: 'Elaboración planos',
+  ingreso_dom: 'Ingreso DOM',
+  tramitacion: 'Tramitación',
+  completado: 'Completado',
+  visita: 'Visita terreno',
+  elaboracion_inf: 'Elaboración informe',
+  entrega_informe: 'Informe entregado',
+};
+
+async function loadEstudios() {
+  if (estudiosData) { renderEstudios(); return; }
+  document.getElementById('est-loading').style.display = 'flex';
+  document.getElementById('estab-content-cuentas').style.display = 'none';
+  document.getElementById('estab-content-tramites').style.display = 'none';
+  try {
+    estudiosData = await apiGet('estudios');
+    renderEstudios();
+  } catch (err) {
+    console.error('loadEstudios:', err);
+  } finally {
+    document.getElementById('est-loading').style.display = 'none';
+  }
+}
+
+function renderEstudios() {
+  if (!estudiosData) return;
+  const { estudios = [], tramites = [] } = estudiosData;
+
+  // KPIs
+  document.getElementById('kpi-est-total').textContent = estudios.length;
+  document.getElementById('kpi-est-tramites').textContent = tramites.length;
+  const gmv = tramites.reduce((s, t) => s + (t.total_clp || 0), 0);
+  document.getElementById('kpi-est-gmv').textContent = gmv > 0 ? clpFmt(gmv) : '$0';
+
+  // Contar trámites por email de estudio
+  const tramPorEmail = {};
+  for (const t of tramites) {
+    const k = t.client_email || '';
+    tramPorEmail[k] = (tramPorEmail[k] || 0) + 1;
+  }
+
+  // Tabla estudios inscritos
+  const tbCuentas = document.getElementById('est-cuentas-tbody');
+  if (!estudios.length) {
+    tbCuentas.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Sin estudios inscritos aún.</td></tr>';
+  } else {
+    tbCuentas.innerHTML = estudios.map(e => `
+      <tr>
+        <td><strong>${e.estudio_nombre || '—'}</strong></td>
+        <td style="color:#4a5568;">${e.email}</td>
+        <td style="color:#718096;font-size:12px;">${e.estudio_rut || '—'}</td>
+        <td style="text-align:center;">
+          <span style="background:#DBEAFE;color:#1D4ED8;border-radius:9999px;padding:2px 10px;font-size:12px;font-weight:700;">${tramPorEmail[e.email] || 0}</span>
+        </td>
+        <td style="color:#718096;font-size:12px;">${e.created_at ? new Date(e.created_at).toLocaleDateString('es-CL') : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Tabla trámites B2B
+  const tbTram = document.getElementById('est-tramites-tbody');
+  if (!tramites.length) {
+    tbTram.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:24px;">Sin trámites B2B aún.</td></tr>';
+  } else {
+    tbTram.innerHTML = tramites.map(t => {
+      const stageLabel = STAGE_LABEL_EST[t.stage] || t.stage || '—';
+      const stageBadge = t.stage === 'completado'
+        ? `<span style="background:#D1FAE5;color:#059669;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${stageLabel}</span>`
+        : t.stage === 'pendiente_pago'
+        ? `<span style="background:#F3F4F6;color:#6B7280;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${stageLabel}</span>`
+        : `<span style="background:#DBEAFE;color:#1D4ED8;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${stageLabel}</span>`;
+      const arq = t.architect_nombre ? `${t.architect_nombre} ${t.architect_apellido || ''}`.trim() : '<span style="color:#9CA3AF">Sin asignar</span>';
+      return `<tr>
+        <td><strong style="color:#E8503A;">${t.project_number}</strong></td>
+        <td>${t.estudio_nombre || t.client_email || '—'}</td>
+        <td style="font-size:12px;">${SVC_LABEL_EST[t.service_type] || t.service_type || '—'}</td>
+        <td style="font-size:12px;color:#4a5568;">${t.address ? t.address + ', ' : ''}${t.commune || '—'}</td>
+        <td style="font-size:12px;">${arq}</td>
+        <td>${stageBadge}</td>
+        <td style="text-align:right;font-weight:700;">${t.total_clp ? clpFmt(t.total_clp) : '—'}</td>
+        <td style="font-size:12px;color:#718096;">${t.created_at ? new Date(t.created_at).toLocaleDateString('es-CL') : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  switchEstudioTab(estudioTabActual);
+}
+
+function switchEstudioTab(tab) {
+  estudioTabActual = tab;
+  const tabs = ['cuentas', 'tramites'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`estab-${t}`);
+    const content = document.getElementById(`estab-content-${t}`);
+    const active = t === tab;
+    if (btn) {
+      btn.style.borderBottomColor = active ? '#E8503A' : 'transparent';
+      btn.style.color = active ? '#E8503A' : '#718096';
+    }
+    if (content) content.style.display = active ? 'block' : 'none';
+  });
+}
+
+function clpFmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-CL');
 }
 
 /* ══════════════════════════════════════════════════

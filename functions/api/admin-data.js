@@ -964,6 +964,38 @@ export async function onRequest(context) {
       });
     }
 
+    if (section === 'estudios') {
+      const [estRes, proyEstRes] = await Promise.all([
+        sb('/estudios_accounts?select=email,estudio_nombre,estudio_rut,created_at&order=created_at.desc'),
+        sb('/proyectos_estudio?select=project_number,estudio_nombre,estudio_rut&order=project_number.desc&limit=500'),
+      ]);
+      const estudios   = estRes.ok    ? (estRes.data    || []) : [];
+      const proyEst    = proyEstRes.ok ? (proyEstRes.data || []) : [];
+
+      let tramites = [];
+      if (proyEst.length) {
+        const pnums = proyEst.map(p => p.project_number).join(',');
+        const tramRes = await sb(
+          `/projects?project_number=in.(${pnums})&select=project_number,client_email,service_type,stage,commune,address,total_clp,created_at,architect_nombre,architect_apellido&order=created_at.desc`
+        );
+        const rawTram = tramRes.ok ? (tramRes.data || []) : [];
+        const peMap = {};
+        proyEst.forEach(p => { peMap[p.project_number] = p; });
+        tramites = rawTram.map(t => ({
+          ...t,
+          estudio_nombre: peMap[t.project_number]?.estudio_nombre || '',
+          estudio_rut:    peMap[t.project_number]?.estudio_rut    || '',
+        }));
+      }
+
+      /* Contar trámites por email para enriquecer estudios */
+      const tramPorEmail = {};
+      tramites.forEach(t => { if (t.client_email) tramPorEmail[t.client_email] = (tramPorEmail[t.client_email] || 0) + 1; });
+      estudios.forEach(e => { e.tramite_count = tramPorEmail[e.email] || 0; });
+
+      return json({ estudios, tramites });
+    }
+
     if (section === 'project-detail') {
       const pnum = new URL(request.url).searchParams.get('project_number');
       if (!pnum) return json({ error: 'project_number requerido' }, 400);
