@@ -63,6 +63,17 @@ export async function onRequest({ request, env }) {
   const email    = (body.email    || '').trim().toLowerCase();
   const password = (body.password || '').trim();
 
+  /* ── check-email: sólo verifica si existe cuenta (sin contraseña) ── */
+  if (body.action === 'check-email') {
+    if (!email) return json({ error: 'Email requerido' }, 400);
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/estudios_accounts?email=eq.${encodeURIComponent(email)}&select=email&limit=1`,
+      { headers }
+    );
+    const rows = r.ok ? await r.json() : [];
+    return json({ has_account: rows.length > 0 });
+  }
+
   if (!email || !password) return json({ error: 'Email y contraseña requeridos' }, 400);
 
   /* ── Verificar contraseña contra estudios_accounts ── */

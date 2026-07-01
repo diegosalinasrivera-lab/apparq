@@ -86,6 +86,26 @@ export async function onRequest(context) {
     if (!estudio_rut)   return corsResponse({ error: 'estudio_rut requerido' }, 400);
 
     const emailLower = email.trim().toLowerCase();
+    const authHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
+
+    /* ── PASO 0: verificar cuenta del portal ANTES de tocar nada ── */
+    let passwordHash = null;
+    let accountAlreadyExists = false;
+
+    if (password) {
+      passwordHash = await hashPassword(password, emailLower);
+      const accRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/estudios_accounts?email=eq.${encodeURIComponent(emailLower)}&select=password_hash&limit=1`,
+        { headers: authHeaders }
+      );
+      const accRows = accRes.ok ? await accRes.json() : [];
+      if (accRows.length > 0) {
+        accountAlreadyExists = true;
+        if (accRows[0].password_hash !== passwordHash) {
+          return corsResponse({ error: 'Contraseña incorrecta. Ingresa la contraseña que usaste al registrar tu estudio.' }, 401);
+        }
+      }
+    }
 
     /* ── Idempotencia: proyecto pendiente_pago para este email ── */
     const existRes = await fetch(
@@ -182,27 +202,26 @@ export async function onRequest(context) {
       console.warn('proyectos_estudio insert failed (tabla puede no existir aún):', metaErr.message);
     }
 
-    /* ── UPSERT en estudios_accounts (cuenta del portal) ── */
-    if (password) {
+    /* ── INSERT en estudios_accounts (solo si es cuenta nueva) ── */
+    if (password && !accountAlreadyExists) {
       try {
-        const hash = await hashPassword(password, emailLower);
         await fetch(`${SUPABASE_URL}/rest/v1/estudios_accounts`, {
           method: 'POST',
           headers: {
             'apikey':        SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type':  'application/json',
-            'Prefer':        'resolution=merge-duplicates,return=minimal',
+            'Prefer':        'return=minimal',
           },
           body: JSON.stringify({
             email:          emailLower,
-            password_hash:  hash,
+            password_hash:  passwordHash,
             estudio_nombre: estudio_nombre || '',
             estudio_rut:    estudio_rut    || '',
           }),
         });
       } catch (accErr) {
-        console.warn('estudios_accounts upsert failed:', accErr.message);
+        console.warn('estudios_accounts insert failed:', accErr.message);
       }
     }
 

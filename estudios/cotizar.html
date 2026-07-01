@@ -414,14 +414,23 @@
     </div>
     <div class="field">
       <label>Email del contacto</label>
-      <input type="email" id="ctcEmail" placeholder="correo@ejemplo.cl" />
+      <input type="email" id="ctcEmail" placeholder="correo@ejemplo.cl"
+        oninput="resetPasswordSection()"
+        onblur="checkEstudioEmail()" />
+      <div id="email-check-status" style="font-size:12px;color:#6B7280;margin-top:5px;display:none;">Verificando cuenta…</div>
     </div>
+
+    <div id="pwd-existing-notice" style="display:none;background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;color:#1D4ED8;line-height:1.6;">
+      <strong>Ya tienes una cuenta en APPARQ.</strong><br>
+      Ingresa tu contraseña actual para vincular este nuevo trámite.
+    </div>
+
     <div class="field">
-      <label>Contraseña para el portal</label>
+      <label id="pwd-label">Contraseña para el portal</label>
       <input type="password" id="ctcPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
-      <div class="field-hint">Con esta contraseña podrás revisar el avance de tus trámites en <strong>apparq.cl/estudios/portal</strong>.</div>
+      <div class="field-hint" id="pwd-hint">Con esta contraseña podrás revisar el avance de tus trámites en <strong>apparq.cl/estudios/portal</strong>.</div>
     </div>
-    <div class="field">
+    <div class="field" id="pwd-confirm-wrap">
       <label>Confirmar contraseña</label>
       <input type="password" id="ctcPasswordConfirm" placeholder="Repite la contraseña" autocomplete="new-password" />
     </div>
@@ -678,6 +687,57 @@ function fillStep2() {
 document.getElementById('btn2').addEventListener('click', () => { goStep(3); });
 
 /* ── PASO 3: datos del estudio ── */
+let estudioHasAccount = false;
+
+function resetPasswordSection() {
+  estudioHasAccount = false;
+  document.getElementById('email-check-status').style.display = 'none';
+  document.getElementById('pwd-existing-notice').style.display = 'none';
+  document.getElementById('pwd-label').textContent = 'Contraseña para el portal';
+  const pwd = document.getElementById('ctcPassword');
+  pwd.placeholder = 'Mínimo 6 caracteres';
+  pwd.autocomplete = 'new-password';
+  document.getElementById('pwd-hint').style.display = '';
+  document.getElementById('pwd-confirm-wrap').style.display = '';
+}
+
+async function checkEstudioEmail() {
+  const email = document.getElementById('ctcEmail').value.trim();
+  if (!email || !email.includes('@')) return;
+  const status = document.getElementById('email-check-status');
+  status.textContent = 'Verificando cuenta…';
+  status.style.display = 'block';
+  try {
+    const res = await fetch('/api/portal-estudio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check-email', email }),
+    });
+    const data = res.ok ? await res.json() : {};
+    status.style.display = 'none';
+    estudioHasAccount = data.has_account === true;
+    if (estudioHasAccount) {
+      document.getElementById('pwd-existing-notice').style.display = 'block';
+      document.getElementById('pwd-label').textContent = 'Contraseña actual';
+      const pwd = document.getElementById('ctcPassword');
+      pwd.placeholder = 'Tu contraseña del portal';
+      pwd.autocomplete = 'current-password';
+      document.getElementById('pwd-hint').style.display = 'none';
+      document.getElementById('pwd-confirm-wrap').style.display = 'none';
+    } else {
+      document.getElementById('pwd-existing-notice').style.display = 'none';
+      document.getElementById('pwd-label').textContent = 'Crea tu contraseña';
+      const pwd = document.getElementById('ctcPassword');
+      pwd.placeholder = 'Mínimo 6 caracteres';
+      pwd.autocomplete = 'new-password';
+      document.getElementById('pwd-hint').style.display = '';
+      document.getElementById('pwd-confirm-wrap').style.display = '';
+    }
+  } catch {
+    status.style.display = 'none';
+  }
+}
+
 document.querySelectorAll('input[name=contacto-tipo]').forEach(r => {
   r.addEventListener('change', () => {
     document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
@@ -700,9 +760,12 @@ document.getElementById('btn3').addEventListener('click', () => {
   if (!ctcNombre) { showErr('err3', 'Ingresa el nombre del contacto.'); return; }
   if (!ctcEmail || !ctcEmail.includes('@')) { showErr('err3', 'Ingresa un email válido.'); return; }
   const ctcPwd = document.getElementById('ctcPassword').value;
-  const ctcPwdC = document.getElementById('ctcPasswordConfirm').value;
-  if (!ctcPwd || ctcPwd.length < 6) { showErr('err3', 'La contraseña debe tener al menos 6 caracteres.'); return; }
-  if (ctcPwd !== ctcPwdC) { showErr('err3', 'Las contraseñas no coinciden.'); return; }
+  if (!ctcPwd) { showErr('err3', 'Ingresa tu contraseña.'); return; }
+  if (!estudioHasAccount) {
+    if (ctcPwd.length < 6) { showErr('err3', 'La contraseña debe tener al menos 6 caracteres.'); return; }
+    const ctcPwdC = document.getElementById('ctcPasswordConfirm').value;
+    if (ctcPwd !== ctcPwdC) { showErr('err3', 'Las contraseñas no coinciden.'); return; }
+  }
   if (!ctcTel)    { showErr('err3', 'Ingresa el teléfono del contacto.'); return; }
 
   fillStep4();
@@ -769,6 +832,12 @@ document.getElementById('btnPagar').addEventListener('click', async () => {
       }),
     });
     const preData = await preRes.json();
+    if (preRes.status === 401) {
+      goStep(3);
+      showErr('err3', preData.error || 'Contraseña incorrecta.');
+      resetBtn();
+      return;
+    }
     if (!preRes.ok || !preData.project_number) {
       throw new Error(preData.error || 'Error al registrar el trámite.');
     }
