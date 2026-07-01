@@ -278,7 +278,7 @@
       <button class="svc-btn" data-svc="regularizacion">Regularización</button>
       <button class="svc-btn" data-svc="ampliacion">Ampliación</button>
       <button class="svc-btn" data-svc="declaracion-jurada">Decl. Jurada</button>
-      <button class="svc-btn" data-svc="obra-nueva">Obra Nueva</button>
+      <button class="svc-btn" data-svc="obra-nueva">Obra Nueva / Trámite Municipal</button>
       <button class="svc-btn" data-svc="informe">Informe</button>
       <button class="svc-btn" data-svc="ley-del-mono">Ley del Mono</button>
     </div>
@@ -289,6 +289,15 @@
       <div class="sub-radio-group">
         <label class="sub-radio"><input type="radio" name="reg-sub" value="obra-menor"><span>Obra menor (hasta 100 m²)</span></label>
         <label class="sub-radio"><input type="radio" name="reg-sub" value="obra-nueva-reg"><span>Obra nueva (regularización)</span></label>
+      </div>
+    </div>
+
+    <!-- Sub-tipo: Obra Nueva / Trámite Municipal -->
+    <div class="sub-panel" id="sub-obra-nueva">
+      <label>Tipo de trámite</label>
+      <div class="sub-radio-group">
+        <label class="sub-radio"><input type="radio" name="on-sub" value="obra-menor"><span>Obra menor (hasta 100 m²)</span></label>
+        <label class="sub-radio"><input type="radio" name="on-sub" value="obra-nueva-reg"><span>Obra nueva (más de 100 m²)</span></label>
       </div>
     </div>
 
@@ -584,6 +593,9 @@ svcButtons.forEach(btn => {
 document.querySelectorAll('input[name=reg-sub]').forEach(r => r.addEventListener('change', () => {
   S.svcSub = r.value; checkStep1Ready();
 }));
+document.querySelectorAll('input[name=on-sub]').forEach(r => r.addEventListener('change', () => {
+  S.svcSub = r.value; checkStep1Ready();
+}));
 document.querySelectorAll('input[name=dj-sub]').forEach(r => r.addEventListener('change', () => {
   S.svcSub = r.value; checkStep1Ready();
 }));
@@ -812,6 +824,24 @@ document.getElementById('btnPagar').addEventListener('click', async () => {
     }
   });
 })();
+
+/* ── Override: obra-nueva usa precios y validación de regularización ── */
+const _calcTotal = calcTotal;
+calcTotal = function() {
+  if (S.svc !== 'obra-nueva') return _calcTotal();
+  S.svc = 'regularizacion';
+  const r = _calcTotal();
+  S.svc = 'obra-nueva';
+  return r;
+};
+const _isReady = isReady;
+isReady = function() {
+  if (S.svc !== 'obra-nueva') return _isReady();
+  S.svc = 'regularizacion';
+  const r = _isReady();
+  S.svc = 'obra-nueva';
+  return r;
+};
 </script>
 </body>
 </html>
