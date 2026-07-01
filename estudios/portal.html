@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Estudio — APPARQ</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='white'/><polygon points='16,2 30,28 2,28' fill='none' stroke='%23E8503A' stroke-width='2.5' stroke-linejoin='round'/><line x1='10' y1='22' x2='22' y2='22' stroke='%23E8503A' stroke-width='2.5' stroke-linecap='round'/></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange:        #E8503A;
+      --orange-dark:   #C93E2A;
+      --orange-light:  rgba(232,80,58,0.10);
+      --dark:          #111827;
+      --mid:           #374151;
+      --muted:         #6B7280;
+      --light:         #9CA3AF;
+      --border:        #E5E7EB;
+      --border-light:  #F3F4F6;
+      --bg:            #FFFFFF;
+      --bg-soft:       #F9FAFB;
+      --radius:        14px;
+      --radius-sm:     8px;
+      --radius-pill:   999px;
+      --shadow:        0 4px 16px rgba(0,0,0,0.08);
+      --shadow-sm:     0 1px 3px rgba(0,0,0,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-soft);
+      color: var(--dark);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 clamp(1rem,4vw,2.5rem);
+      display: flex; align-items: center;
+      justify-content: space-between; height: 60px;
+    }
+    .logo { display:flex; align-items:center; gap:8px; text-decoration:none; }
+    .logo-icon { width:28px; height:28px; flex-shrink:0; }
+    .logo-wm { font-size:1rem; font-weight:900; letter-spacing:.08em; color:var(--dark); }
+    .logo-badge {
+      font-size:.7rem; font-weight:700; letter-spacing:.06em;
+      background:var(--orange-light); color:var(--orange);
+      padding:2px 8px; border-radius:var(--radius-pill);
+    }
+    .nav-right { display:flex; align-items:center; gap:12px; }
+    .btn-salir {
+      font-size:.8rem; font-weight:600; color:var(--muted);
+      background:none; border:1px solid var(--border); border-radius:var(--radius-pill);
+      padding:.35rem .85rem; cursor:pointer; transition:all .15s; display:none;
+    }
+    .btn-salir:hover { color:var(--dark); border-color:var(--dark); }
+
+    /* ── LAYOUT ── */
+    .main { max-width: 900px; margin: 0 auto; padding: clamp(2rem,5vw,4rem) clamp(1rem,4vw,2rem); }
+
+    /* ── LOGIN ── */
+    #view-login { display:flex; flex-direction:column; align-items:center; }
+    .login-card {
+      width: 100%; max-width: 440px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem 2rem;
+      box-shadow: var(--shadow);
+    }
+    .login-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: var(--orange-light); display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 1.25rem;
+    }
+    .login-card h1 { font-size: 1.35rem; font-weight: 800; margin-bottom: .35rem; }
+    .login-card p  { font-size: .875rem; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.5; }
+
+    .field { display:flex; flex-direction:column; gap:.45rem; margin-bottom:1rem; }
+    .field label { font-size:.8rem; font-weight:700; color:var(--mid); letter-spacing:.04em; text-transform:uppercase; }
+    .field input {
+      padding: .7rem .95rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: .9rem; font-family: inherit; color: var(--dark);
+      transition: border-color .15s; outline: none; background: var(--bg);
+    }
+    .field input:focus { border-color: var(--orange); }
+    .field .hint { font-size:.75rem; color:var(--light); }
+
+    .btn-login {
+      width: 100%; padding: .8rem; margin-top: .5rem;
+      background: var(--orange); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-size: .95rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-login:hover { background: var(--orange-dark); }
+    .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+
+    .login-error {
+      margin-top: 1rem; padding: .75rem 1rem;
+      background: #FEF2F2; border: 1px solid #FECACA;
+      border-radius: var(--radius-sm); font-size: .85rem; color: #991B1B;
+      display: none;
+    }
+
+    /* ── DASHBOARD ── */
+    #view-dashboard { display:none; }
+    .dash-header { margin-bottom: 2rem; }
+    .dash-header .greeting { font-size: .8rem; font-weight:600; color:var(--orange); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+    .dash-header h2 { font-size: 1.6rem; font-weight:800; margin-bottom:.4rem; }
+    .dash-header p  { font-size:.875rem; color:var(--muted); }
+
+    .tramites-grid { display:flex; flex-direction:column; gap:1rem; }
+
+    /* ── TRAMITE CARD ── */
+    .tramite-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); transition: box-shadow .2s;
+    }
+    .tramite-card:hover { box-shadow: var(--shadow); }
+
+    .card-top {
+      padding: 1.25rem 1.5rem;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+      cursor: pointer;
+    }
+    .card-left { flex: 1; min-width: 0; }
+    .card-num {
+      font-size: .75rem; font-weight: 700; color: var(--orange);
+      letter-spacing: .06em; margin-bottom: .3rem;
+    }
+    .card-title { font-size: 1rem; font-weight: 700; margin-bottom: .25rem; }
+    .card-sub   { font-size: .8rem; color: var(--muted); }
+
+    .stage-badge {
+      font-size: .72rem; font-weight: 700; padding: .3rem .75rem;
+      border-radius: var(--radius-pill); white-space: nowrap; flex-shrink: 0;
+    }
+
+    .progress-wrap { padding: 0 1.5rem 1rem; }
+    .progress-bar-bg {
+      height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden;
+    }
+    .progress-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+    .progress-info {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: .5rem; font-size: .75rem; color: var(--muted);
+    }
+
+    /* ── UPDATES PANEL ── */
+    .updates-panel {
+      border-top: 1px solid var(--border-light);
+      padding: 1rem 1.5rem 1.25rem;
+      display: none;
+    }
+    .updates-panel.open { display: block; }
+    .updates-title { font-size:.75rem; font-weight:700; color:var(--mid); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.85rem; }
+
+    .update-item {
+      display: flex; gap: .75rem; padding: .6rem 0;
+      border-bottom: 1px solid var(--border-light); font-size:.83rem;
+    }
+    .update-item:last-child { border-bottom: none; }
+    .update-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--border);
+      margin-top: .35rem; flex-shrink: 0;
+    }
+    .update-dot.architect { background: var(--orange); }
+    .update-dot.system    { background: #3B82F6; }
+    .update-body { flex: 1; }
+    .update-nota  { color: var(--dark); line-height: 1.5; margin-bottom: .2rem; }
+    .update-meta  { font-size: .72rem; color: var(--light); }
+
+    .no-updates { font-size:.83rem; color:var(--light); font-style:italic; }
+
+    .expand-btn {
+      background: none; border: none; cursor: pointer; padding: .25rem;
+      color: var(--light); transition: transform .2s, color .15s;
+    }
+    .expand-btn:hover { color: var(--mid); }
+    .expand-btn.open { transform: rotate(180deg); }
+
+    /* ── EMPTY / LOADING ── */
+    .empty-state {
+      text-align: center; padding: 3rem 1rem; color: var(--muted);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom:.75rem; }
+    .empty-state p { font-size:.9rem; }
+
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid var(--border);
+      border-top-color: var(--orange); border-radius: 50%;
+      animation: spin .7s linear infinite; margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESUMEN BAR ── */
+    .resumen-bar {
+      display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+    }
+    .resumen-chip {
+      font-size: .78rem; font-weight: 600; padding: .35rem .85rem;
+      border-radius: var(--radius-pill); background: var(--bg);
+      border: 1px solid var(--border); color: var(--mid);
+    }
+    .resumen-chip span { font-weight: 800; color: var(--dark); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="/estudios">
+      <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" fill="white"/>
+        <polygon points="16,2 30,28 2,28" fill="none" stroke="#E8503A" stroke-width="2.5" stroke-linejoin="round"/>
+        <line x1="10" y1="22" x2="22" y2="22" stroke="#E8503A" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-wm">APPARQ</span>
+      <span class="logo-badge">Estudios</span>
+    </a>
+    <div class="nav-right">
+      <button class="btn-salir" id="btn-salir" onclick="salir()">Cerrar sesión</button>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- LOGIN -->
+  <div id="view-login">
+    <div class="login-card">
+      <div class="login-icon">🏛️</div>
+      <h1>Portal de tu estudio</h1>
+      <p>Ingresa con el email y RUT del estudio para ver el avance de todos tus trámites.</p>
+
+      <div class="field">
+        <label>Email de contacto</label>
+        <input type="email" id="inp-email" placeholder="tu@estudio.cl" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label>RUT del estudio</label>
+        <input type="text" id="inp-rut" placeholder="12.345.678-9" autocomplete="off" />
+        <span class="hint">Con o sin puntos, con guión</span>
+      </div>
+      <button class="btn-login" id="btn-login" onclick="login()">Ver mis trámites</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard">
+    <div class="dash-header">
+      <div class="greeting">Portal de Estudios</div>
+      <h2 id="dash-title">Mis trámites</h2>
+      <p id="dash-sub"></p>
+    </div>
+    <div class="resumen-bar" id="resumen-bar"></div>
+    <div class="tramites-grid" id="tramites-grid"></div>
+  </div>
+
+</main>
+
+<script>
+  const API = '/api/portal-estudio';
+  let SESSION = null;
+
+  /* ── UTILIDADES ── */
+  function rutLimpio(rut) {
+    return rut.replace(/\./g, '').toUpperCase();
+  }
+
+  function fmtFecha(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function stageStyle(color) {
+    const hex = color || '#9CA3AF';
+    /* background claro derivado del color */
+    const map = {
+      '#3B82F6': { bg:'#EFF6FF', text:'#1D4ED8' },
+      '#F59E0B': { bg:'#FFFBEB', text:'#B45309' },
+      '#10B981': { bg:'#F0FDF4', text:'#065F46' },
+      '#9CA3AF': { bg:'#F3F4F6', text:'#4B5563' },
+    };
+    return map[hex] || { bg:'#F3F4F6', text:'#374151' };
+  }
+
+  /* ── LOGIN ── */
+  async function login() {
+    const email = document.getElementById('inp-email').value.trim().toLowerCase();
+    const rut   = rutLimpio(document.getElementById('inp-rut').value.trim());
+    const errEl = document.getElementById('login-error');
+    const btn   = document.getElementById('btn-login');
+
+    errEl.style.display = 'none';
+    if (!email || !rut) { mostrarError('Completa email y RUT.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Buscando…';
+
+    try {
+      const res  = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, rut }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        mostrarError(data.error || 'No se encontraron trámites con esos datos.');
+        return;
+      }
+
+      SESSION = { email, rut };
+      localStorage.setItem('apparq_estudio', JSON.stringify(SESSION));
+      renderDashboard(data);
+
+    } catch (e) {
+      mostrarError('Error de conexión. Intenta nuevamente.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ver mis trámites';
+    }
+  }
+
+  function mostrarError(msg) {
+    const el = document.getElementById('login-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  /* ── DASHBOARD ── */
+  function renderDashboard({ projects, estudio_nombre }) {
+    document.getElementById('view-login').style.display     = 'none';
+    document.getElementById('view-dashboard').style.display = 'block';
+    document.getElementById('btn-salir').style.display      = 'block';
+
+    const nombre = estudio_nombre || 'tu estudio';
+    document.getElementById('dash-title').textContent = estudio_nombre || 'Mis trámites';
+    document.getElementById('dash-sub').textContent   =
+      `${projects.length} trámite${projects.length !== 1 ? 's' : ''} registrado${projects.length !== 1 ? 's' : ''}`;
+
+    /* Resumen chips */
+    const activos    = projects.filter(p => p.stage !== 'completado' && p.stage !== 'entrega_informe' && p.stage !== 'pendiente_pago').length;
+    const completados = projects.filter(p => p.stage === 'completado' || p.stage === 'entrega_informe').length;
+    document.getElementById('resumen-bar').innerHTML = `
+      <div class="resumen-chip"><span>${projects.length}</span> total</div>
+      ${activos     ? `<div class="resumen-chip"><span>${activos}</span> en curso</div>` : ''}
+      ${completados ? `<div class="resumen-chip"><span>${completados}</span> completado${completados !== 1 ? 's' : ''}</div>` : ''}
+    `;
+
+    /* Cards */
+    const grid = document.getElementById('tramites-grid');
+    if (!projects.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No hay trámites registrados aún.</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = projects.map((p, i) => {
+      const st = stageStyle(p.stage_color);
+      return `
+      <div class="tramite-card" id="card-${i}">
+        <div class="card-top" onclick="toggleUpdates(${i}, '${p.project_number}')">
+          <div class="card-left">
+            <div class="card-num">${p.project_number}</div>
+            <div class="card-title">${p.service_label} · ${p.commune}</div>
+            <div class="card-sub">${p.address || ''}${p.architect_nombre ? ' · Arq. ' + p.architect_nombre : ''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+            <span class="stage-badge" style="background:${st.bg};color:${st.text};">${p.stage_label}</span>
+            <button class="expand-btn" id="expand-btn-${i}" aria-label="Ver actualizaciones">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:${p.stage_pct}%;background:${p.stage_color};"></div>
+          </div>
+          <div class="progress-info">
+            <span>${p.stage_pct}% completado</span>
+            <span>Desde ${fmtFecha(p.created_at)}</span>
+          </div>
+        </div>
+        <div class="updates-panel" id="updates-${i}">
+          <div class="spinner" id="spin-${i}"></div>
+          <div id="updates-content-${i}"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── ACTUALIZACIONES ── */
+  async function toggleUpdates(idx, projectNumber) {
+    const panel  = document.getElementById(`updates-${idx}`);
+    const btn    = document.getElementById(`expand-btn-${idx}`);
+    const isOpen = panel.classList.contains('open');
+
+    /* cerrar todos los demás */
+    document.querySelectorAll('.updates-panel').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.expand-btn').forEach(b => b.classList.remove('open'));
+
+    if (isOpen) return;
+
+    panel.classList.add('open');
+    btn.classList.add('open');
+
+    /* Si ya tiene contenido cargado, no volver a consultar */
+    const contentEl = document.getElementById(`updates-content-${idx}`);
+    if (contentEl.dataset.loaded) return;
+
+    document.getElementById(`spin-${idx}`).style.display = 'block';
+
+    try {
+      const res  = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get-updates',
+          email:  SESSION.email,
+          rut:    SESSION.rut,
+          project_number: projectNumber,
+        }),
+      });
+      const data = await res.json();
+      const updates = data.updates || [];
+
+      document.getElementById(`spin-${idx}`).style.display = 'none';
+
+      if (!updates.length) {
+        contentEl.innerHTML = `<div class="updates-title">Actualizaciones</div><p class="no-updates">Aún no hay actualizaciones para este trámite.</p>`;
+      } else {
+        contentEl.innerHTML = `
+          <div class="updates-title">Actualizaciones (${updates.length})</div>
+          ${updates.map(u => {
+            const dotClass = u.author === 'architect' ? 'architect' : u.author === 'system' ? 'system' : '';
+            return `<div class="update-item">
+              <div class="update-dot ${dotClass}"></div>
+              <div class="update-body">
+                <div class="update-nota">${u.nota || u.message || ''}</div>
+                <div class="update-meta">${fmtFecha(u.created_at)} · ${u.author === 'architect' ? 'Arquitecto' : u.author === 'client' ? 'Cliente' : 'Sistema'}</div>
+              </div>
+            </div>`;
+          }).join('')}
+        `;
+      }
+      contentEl.dataset.loaded = '1';
+    } catch (_) {
+      document.getElementById(`spin-${idx}`).style.display = 'none';
+      contentEl.innerHTML = '<p class="no-updates">Error al cargar actualizaciones.</p>';
+    }
+  }
+
+  /* ── SESIÓN ── */
+  function salir() {
+    SESSION = null;
+    localStorage.removeItem('apparq_estudio');
+    document.getElementById('view-dashboard').style.display = 'none';
+    document.getElementById('view-login').style.display     = 'flex';
+    document.getElementById('btn-salir').style.display      = 'none';
+    document.getElementById('tramites-grid').innerHTML      = '';
+    document.getElementById('login-error').style.display    = 'none';
+  }
+
+  /* Auto-login si hay sesión guardada */
+  (async function init() {
+    const saved = localStorage.getItem('apparq_estudio');
+    if (!saved) return;
+    try {
+      SESSION = JSON.parse(saved);
+      document.getElementById('inp-email').value = SESSION.email;
+      document.getElementById('inp-rut').value   = SESSION.rut;
+      await login();
+    } catch (_) { localStorage.removeItem('apparq_estudio'); }
+  })();
+
+  /* Enter para login */
+  ['inp-email','inp-rut'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+  });
+</script>
+</body>
+</html>
