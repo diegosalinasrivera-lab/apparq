@@ -3242,7 +3242,7 @@ function renderArqPagos() {
       const pctFrac = (p.pct || 80) / 100;
       let cum = 0;
       p.etapas.forEach(e => {
-        cum += Math.round((e.brutoBoleta || e.monto) / pctFrac);
+        cum += e.valorCliente || Math.round((e.brutoBoleta || e.monto) / pctFrac);
         const neto = e.netoArquitecto || e.monto;
         globalBruto += (e.brutoBoleta || e.monto);
         globalRet   += (e.retencion   || 0);
@@ -3310,7 +3310,7 @@ function renderArqPagos() {
       const svc = SVC_SHORT[p.service_type] || p.service_type;
       const sub = p.servicio_subtipo ? ` · ${p.servicio_subtipo.charAt(0).toUpperCase()+p.servicio_subtipo.slice(1)}` : '';
       p.etapas.forEach(e => {
-        cum += Math.round((e.brutoBoleta || e.monto) / pctFrac);
+        cum += e.valorCliente || Math.round((e.brutoBoleta || e.monto) / pctFrac);
         const neto = e.netoArquitecto || e.monto;
         const bruto = e.brutoBoleta || e.monto;
         const ret   = e.retencion   || 0;
