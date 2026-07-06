@@ -2952,13 +2952,16 @@ function renderDetailTab(tab) {
     const arqPct    = arch?.patente ? 0.80 : 0.70;
     const pctCom    = arch?.patente ? 20 : 30;
     const RETENCION = 0.1525; /* 15,25% — Ley 21.133 vigente 2026 */
+    const IVA_CUTOFF = '2026-07-06T00:00:00';
+    const useIVA    = proj.created_at && proj.created_at >= IVA_CUTOFF;
     const clp       = proj.total_clp || 0;
     const e1c       = proj.e1_clp   || 0;
     const is2stages = proj.service_type === 'informe' || proj.service_type === 'declaracion-jurada';
     const clpFmt    = n => '$' + Math.round(n||0).toLocaleString('es-CL');
     function mkPagoAdmin(etapa, label, valorCliente, pagado, at) {
       const vCli = Math.round(valorCliente);
-      const bruto = Math.round(vCli * arqPct);
+      const base  = useIVA ? Math.round(vCli / 1.19) : vCli;
+      const bruto = Math.round(base * arqPct);
       const ret   = Math.round(bruto * RETENCION);
       return { etapa, label, valorCliente: vCli, monto: bruto,
                brutoBoleta: bruto, retencion: ret, netoArquitecto: bruto - ret,

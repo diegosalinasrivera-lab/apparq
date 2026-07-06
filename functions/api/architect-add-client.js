@@ -27,14 +27,15 @@ async function verifyToken(token, SUPABASE_URL, SUPABASE_KEY) {
   return user.email?.toLowerCase() || null;
 }
 
-/* ── Tabla de precios en UF (igual que en index.html) ── */
-const PRECIO_LEY_MONO  = { hasta90: 14, hasta140: 19 };
-const PRECIO_REG       = { 'obra-menor': 28, 'obra-nueva-reg-hasta140': 38, 'obra-nueva-reg-por-m2': 0.39 };
-const PRECIO_AMP       = { hasta50: 20, hasta100: 28 };
-const PRECIO_ON        = { tarifa: 0.80, minimo: 35 };
-const PRECIO_INF       = { evaluacion: 3, factibilidad: 6, compraventa: 8 };
-const PRECIO_DJ        = { piscina: 10, pergola: 6, demolicion_base: 8, demolicion_umbral: 100, demolicion_por_m2: 0.05 };
-const UF_FALLBACK      = 39900;
+/* ── Tabla de precios en UF (IVA incluido, vigentes desde 2026-07-06) ── */
+const PRECIO_LEY_MONO  = { hasta90: 15.4, hasta140: 20.9 };
+const PRECIO_REG       = { 'obra-menor': 30.8, 'obra-nueva-reg-hasta140': 41.8, 'obra-nueva-reg-por-m2': 0.429 };
+const PRECIO_AMP       = { hasta50: 22, hasta100: 30.8 };
+const PRECIO_ON        = { tarifa: 0.88, minimo: 38.5 };
+const PRECIO_INF       = { evaluacion: 3.3, factibilidad: 6.6, compraventa: 8.8 };
+const PRECIO_DJ        = { piscina: 11, pergola: 6.6, demolicion_base: 8.8, demolicion_umbral: 100, demolicion_por_m2: 0.055 };
+const UF_FALLBACK      = 40823;
+const IVA_RATE         = 0.19;
 
 function calcUF({ svc, servicio_subtipo, m2 = 0 }) {
   const m = Number(m2) || 0;
@@ -111,7 +112,8 @@ export async function onRequest(context) {
       const clp_total  = Math.round(uf_total * uf);
       const is2stages  = svc === 'informe' || svc === 'declaracion-jurada';
       const e1_clp     = Math.round(clp_total * (is2stages ? 0.50 : 0.20));
-      const arq_total  = Math.round(clp_total * arq_pct);
+      const neto_base  = Math.round(clp_total / (1 + IVA_RATE));
+      const arq_total  = Math.round(neto_base * arq_pct);
       const com_total  = clp_total - arq_total;
 
       return corsResponse({

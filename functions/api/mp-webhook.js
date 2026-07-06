@@ -299,7 +299,10 @@ export async function onRequest(context) {
               } catch(_) {}
             }
             const valorCliente      = cobro.valor_clp || 0;
-            const brutoBoleta       = Math.round(valorCliente * arqPct);
+            const IVA_CUTOFF        = '2026-07-06T00:00:00';
+            const useIVA            = cobro.created_at && cobro.created_at >= IVA_CUTOFF;
+            const baseComision      = useIVA ? Math.round(valorCliente / 1.19) : valorCliente;
+            const brutoBoleta       = Math.round(baseComision * arqPct);
             const retencionSii      = Math.round(brutoBoleta * RETENCION);
             const pagoNetoArquitecto = brutoBoleta - retencionSii;
             const comisionMonto     = valorCliente - brutoBoleta;
