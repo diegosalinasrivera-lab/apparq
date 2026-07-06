@@ -1668,19 +1668,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
         </div>
 
-        <!-- Tipo de cliente (visible junto con el precio) -->
-        <div id="tipoClienteBox" class="hidden" style="margin:0 0 0.45rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-          <span style="font-size:0.77rem;font-weight:700;color:var(--dark);">Tipo de cliente:</span>
-          <button id="tipoBtnPN" class="tipo-cli-btn tipo-cli-active" data-tipo="persona_natural"
-            style="padding:0.25rem 0.75rem;border-radius:20px;border:1.5px solid var(--orange,#E8503A);background:var(--orange,#E8503A);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;">
-            Persona Natural
-          </button>
-          <button id="tipoBtnEmp" class="tipo-cli-btn" data-tipo="empresa"
-            style="padding:0.25rem 0.75rem;border-radius:20px;border:1.5px solid var(--border,#e8e4dc);background:transparent;color:var(--dark);font-size:0.75rem;font-weight:700;cursor:pointer;">
-            Empresa
-          </button>
-        </div>
-
         <!-- Price -->
         <div class="price-box hidden" id="priceBox">
           <div class="price-top">
@@ -1688,7 +1675,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <div class="price-lbl">Total exacto</div>
               <div class="price-total" id="priceTotal">$0</div>
               <div class="price-uf-row" id="priceUFRow"></div>
-              <div id="priceIVARow" class="hidden" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;line-height:1.65;"></div>
             </div>
             <div class="uf-pill" id="ufPill">UF —</div>
           </div>
@@ -3205,7 +3191,7 @@ const REGIONES_COMUNAS = {
 const COMMUNES = Object.values(REGIONES_COMUNAS).flat();
 
 let S = { addr: '', commune: '', svc: null, svcSub: null, m2: null, mat: null, dest: [], uf: 40823,
-          djElig: null, djObra: null, tipoCliente: 'persona_natural' }; // actualizado vía /api/get-uf al cargar
+          djElig: null, djObra: null }; // actualizado vía /api/get-uf al cargar
 
 /* ══════════════════════════════════════════════════
    RETORNO DESDE MERCADO PAGO
@@ -4049,7 +4035,6 @@ function recalc() {
 
   if (!isReady()) {
     box.classList.add('hidden');
-    document.getElementById('tipoClienteBox')?.classList.add('hidden');
     document.getElementById('leadBox')?.classList.add('hidden');
     document.getElementById('e1-notice')?.classList.add('hidden');
     cta.disabled = true;
@@ -4063,17 +4048,6 @@ function recalc() {
   document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
 
-  /* Desglose IVA para empresa */
-  const ivaRow = document.getElementById('priceIVARow');
-  if (S.tipoCliente === 'empresa') {
-    const neto = Math.round(clp / (1 + IVA_RATE));
-    const iva  = clp - neto;
-    ivaRow.innerHTML = `Neto: <strong>${clpFmt(neto)}</strong> + IVA 19%: <strong>${clpFmt(iva)}</strong>`;
-    ivaRow.classList.remove('hidden');
-  } else {
-    ivaRow.classList.add('hidden');
-  }
-
   const stages = S.svc === 'informe' ? STAGES_INFORME
                : S.svc === 'declaracion-jurada' ? STAGES_DJ
                : STAGES_NORMAL;
@@ -4085,7 +4059,6 @@ function recalc() {
     </div>`).join('');
 
   box.classList.remove('hidden');
-  document.getElementById('tipoClienteBox')?.classList.remove('hidden');
   cta.disabled = false;
   sub.textContent = '¡Listo! Tu cotización';
 
@@ -4105,19 +4078,6 @@ function recalc() {
   }
 }
 
-/* ── Tipo de cliente toggle ────────────────────── */
-document.querySelectorAll('.tipo-cli-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    S.tipoCliente = btn.dataset.tipo;
-    document.querySelectorAll('.tipo-cli-btn').forEach(b => {
-      const active = b.dataset.tipo === S.tipoCliente;
-      b.style.background  = active ? 'var(--orange,#E8503A)' : 'transparent';
-      b.style.color       = active ? '#fff' : 'var(--dark)';
-      b.style.borderColor = active ? 'var(--orange,#E8503A)' : 'var(--border,#e8e4dc)';
-    });
-    recalc();
-  });
-});
 
 /* ── CTA → open wizard ────────────────────── */
 document.getElementById('btnCta').onclick = () => {
