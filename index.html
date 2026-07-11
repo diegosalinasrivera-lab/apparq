@@ -778,6 +778,8 @@
     .btn-cta:hover { opacity: 0.92; box-shadow: 0 6px 20px rgba(232,80,58,0.45); }
     .btn-cta:active { transform: scale(0.98); }
     .btn-cta:disabled { background: var(--border); box-shadow: none; color: var(--light); cursor: default; }
+    #svc-desc { font-size: 0.74rem; color: var(--muted); line-height: 1.5; margin-top: 0.55rem; min-height: 1.1em; transition: opacity 0.2s; }
+    #svc-desc strong { color: var(--dark); font-weight: 600; }
     .field-error { outline: 2px solid #E8503A; border-radius: 8px; animation: fieldShake 0.35s ease; }
     @keyframes fieldShake { 0%,100%{transform:translateX(0)} 25%,75%{transform:translateX(-4px)} 50%{transform:translateX(4px)} }
     #m2Input.field-error { outline: none; border-color: #E8503A !important; }
@@ -1550,6 +1552,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <button class="sbtn" data-svc="informe"><span class="sbtn-ico">📄</span>Informe</button>
             <button class="sbtn" data-svc="ley-del-mono"><span class="sbtn-ico">⚖️</span>Ley del Mono</button>
           </div>
+          <div id="svc-desc"></div>
         </div>
 
         <!-- m² -->
@@ -3683,6 +3686,15 @@ document.getElementById('arqForm').onsubmit = async e => {
   }
 };
 
+const SVC_DESC = {
+  'ley-del-mono':       'Exclusivo para <strong>viviendas construidas sin permiso antes del 31 de diciembre de 2015</strong> y hasta 140 m². Si tu casa es más nueva, usa Regularización.',
+  'regularizacion':     'Para obras o ampliaciones construidas <strong>sin permiso, sin límite de año ni superficie</strong>. Aplica también a viviendas post-2015.',
+  'ampliacion':         'Para <strong>agregar nuevos m² a una construcción existente</strong> que ya tiene permiso de edificación previo.',
+  'declaracion-jurada': 'Trámite simplificado para <strong>piscinas privadas, pérgolas, sombreaderos o demoliciones menores</strong> que no requieren permiso DOM.',
+  'obra-nueva':         'Para <strong>construir desde cero</strong> con permiso municipal de edificación.',
+  'informe':            '<strong>Certificado técnico</strong> del estado normativo y legal de tu propiedad. Sin tramitación DOM.',
+};
+
 /* ── Service buttons ──────────────────────── */
 document.querySelectorAll('.sbtn').forEach(b => {
   b.onclick = () => {
@@ -3690,6 +3702,7 @@ document.querySelectorAll('.sbtn').forEach(b => {
     b.classList.add('on');
     S.svc = b.dataset.svc;
     S.svcSub = null;
+    document.getElementById('svc-desc').innerHTML = SVC_DESC[S.svc] || '';
     document.querySelectorAll('.chip[data-sub]').forEach(x => x.classList.remove('on'));
 
     const isInf     = S.svc === 'informe';
