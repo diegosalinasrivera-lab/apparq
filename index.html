@@ -778,6 +778,9 @@
     .btn-cta:hover { opacity: 0.92; box-shadow: 0 6px 20px rgba(232,80,58,0.45); }
     .btn-cta:active { transform: scale(0.98); }
     .btn-cta:disabled { background: var(--border); box-shadow: none; color: var(--light); cursor: default; }
+    .field-error { outline: 2px solid #E8503A; border-radius: 8px; animation: fieldShake 0.35s ease; }
+    @keyframes fieldShake { 0%,100%{transform:translateX(0)} 25%,75%{transform:translateX(-4px)} 50%{transform:translateX(4px)} }
+    #m2Input.field-error { outline: none; border-color: #E8503A !important; }
     .calc-note { font-size: 0.68rem; color: var(--light); text-align: center; margin-top: 0.6rem; }
 
     /* ── HOW IT WORKS ──────────────────────── */
@@ -1717,7 +1720,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           ⚠️ <strong>Importante:</strong> Si elegiste el trámite equivocado, tu arquitecto te lo notificará y APPARQ te redirigirá al servicio correcto con el precio correspondiente. El pago de la <strong>Etapa 1 no es reembolsable</strong> — se aplica íntegramente al nuevo trámite.
         </div>
 
-        <button class="btn-cta" id="btnCta" disabled>Comenzar mi trámite →</button>
+        <button class="btn-cta" id="btnCta">Comenzar mi trámite →</button>
 
       </div>
 
@@ -4037,7 +4040,6 @@ function recalc() {
     box.classList.add('hidden');
     document.getElementById('leadBox')?.classList.add('hidden');
     document.getElementById('e1-notice')?.classList.add('hidden');
-    cta.disabled = true;
     sub.textContent = 'Completa los campos';
     return;
   }
@@ -4079,9 +4081,45 @@ function recalc() {
 }
 
 
+/* ── Validation highlight for CTA click ─── */
+function highlightMissing() {
+  let firstEl = null;
+  const flash = el => {
+    if (!el) return;
+    el.classList.remove('field-error');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('field-error');
+    setTimeout(() => el.classList.remove('field-error'), 2200);
+    if (!firstEl) firstEl = el;
+  };
+  if (!S.svc) {
+    flash(document.querySelector('.service-grid'));
+  } else if (S.svc === 'informe' && !S.svcSub) {
+    flash(document.getElementById('grp-sub-inf'));
+  } else if (S.svc === 'declaracion-jurada') {
+    if (!S.svcSub) {
+      flash(document.getElementById('grp-sub-dj'));
+    } else if (S.svcSub === 'piscina_privada' && (!S.djElig || S.djElig === 'no_15m')) {
+      flash(document.getElementById('grp-dj-piscina'));
+    } else if (S.svcSub === 'pergola_sombreadero' && !S.djObra) {
+      flash(document.getElementById('grp-dj-pergola'));
+    } else if (S.svcSub === 'demolicion' && !S.m2) {
+      flash(document.getElementById('m2Input'));
+    }
+  } else if (!S.m2) {
+    flash(document.getElementById('m2Input'));
+  } else if (S.svc === 'regularizacion' && !S.svcSub) {
+    flash(document.getElementById('grp-sub-reg'));
+  } else if (S.svc === 'obra-nueva') {
+    if (!S.mat) flash(document.getElementById('grp-mat'));
+    if (!S.dest || !S.dest.length) flash(document.getElementById('grp-dest'));
+  }
+  if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 /* ── CTA → open wizard ────────────────────── */
 document.getElementById('btnCta').onclick = () => {
-  if (!isReady()) return;
+  if (!isReady()) { highlightMissing(); return; }
   /* Tracking silencioso — no bloquea el flujo */
   try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp }) }); } catch(_) {}
   openWizard();
