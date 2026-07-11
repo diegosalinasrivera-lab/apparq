@@ -108,6 +108,7 @@ function calcTotal() {
 
 /* ── isReady(): usa la variable global S ── */
 function isReady() {
+  if (!S.commune) return false;
   if (!S.svc) return false;
   if (S.svc === 'informe')       return !!S.svcSub;
 

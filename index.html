@@ -4092,7 +4092,9 @@ function highlightMissing() {
     setTimeout(() => el.classList.remove('field-error'), 2200);
     if (!firstEl) firstEl = el;
   };
-  if (!S.svc) {
+  if (!S.commune) {
+    flash(document.getElementById('communeDD'));
+  } else if (!S.svc) {
     flash(document.querySelector('.service-grid'));
   } else if (S.svc === 'informe' && !S.svcSub) {
     flash(document.getElementById('grp-sub-inf'));
