@@ -1517,23 +1517,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="calc-subtitle" id="calcSubtitle">Completa los campos</div>
         </div>
 
-        <!-- Address -->
+        <!-- Commune -->
         <div class="calc-group">
-          <label class="calc-label">📍 Dirección de la propiedad</label>
-          <div class="field-wrap">
-            <span class="field-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-              </svg>
-            </span>
-            <input id="addrInput" type="text" class="field"
-              placeholder="Ej: Av. Providencia 1234" autocomplete="off" spellcheck="false" />
-            <div class="field-spin" id="addrSpin"><div class="spin-ring"></div></div>
-            <div class="suggestions" id="suggBox"></div>
-          </div>
-          <div class="commune-row">
-            <div class="commune-label">O selecciona tu comuna directamente</div>
-            <div class="cdd" id="communeDD">
+          <label class="calc-label">📍 Comuna de la propiedad</label>
+          <div class="cdd" id="communeDD">
               <div class="cdd-icon-map">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
@@ -1550,7 +1537,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="cdd-list" id="communeDDList"></div>
               </div>
             </div>
-          </div>
         </div>
 
         <!-- Service -->
@@ -2026,7 +2012,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
           <div class="wiz-group">
             <label class="wiz-label">Dirección de la propiedad</label>
-            <input class="wiz-input" id="wizAddr" type="text" readonly />
+            <input class="wiz-input" id="wizAddr" type="text" placeholder="Ej: Av. Providencia 1234" />
           </div>
         </div>
       </div>
@@ -3340,15 +3326,9 @@ function buildDDList(filter = '') {
     }
     opt.onclick = () => {
       S.commune = c;
-      /* Solo rellenar el campo de dirección si está vacío */
-      const addrEl = document.getElementById('addrInput');
-      if (!addrEl.value.trim()) {
-        addrEl.value = c;
-        S.addr = c;
-      }
       cDDText.textContent = c;
       cDDBtn.classList.add('selected');
-      closeDDPanel(); closeSugg(); recalc();
+      closeDDPanel(); recalc();
     };
     return opt;
   }
@@ -3703,120 +3683,6 @@ document.getElementById('arqForm').onsubmit = async e => {
   }
 };
 
-/* ── Address autocomplete ─────────────────── */
-const addrInput = document.getElementById('addrInput');
-const suggBox   = document.getElementById('suggBox');
-const addrSpin  = document.getElementById('addrSpin');
-let debTimer;
-
-addrInput.addEventListener('input', () => {
-  S.addr = addrInput.value.trim();
-  if (S.addr.length < 4) { closeSugg(); return; }
-  clearTimeout(debTimer);
-  debTimer = setTimeout(() => doSearch(S.addr), 420);
-});
-addrInput.addEventListener('focus', () => {
-  if (addrInput.value.length >= 4) doSearch(addrInput.value);
-});
-document.addEventListener('click', e => {
-  if (!e.target.closest('#addrInput') && !e.target.closest('#suggBox')) closeSugg();
-});
-
-async function doSearch(q) {
-  addrSpin.classList.add('on');
-  try {
-    const headers = { 'User-Agent': 'APPARQ/1.0' };
-    const base = 'https://nominatim.openstreetmap.org/search';
-    const common = '&format=json&addressdetails=1&limit=6&countrycodes=cl&accept-language=es';
-
-    /* Intento 1: búsqueda libre con bounding box Santiago */
-    let url = `${base}?q=${encodeURIComponent(q + ', Chile')}${common}&bounded=1&viewbox=-71.7,-33.7,-70.4,-33.2`;
-    let data = await (await fetch(url, { headers })).json();
-
-    /* Intento 2: búsqueda estructurada separando número y calle */
-    if (!data?.length) {
-      const m = q.match(/^(.+?)\s+(\d+)\s*(?:,\s*(.+))?$/);
-      if (m) {
-        const street = encodeURIComponent(m[1].trim());
-        const num    = encodeURIComponent(m[2].trim());
-        const city   = encodeURIComponent((m[3] || 'Santiago').trim());
-        url = `${base}?street=${num}+${street}&city=${city}&country=Chile${common}`;
-        data = await (await fetch(url, { headers })).json();
-      }
-    }
-
-    /* Intento 3: solo nombre de calle sin número, Chile completo */
-    if (!data?.length) {
-      url = `${base}?q=${encodeURIComponent(q + ', Chile')}${common}`;
-      data = await (await fetch(url, { headers })).json();
-    }
-
-    data?.length ? showSugg(data) : showNoResults();
-  } catch { closeSugg(); }
-  finally { addrSpin.classList.remove('on'); }
-}
-
-function buildAddr(item) {
-  const a = item.address || {};
-  const road = a.road || a.pedestrian || a.path || a.footway || '';
-  const num  = a.house_number || '';
-  if (road && num) return `${road} ${num}`;
-  if (road)        return road;
-  // Fallback: si display_name empieza con número (ej: "4826, Pucará, Ñuñoa...")
-  const parts = item.display_name.split(',').map(p => p.trim());
-  if (parts.length >= 2 && /^\d+$/.test(parts[0])) return `${parts[1]} ${parts[0]}`;
-  return parts.slice(0, 2).join(', ');
-}
-
-function showSugg(data) {
-  suggBox.innerHTML = '';
-  data.slice(0, 5).forEach(item => {
-    const commune = extractCommune(item.address);
-    const addr    = buildAddr(item);
-    const el = document.createElement('div');
-    el.className = 'sug-item';
-    el.innerHTML = `
-      <svg class="sug-pin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-      </svg>
-      <div>
-        <div class="sug-main">${addr}</div>
-        <div class="sug-sub">${item.display_name.split(',').slice(1,4).join(',').trim()}</div>
-        ${commune ? `<span class="sug-tag">${commune}</span>` : ''}
-      </div>`;
-    el.onclick = () => {
-      addrInput.value = addr + (commune ? ', ' + commune : '');
-      S.addr = addrInput.value; S.commune = commune || '';
-      if (commune) {
-        cDDText.textContent = commune;
-        cDDBtn.classList.add('selected');
-        buildDDList();
-      }
-      closeSugg(); recalc();
-    };
-    suggBox.appendChild(el);
-  });
-  suggBox.classList.add('open');
-}
-
-function extractCommune(addr) {
-  if (!addr) return '';
-  for (const k of ['suburb','city_district','town','municipality','city']) {
-    const v = addr[k];
-    if (v) { const m = COMMUNES.find(c => c.toLowerCase() === v.toLowerCase()); if (m) return m; }
-  }
-  return '';
-}
-function closeSugg() { suggBox.classList.remove('open'); suggBox.innerHTML = ''; }
-
-function showNoResults() {
-  suggBox.innerHTML = `<div style="padding:14px 16px;font-size:12px;color:#718096;line-height:1.6;">
-    No encontramos esa dirección.<br>
-    <strong style="color:#1a1a2e;">Escríbela manualmente</strong> y selecciona tu comuna con el selector de abajo.
-  </div>`;
-  suggBox.classList.add('open');
-}
-
 /* ── Service buttons ──────────────────────── */
 document.querySelectorAll('.sbtn').forEach(b => {
   b.onclick = () => {
@@ -4006,8 +3872,6 @@ document.querySelectorAll('.chip[data-dest]').forEach(c => {
 
   if (commune) {
     S.commune = commune;
-    const addrEl = document.getElementById('addrInput');
-    if (addrEl && !addrEl.value.trim()) { addrEl.value = commune; S.addr = commune; }
     const txt = document.getElementById('communeDDText');
     const btn = document.getElementById('communeDDBtn');
     if (txt) txt.textContent = commune;
@@ -4266,7 +4130,7 @@ function prefillWizard() {
     <div class="wiz-sum-price">${clpFmt(clp)}</div>`;
 
   /* address field */
-  document.getElementById('wizAddr').value = S.addr || S.commune ? (S.addr || S.commune + ', Santiago') : '';
+  document.getElementById('wizAddr').value = '';
 
   /* contract text */
   const svcName = SVC_LABELS[S.svc] || S.svc;
