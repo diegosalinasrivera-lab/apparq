@@ -3066,7 +3066,11 @@ async function adminMarkPago(projectId, etapa, idx) {
         projects[pIdx][`arq_pago_${etapa}_at`] = state.pagos[idx].at;
       }
       state.renderPagosAdmin();
-      showToast(`✅ Pago ${etapa.toUpperCase()} marcado`, 'success');
+      if (res.emailSent) {
+        showToast(`✅ Pago ${etapa.toUpperCase()} marcado · Arquitecto notificado por email`, 'success');
+      } else {
+        showToast(`✅ Pago ${etapa.toUpperCase()} marcado (email no enviado — notifica manualmente)`, 'warning');
+      }
     } else {
       showToast(res.error || 'Error al marcar pago', 'error');
     }

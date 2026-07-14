@@ -36,6 +36,101 @@ async function sendEmail({ to, subject, html }, RESEND_API_KEY) {
   if (!res.ok) console.error('Resend error admin-data:', await res.text());
 }
 
+/* ── Notificación de pago al arquitecto ── */
+async function sendArqPaymentEmail({ project, architect, etapa, RESEND_API_KEY }) {
+  const clp  = project.total_clp || 0;
+  const e1c  = project.e1_clp    || 0;
+  const svc  = project.service_type || '';
+  const pnum = project.project_number || '—';
+
+  const SVC_LABELS = { regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'ley-del-mono':'Ley del Mono' };
+  const svcName   = SVC_LABELS[svc] || svc;
+  const is2stages = svc === 'informe' || svc === 'declaracion-jurada';
+  const clientName = `${project.client_nombre || ''} ${project.client_apellido || ''}`.trim();
+
+  /* Etapa label y valor base del cliente */
+  let etapaLabel, valorCliente;
+  if (is2stages) {
+    etapaLabel   = etapa === 'e1' ? 'E1 · Inicio' : (svc === 'informe' ? 'E2 · Entrega informe' : 'E2 · Cierre DJ');
+    valorCliente = clp * 0.50;
+  } else {
+    const LABELS = { e1: 'E1 · Levantamiento', e2: 'E2 · Elaboración', e3: 'E3 · Ingreso DOM', e4: 'E4 · Recepción final' };
+    const PCTS   = { e2: 0.30, e3: 0.30, e4: 0.20 };
+    etapaLabel   = LABELS[etapa] || etapa.toUpperCase();
+    valorCliente = etapa === 'e1' ? e1c : clp * PCTS[etapa];
+  }
+
+  /* IVA guard: proyectos desde 2026-07-06 incluyen IVA 19% */
+  const IVA_CUTOFF = '2026-07-06T00:00:00';
+  const useIVA     = project.created_at && project.created_at >= IVA_CUTOFF;
+  const arqPct     = architect.patente ? 0.80 : 0.70;
+  const netoBase   = useIVA ? Math.round(valorCliente / 1.19) : Math.round(valorCliente);
+  const ivaMonto   = useIVA ? Math.round(valorCliente - netoBase) : 0;
+  const bruto      = Math.round(netoBase * arqPct);
+  const retencion  = Math.round(bruto * 0.1525);
+  const neto       = bruto - retencion;
+
+  const fechaPago  = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+
+  const html = `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e">
+    <div style="background:#1a1a2e;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+      <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:-0.5px">APPARQ</h1>
+      <p style="color:#a0aec0;margin:8px 0 0;font-size:13px">Notificación de pago de honorarios</p>
+    </div>
+    <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+      <h2 style="margin-top:0;color:#1a1a2e">💰 ¡Hola ${architect.nombre}! Recibiste un pago</h2>
+      <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:0 0 20px;">
+        APPARQ realizó una transferencia a tu cuenta correspondiente al siguiente trámite:
+      </p>
+
+      <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:8px;padding:18px 20px;margin:0 0 20px">
+        <p style="margin:0 0 12px;font-size:13px;font-weight:800;color:#15803d;">📋 Detalle del pago</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <tr style="background:#dcfce7"><td style="padding:7px 10px;color:#166534;width:44%">Trámite N°</td><td style="padding:7px 10px;font-weight:800;color:#166534">${pnum}</td></tr>
+          <tr><td style="padding:7px 10px;color:#718096">Cliente</td><td style="padding:7px 10px;font-weight:600">${clientName}</td></tr>
+          <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Comuna</td><td style="padding:7px 10px">${project.commune || '—'}</td></tr>
+          <tr><td style="padding:7px 10px;color:#718096">Tipo de trámite</td><td style="padding:7px 10px">${svcName}</td></tr>
+          <tr style="background:#f7fafc"><td style="padding:7px 10px;color:#718096">Etapa pagada</td><td style="padding:7px 10px;font-weight:700">${etapaLabel}</td></tr>
+          <tr><td style="padding:7px 10px;color:#718096">Fecha de pago</td><td style="padding:7px 10px">${fechaPago}</td></tr>
+        </table>
+      </div>
+
+      <div style="background:#1a1a2e;border-radius:8px;padding:18px 20px;margin:0 0 20px">
+        <p style="margin:0 0 12px;font-size:13px;font-weight:800;color:#e2e8f0;">💵 Desglose de honorarios</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;color:#e2e8f0">
+          <tr><td style="padding:6px 0;color:#94a3b8">Valor que paga el cliente</td><td style="padding:6px 0;text-align:right">${clpFmt(valorCliente)}</td></tr>
+          ${useIVA ? `
+          <tr><td style="padding:4px 0;color:#94a3b8;padding-left:14px">↳ IVA 19%</td><td style="padding:4px 0;text-align:right;color:#f59e0b">-${clpFmt(ivaMonto)}</td></tr>
+          <tr><td style="padding:4px 0;color:#94a3b8;padding-left:14px">↳ Neto honorarios</td><td style="padding:4px 0;text-align:right">${clpFmt(netoBase)}</td></tr>
+          ` : ''}
+          <tr><td style="padding:6px 0;color:#94a3b8">Com. APPARQ (${Math.round((1-arqPct)*100)}%)</td><td style="padding:6px 0;text-align:right;color:#f87171">-${clpFmt(netoBase - bruto)}</td></tr>
+          <tr style="border-top:1px solid #334155"><td style="padding:8px 0 4px;color:#e2e8f0;font-weight:700">🧾 Bruto boleta (monto a emitir)</td><td style="padding:8px 0 4px;text-align:right;font-weight:800">${clpFmt(bruto)}</td></tr>
+          <tr><td style="padding:4px 0;color:#94a3b8">Retención SII 15,25%</td><td style="padding:4px 0;text-align:right;color:#c4b5fd">-${clpFmt(retencion)}</td></tr>
+          <tr style="border-top:2px solid #E8503A"><td style="padding:10px 0 4px;color:#4ade80;font-weight:800;font-size:15px">NETO TRANSFERIDO</td><td style="padding:10px 0 4px;text-align:right;color:#4ade80;font-weight:900;font-size:16px">${clpFmt(neto)}</td></tr>
+        </table>
+      </div>
+
+      <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:12px 16px;margin:0 0 20px;font-size:12px;color:#78350F;line-height:1.6">
+        ⚠️ <strong>Recuerda:</strong> Debes emitir tu boleta de honorarios electrónica por <strong>${clpFmt(bruto)}</strong> (monto BRUTO) a nombre de <strong>APPARQ SpA · RUT 78.441.391-8</strong>.
+        Sin boleta no podremos transferirte los honorarios.
+      </div>
+
+      <p style="color:#718096;font-size:12px;text-align:center;margin:0">
+        ¿Tienes alguna consulta? Escríbenos a
+        <a href="mailto:hola@apparq.cl" style="color:#E8503A">hola@apparq.cl</a><br>
+        <strong style="color:#1a1a2e">Equipo APPARQ</strong> · <a href="https://apparq.cl" style="color:#E8503A">apparq.cl</a>
+      </p>
+    </div>
+  </div>`;
+
+  await sendEmail({
+    to: architect.email,
+    subject: `💰 Recibiste un pago de APPARQ — Trámite ${pnum} · ${etapaLabel}`,
+    html,
+  }, RESEND_API_KEY);
+}
+
 /* ── HTML reutilizable: instrucciones de operación para el arquitecto ── */
 function instruccionesArqHtml(nombreArq, pnum) {
   return `
@@ -1560,7 +1655,31 @@ export async function onRequest(context) {
         prefer: 'return=minimal',
       });
       if (!ok) return json({ error: 'Error al marcar pago', detail: data }, 500);
-      return json({ ok: true });
+
+      /* Notificación al arquitecto — no bloquea si falla */
+      let emailSent = false;
+      try {
+        const RESEND_API_KEY = env.RESEND_API_KEY;
+        if (RESEND_API_KEY) {
+          const [projRes, archTmp] = await Promise.all([
+            sb(`/projects?id=eq.${project_id}&select=id,project_number,client_nombre,client_apellido,service_type,commune,total_clp,e1_clp,created_at,architect_email&limit=1`),
+            sb(`/projects?id=eq.${project_id}&select=architect_email&limit=1`),
+          ]);
+          const project = projRes.ok && Array.isArray(projRes.data) && projRes.data[0] ? projRes.data[0] : null;
+          if (project && project.architect_email) {
+            const archRes = await sb(`/architects?email=eq.${encodeURIComponent(project.architect_email)}&select=nombre,apellido,email,patente&limit=1`);
+            const architect = archRes.ok && Array.isArray(archRes.data) && archRes.data[0] ? archRes.data[0] : null;
+            if (architect) {
+              await sendArqPaymentEmail({ project, architect, etapa, RESEND_API_KEY });
+              emailSent = true;
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error('[mark_arq_payment] email error:', emailErr?.message || emailErr);
+      }
+
+      return json({ ok: true, emailSent });
     }
 
     /* resend_arq_email — reenvía email de asignación al arquitecto */
