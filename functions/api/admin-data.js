@@ -1209,7 +1209,7 @@ export async function onRequest(context) {
       }
       const { ok, data } = await sb(`/projects?id=eq.${project_id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ architect_email, architect_nombre: architect_nombre || '', architect_apellido: architect_apellido || '', cliente_contactado: false }),
+        body: JSON.stringify({ architect_email, architect_nombre: architect_nombre || '', architect_apellido: architect_apellido || '', cliente_contactado: false, contacto_alerta_enviada: false, updated_at: new Date().toISOString() }),
         prefer: 'return=representation',
       });
       if (!ok) return json({ error: 'Error al asignar arquitecto', detail: data }, 500);

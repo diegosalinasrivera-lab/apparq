@@ -21,8 +21,9 @@ const REASSIGN_HOURS = WARN_HOURS + GRACE_HOURS; /* 120h (5 días) → reasignar
 /* ── Desactivar reasignación automática hasta nuevo aviso ── */
 const REASSIGN_ENABLED = false;
 
-function hoursElapsed(createdAt) {
-  return (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
+function hoursElapsed(createdAt, updatedAt) {
+  const base = updatedAt || createdAt;
+  return (Date.now() - new Date(base).getTime()) / 3_600_000;
 }
 
 function clpFmt(n) {
@@ -99,7 +100,7 @@ export async function onRequest(context) {
     `${SUPABASE_URL}/rest/v1/projects` +
     `?select=id,project_number,client_nombre,client_apellido,client_email,` +
     `architect_nombre,architect_apellido,architect_email,` +
-    `service_type,address,commune,m2,total_clp,stage,created_at,` +
+    `service_type,address,commune,m2,total_clp,stage,created_at,updated_at,` +
     `cliente_contactado,contacto_alerta_enviada` +
     `&cliente_contactado=eq.false` +
     `&stage=neq.completado` +
@@ -118,7 +119,7 @@ export async function onRequest(context) {
   const skipped    = [];
 
   for (const p of projects) {
-    const hours    = hoursElapsed(p.created_at);
+    const hours    = hoursElapsed(p.created_at, p.updated_at);
     const archName = `${p.architect_nombre || ''} ${p.architect_apellido || ''}`.trim();
     const clientName = `${p.client_nombre || ''} ${p.client_apellido || ''}`.trim();
     const svcLabels = {
