@@ -16,14 +16,14 @@ function corsResponse(body, status = 200) {
   return new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers: CORS });
 }
 
-async function getRole(email, SUPABASE_URL, SUPABASE_KEY) {
-  /* Chequear si el email existe en la tabla architects */
+async function getRole(email, SUPABASE_URL, SERVICE_KEY) {
+  /* Chequear si el email existe en la tabla architects — usa service key para bypassear RLS */
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,nombre,apellido&limit=1`,
     {
       headers: {
-        'apikey':        SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey':        SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
       },
     }
   );
@@ -40,8 +40,9 @@ async function getRole(email, SUPABASE_URL, SUPABASE_KEY) {
 
 export async function onRequest(context) {
   const { request, env } = context;
-  const SUPABASE_URL = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
-  const SUPABASE_KEY = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
+  const SUPABASE_URL  = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
+  const SUPABASE_KEY  = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
+  const SERVICE_KEY   = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
@@ -71,7 +72,7 @@ export async function onRequest(context) {
       if (!res.ok || data.error) return corsResponse({ error: 'Token inválido o expirado' }, 401);
 
       const emailLower = (data.email || '').toLowerCase();
-      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
+      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SERVICE_KEY);
       return corsResponse({ email: emailLower, role, architect });
     }
 
@@ -174,7 +175,7 @@ export async function onRequest(context) {
           const loginData = await loginRes.json();
           const loginToken = loginData.access_token || loginData.session?.access_token;
           if (loginToken) {
-            const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
+            const { role, architect } = await getRole(emailLower, SUPABASE_URL, SERVICE_KEY);
             return corsResponse({ token: loginToken, role, email: emailLower, architect });
           }
           return corsResponse({ error: 'email_not_confirmed' }, 400);
@@ -182,7 +183,7 @@ export async function onRequest(context) {
         return corsResponse({ error: `Sin token (status ${res.status}) raw=${rawText.substring(0,200)}` }, 400);
       }
 
-      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
+      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SERVICE_KEY);
       return corsResponse({ token, role, email: emailLower, architect });
     }
 
@@ -210,7 +211,7 @@ export async function onRequest(context) {
         return corsResponse({ error: 'Email o contraseña incorrectos' }, 401);
       }
 
-      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SUPABASE_KEY);
+      const { role, architect } = await getRole(emailLower, SUPABASE_URL, SERVICE_KEY);
 
       return corsResponse({ token, refresh_token: refreshToken, role, email: emailLower, architect });
     }
