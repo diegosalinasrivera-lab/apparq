@@ -116,7 +116,7 @@ export async function onRequest(context) {
   const SUPABASE_URL   = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
   /* Usar service key para REST queries (bypasa RLS); anon key solo para Auth */
   const SUPABASE_KEY   = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC || env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
-  const RESEND_API_KEY = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
+  const RESEND_API_KEY = env.RESEND_API_KEY;
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
@@ -179,12 +179,15 @@ export async function onRequest(context) {
           : pctCom;
 
         function mkPagoP(etapa, label, valorCliente, pagado, at) {
-          const vCli           = Math.round(valorCliente);
+          const raw            = Math.round(valorCliente);
+          /* Proyectos con IVA (≥ 2026-07-06): la base de honorarios es el monto sin IVA */
+          const hasIva         = p.created_at && p.created_at >= '2026-07-06';
+          const vCli           = hasIva ? Math.round(raw / 1.19) : raw;
           const brutoBoleta    = Math.round(vCli * projArqPct);
           const retencion      = Math.round(brutoBoleta * RETENCION);
           const netoArquitecto = brutoBoleta - retencion;
           const comisionAPPARQ = vCli - brutoBoleta;
-          return { etapa, label, valorCliente: vCli, monto: brutoBoleta,
+          return { etapa, label, valorCliente: raw, monto: brutoBoleta,
                    brutoBoleta, retencion, netoArquitecto, comisionAPPARQ, pctCom: projPctCom, pagado, at };
         }
 
