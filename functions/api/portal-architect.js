@@ -383,6 +383,73 @@ export async function onRequest(context) {
                 </div>
               </div>`,
           }, RESEND_API_KEY);
+
+          /* Correo de calificación al cliente cuando el arquitecto termina una etapa */
+          const RATING_STAGES_REGULAR = ['elaboracion', 'ingreso_dom', 'tramitacion', 'completado'];
+          const RATING_STAGES_INFORME  = ['elaboracion_inf', 'entrega_informe'];
+          const esEtapaCalificable = p.service_type === 'informe'
+            ? RATING_STAGES_INFORME.includes(new_stage)
+            : RATING_STAGES_REGULAR.includes(new_stage);
+
+          if (esEtapaCalificable && p.client_email) {
+            const archName    = `${p.architect_nombre || ''} ${p.architect_apellido || ''}`.trim();
+            const clientName  = `${p.client_nombre || ''} ${p.client_apellido || ''}`.trim();
+            const etapaTexto  = new_stage === 'entrega_informe'
+              ? 'Visita a terreno y Elaboración del informe'
+              : STAGE_LABELS[new_stage] || new_stage;
+
+            await sendEmail({
+              to: p.client_email,
+              subject: `¿Cómo va la experiencia con tu arquitecto? — Trámite ${project_number}`,
+              html: `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;max-width:600px;width:100%;">
+      <tr><td style="background:#1a1a2e;padding:28px 36px;">
+        <div style="color:#ffffff;font-size:22px;font-weight:800;letter-spacing:1px;">APPARQ</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:4px;">Tu trámite avanza — cuéntanos cómo va</div>
+      </td></tr>
+      <tr><td style="padding:36px 36px 28px;">
+        <p style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Trámite ${project_number}</p>
+        <p style="font-size:22px;font-weight:800;color:#1a1a2e;margin:0 0 24px;">¿Cómo va la experiencia con tu arquitecto?</p>
+        <p style="font-size:14px;color:#444;line-height:1.7;margin:0 0 16px;">Hola ${clientName},</p>
+        <p style="font-size:14px;color:#444;line-height:1.7;margin:0 0 20px;">
+          Tu arquitecto <strong>${archName}</strong> completó la etapa <strong>${etapaTexto}</strong>.
+          Nos gustaría saber cómo ha sido tu experiencia hasta ahora.
+        </p>
+        <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:20px 24px;margin-bottom:28px;text-align:center;">
+          <p style="font-size:14px;color:#92400E;margin:0 0 12px;font-weight:700;">Califica a tu arquitecto</p>
+          <p style="font-size:32px;letter-spacing:4px;margin:0 0 16px;color:#d1d5db;">★★★★★</p>
+          <a href="https://apparq.cl" style="display:inline-block;background:#1a1a2e;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;">
+            Ir a mi portal → calificar
+          </a>
+          <p style="font-size:12px;color:#92400E;margin:12px 0 0;">
+            Ingresa con tu N° de trámite <strong>${project_number}</strong> y tu email
+          </p>
+        </div>
+        <p style="font-size:13px;color:#888;line-height:1.6;margin:0 0 28px;">
+          Tu opinión nos ayuda a mejorar el servicio y a reconocer a los mejores arquitectos de nuestra red.
+          ¡No dejes que este trámite quede pendiente — tu tranquilidad vale la pena!
+        </p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 20px;">
+        <p style="font-size:13px;color:#888;margin:0;">Saludos,<br>
+          <strong style="color:#1a1a2e;">Equipo APPARQ</strong><br>
+          <a href="mailto:hola@apparq.cl" style="color:#1a1a2e;">hola@apparq.cl</a>
+          · <a href="https://wa.me/56942054581" style="color:#1a1a2e;">WhatsApp +56 9 4205 4581</a>
+        </p>
+      </td></tr>
+      <tr><td style="background:#f4f4f5;padding:16px 36px;text-align:center;">
+        <p style="font-size:11px;color:#aaa;margin:0;">APPARQ SpA · RUT 78.441.391-8 · Santiago, Chile</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+            }, RESEND_API_KEY);
+          }
         }
       } catch (emailErr) {
         console.warn('Error enviando email de avance:', emailErr);
