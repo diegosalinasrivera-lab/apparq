@@ -1162,6 +1162,7 @@
                       <th>Arquitecto</th>
                       <th title="¿Arquitecto contactó al cliente?">Contacto</th>
                       <th title="¿Se realizó visita a terreno?">Visita</th>
+                      <th title="Calificación del cliente">★</th>
                       <th>Etapa</th>
                       <th>Fecha</th>
                       <th>Acciones</th>
@@ -2739,7 +2740,7 @@ function renderTramitesTable() {
   if (tramiteFilter === 'completados') list = projects.filter(p => p.stage === 'completado');
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><div class="empty-icon">📋</div>Sin trámites</div></td></tr>';
     return;
   }
   tbody.innerHTML = list.map(p => `
@@ -2776,6 +2777,11 @@ function renderTramitesTable() {
           : p.visita_terreno
             ? `<span title="Visita realizada${p.visita_terreno_at ? ' · ' + new Date(p.visita_terreno_at).toLocaleDateString('es-CL') : ''}" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#7C3AED;box-shadow:0 0 0 3px #EDE9FE"></span>`
             : '<span title="Sin visita aún" style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#d1d5db;box-shadow:0 0 0 3px #f3f4f6"></span>'
+      }</td>
+      <td style="text-align:center;white-space:nowrap;">${
+        p.rating_arquitecto
+          ? `<span style="color:#F59E0B;font-size:13px;" title="${p.rating_arquitecto} estrella${p.rating_arquitecto > 1 ? 's' : ''}">${'★'.repeat(p.rating_arquitecto)}</span>`
+          : '<span style="color:var(--muted);font-size:12px">—</span>'
       }</td>
       <td>
         ${stageBadge(p.stage)}

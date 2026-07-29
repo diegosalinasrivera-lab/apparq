@@ -54,8 +54,8 @@ async function verifyProject(numUpper, emailLower, SUPABASE_URL, SUPABASE_KEY) {
 export async function onRequest(context) {
   const { request, env } = context;
   const SUPABASE_URL   = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
-  const SUPABASE_KEY   = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
-  const RESEND_API_KEY = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
+  const SUPABASE_KEY   = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
+  const RESEND_API_KEY = env.RESEND_API_KEY;
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
@@ -163,6 +163,30 @@ export async function onRequest(context) {
         </div>`,
       }, RESEND_API_KEY);
 
+      return corsResponse({ ok: true });
+    }
+
+    /* ── RATE-ARCHITECT ─────────────────────────── */
+    if (action === 'rate-architect') {
+      const stars = parseInt(body.stars, 10);
+      if (!stars || stars < 1 || stars > 5) {
+        return corsResponse({ error: 'Calificación inválida' }, 400);
+      }
+      const patchRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/projects?project_number=eq.${encodeURIComponent(numUpper)}&client_email=eq.${encodeURIComponent(emailLower)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json', 'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            rating_arquitecto: stars,
+            rating_arquitecto_at: new Date().toISOString(),
+          }),
+        }
+      );
+      if (!patchRes.ok) return corsResponse({ error: 'Error al guardar calificación' }, 500);
       return corsResponse({ ok: true });
     }
 

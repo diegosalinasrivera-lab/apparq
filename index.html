@@ -2570,6 +2570,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="pcNoteMsg" style="font-size:0.75rem;margin-top:0.4rem;display:none;"></div>
       </div>
 
+      <!-- Calificación del arquitecto -->
+      <div id="pcRatingSection" style="display:none;margin-top:0.85rem;background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:0.85rem 1rem;">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--dark);display:block;margin-bottom:0.5rem;">⭐ Califica a tu arquitecto</label>
+        <div id="pcStars" style="display:flex;gap:0.2rem;margin-bottom:0.4rem;">
+          <button class="pc-star" data-val="1" style="font-size:1.75rem;background:none;border:none;cursor:pointer;padding:0 0.1rem;line-height:1;color:#d1d5db;">★</button>
+          <button class="pc-star" data-val="2" style="font-size:1.75rem;background:none;border:none;cursor:pointer;padding:0 0.1rem;line-height:1;color:#d1d5db;">★</button>
+          <button class="pc-star" data-val="3" style="font-size:1.75rem;background:none;border:none;cursor:pointer;padding:0 0.1rem;line-height:1;color:#d1d5db;">★</button>
+          <button class="pc-star" data-val="4" style="font-size:1.75rem;background:none;border:none;cursor:pointer;padding:0 0.1rem;line-height:1;color:#d1d5db;">★</button>
+          <button class="pc-star" data-val="5" style="font-size:1.75rem;background:none;border:none;cursor:pointer;padding:0 0.1rem;line-height:1;color:#d1d5db;">★</button>
+        </div>
+        <div id="pcRatingMsg" style="font-size:0.73rem;color:var(--muted);min-height:1rem;"></div>
+      </div>
+
       <button id="pcVolver" style="margin-top:1rem;background:none;border:1px solid var(--border);border-radius:var(--radius-pill);padding:0.45rem 1rem;font-size:0.8rem;cursor:pointer;color:var(--muted);">← Buscar otro trámite</button>
     </div>
   </div>
@@ -5154,6 +5167,50 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     /* Gate: el cliente puede descargar archivos sólo si pagó E2 */
     const informeGate = informePagado;
     pcLoadFiles(p.project_number, clientEmail, informeGate);
+
+    /* Calificación del arquitecto */
+    if (p.architect_email) {
+      document.getElementById('pcRatingSection').style.display = '';
+      const starBtns = document.querySelectorAll('.pc-star');
+      let currentRating = p.rating_arquitecto || 0;
+
+      function renderStars(val) {
+        starBtns.forEach(s => {
+          s.style.color = parseInt(s.dataset.val) <= val ? '#F59E0B' : '#d1d5db';
+        });
+      }
+      renderStars(currentRating);
+
+      starBtns.forEach(s => {
+        s.addEventListener('mouseover', () => renderStars(parseInt(s.dataset.val)));
+        s.addEventListener('mouseout',  () => renderStars(currentRating));
+        s.addEventListener('click', async () => {
+          const val   = parseInt(s.dataset.val);
+          const msgEl = document.getElementById('pcRatingMsg');
+          try {
+            const res  = await fetch('/api/portal-client', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'rate-architect', project_number: p.project_number, email: clientEmail, stars: val }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+              currentRating = val;
+              renderStars(currentRating);
+              msgEl.style.color = '#059669';
+              msgEl.textContent = '✓ Gracias por tu calificación';
+            } else {
+              msgEl.style.color = '#DC2626';
+              msgEl.textContent = data.error || 'Error al guardar';
+            }
+          } catch {
+            msgEl.style.color = '#DC2626';
+            msgEl.textContent = 'Error al guardar';
+          }
+        });
+      });
+    } else {
+      document.getElementById('pcRatingSection').style.display = 'none';
+    }
 
     /* Archivos */
     document.getElementById('pcUploadBtn').onclick = () =>
