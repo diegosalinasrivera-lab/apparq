@@ -187,6 +187,25 @@ export async function onRequest(context) {
         }
       );
       if (!patchRes.ok) return corsResponse({ error: 'Error al guardar calificación' }, 500);
+
+      /* Notificación a hola@apparq.cl */
+      const clientName = `${project.client_nombre || ''} ${project.client_apellido || ''}`.trim();
+      const archName   = `${project.architect_nombre || ''} ${project.architect_apellido || ''}`.trim();
+      const starStr    = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+      await sendEmail({
+        to: 'hola@apparq.cl',
+        subject: `⭐ Nueva calificación — ${numUpper} · ${stars}/5`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:500px;font-size:13px;color:#1a1a2e;">
+          <h2 style="margin-top:0;">Nueva calificación de arquitecto</h2>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Trámite</td><td style="padding:8px 10px;font-weight:700;color:#E8503A">${numUpper}</td></tr>
+            <tr><td style="padding:8px 10px;color:#718096">Cliente</td><td style="padding:8px 10px">${clientName} · ${emailLower}</td></tr>
+            <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Arquitecto</td><td style="padding:8px 10px">${archName}</td></tr>
+            <tr><td style="padding:8px 10px;color:#718096">Calificación</td><td style="padding:8px 10px;font-size:18px;color:#F59E0B;font-weight:700;">${starStr} (${stars}/5)</td></tr>
+          </table>
+        </div>`,
+      }, RESEND_API_KEY);
+
       return corsResponse({ ok: true });
     }
 
