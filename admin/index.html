@@ -2246,6 +2246,17 @@ function renderArchitectsTable() {
          </div>`
       : '';
 
+    const ratedProjects = arqProjects.filter(p => p.rating_arquitecto);
+    const avgRating = ratedProjects.length > 0
+      ? (ratedProjects.reduce((s, p) => s + p.rating_arquitecto, 0) / ratedProjects.length).toFixed(1)
+      : null;
+    const ratingMetric = avgRating
+      ? `<div style="font-size:11px;margin-top:3px;">
+           <span style="color:#F59E0B;font-weight:700;">★ ${avgRating}</span>
+           <span style="color:#718096;"> · ${ratedProjects.length} calificación${ratedProjects.length > 1 ? 'es' : ''}</span>
+         </div>`
+      : '';
+
     return `
     <tr>
       <td>${avatarHTML(a)}</td>
@@ -2253,6 +2264,7 @@ function renderArchitectsTable() {
         <strong>${a.nombre || ''} ${a.apellido || ''}</strong>
         <div style="font-size:11px;color:#718096;margin-top:2px;">Trámites asignados: ${totalTram}</div>
         ${descarteMetric}
+        ${ratingMetric}
       </td>
       <td style="font-size:12.5px;color:var(--muted)">${a.email || '—'}</td>
       <td style="font-size:12.5px;white-space:nowrap;">${a.telefono ? `<a href="tel:${a.telefono}" style="color:var(--muted);text-decoration:none;">${a.telefono}</a>` : '<span style="color:var(--light)">—</span>'}</td>
