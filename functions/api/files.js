@@ -156,7 +156,7 @@ export async function onRequest(context) {
   const SUPABASE_URL  = env.SUPABASE_URL  || 'https://ibdafnzlsufsshczqvoa.supabase.co';
   const ANON_KEY      = env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
   const SERVICE_KEY   = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
-  const RESEND_API_KEY = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
+  const RESEND_API_KEY = env.RESEND_API_KEY;
 
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (request.method !== 'POST')    return json({ error: 'Método no permitido' }, 405);
@@ -255,7 +255,8 @@ export async function onRequest(context) {
     if (archEmail) role = 'architect';
   }
   if (!role && email) {
-    const ok = await verifyClient(numUpper, email.trim().toLowerCase(), SUPABASE_URL, ANON_KEY);
+    /* Usar SERVICE_KEY para bypassear RLS en la verificación del cliente */
+    const ok = await verifyClient(numUpper, email.trim().toLowerCase(), SUPABASE_URL, SERVICE_KEY);
     if (ok) role = 'client';
   }
   if (!role) return json({ error: 'No autorizado' }, 403);
