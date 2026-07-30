@@ -1673,7 +1673,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="uf-pill" id="ufPill">UF —</div>
           </div>
-          <div class="stages-grid" id="stagesGrid"></div>
         </div>
 
         <!-- Lead capture — aparece junto con el precio -->
@@ -1738,7 +1737,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="jstep-num">3</div>
             <div class="jstep-ico">💰</div>
             <div class="jstep-title">Ves el precio calculado</div>
-            <div class="jstep-sub">Precio exacto con desglose por etapas de pago.</div>
+            <div class="jstep-sub">Precio exacto del trámite completo, sin letra chica.</div>
             <span class="jstep-tag green">Sin letra chica</span>
           </div>
 
@@ -1768,8 +1767,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="jstep-num">7</div>
             <div class="jstep-ico">💳</div>
             <div class="jstep-title">Pago del servicio</div>
-            <div class="jstep-sub">Pago del 20% inicial vía WebPay o transferencia.</div>
-            <span class="jstep-tag">20% inicio</span>
+            <div class="jstep-sub">Pago total al inicio, hasta 12 cuotas sin interés con Mercado Pago.</div>
+            <span class="jstep-tag">Hasta 12 cuotas</span>
           </div>
 
           <div class="jstep">
@@ -1876,7 +1875,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="inc-section-label">Ventajas</div>
             <div class="inc">Plazo DOM: 3 días hábiles para emitir giro</div>
             <div class="inc">Sin observaciones técnicas previas</div>
-            <div class="inc">Pago en 2 etapas (50% / 50%)</div>
+            <div class="inc">Pago total al inicio, hasta 12 cuotas sin interés</div>
           </div>
           <button class="saber-mas-btn" onclick="event.stopPropagation();openSaberMas('declaracion-jurada')">Saber más →</button>
         </div>
@@ -2056,7 +2055,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="wiz-sub" id="wizPaySub3">Paga el 20% inicial (Etapa 1) para que tu arquitecto comience el proyecto.</div>
 
         <div class="pay-amount-box">
-          <div class="pay-amount-lbl" id="wizPayAmtLbl">Monto a pagar ahora · E1 (20%)</div>
+          <div class="pay-amount-lbl" id="wizPayAmtLbl">Total del servicio · precio contado</div>
           <div class="pay-amount-val" id="wizPayAmt">$0</div>
           <div class="pay-amount-sub" id="wizPaySub">Del total de $0</div>
         </div>
@@ -3924,16 +3923,6 @@ function recalc() {
   const m2Suffix = S.m2 && S.svc !== 'informe' ? ' — ' + S.m2 + ' m²' : '';
   document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
-
-  const stages = S.svc === 'informe' ? STAGES_INFORME
-               : S.svc === 'declaracion-jurada' ? STAGES_DJ
-               : STAGES_NORMAL;
-  document.getElementById('stagesGrid').innerHTML = stages.map(st => `
-    <div class="stage">
-      <div class="stage-name">${st.name}</div>
-      <div class="stage-pct">${Math.round(st.pct * 100)}%</div>
-      <div class="stage-amt">${clpFmt(clp * st.pct)}</div>
-    </div>`).join('');
 
   box.classList.remove('hidden');
   cta.disabled = false;

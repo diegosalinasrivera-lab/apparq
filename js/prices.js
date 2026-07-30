@@ -42,21 +42,6 @@ function calcularLiquidacionArquitecto(comision) {
   return { bruto: comision, retencion: ret, neto: comision - ret };
 }
 
-/* ── Etapas de pago ── */
-const STAGES_NORMAL = [
-  { name: 'Inicio (E1)',    pct: 0.20 },
-  { name: 'Planos (E2)',    pct: 0.30 },
-  { name: 'Ingreso (E3)',   pct: 0.30 },
-  { name: 'Recepción (E4)', pct: 0.20 },
-];
-const STAGES_INFORME = [
-  { name: 'Inicio (E1)',          pct: 0.50 },
-  { name: 'Entrega informe (E2)', pct: 0.50 },
-];
-const STAGES_DJ = [
-  { name: 'Inicio (E1)',  pct: 0.50 },
-  { name: 'Cierre (E2)', pct: 0.50 },
-];
 
 /* ── calcTotal(): usa la variable global S ── */
 function calcTotal() {
