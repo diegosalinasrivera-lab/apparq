@@ -199,7 +199,7 @@ export async function onRequest(context) {
           mkPagoP('e2', p.service_type === 'informe' ? 'E2 · Entrega informe' : 'E2 · Cierre DJ',
                        clp * 0.50, p.arq_pago_e2 || false, p.arq_pago_e2_at),
         ] : [
-          mkPagoP('e1', 'E1 · Levantamiento',   e1c,        p.arq_pago_e1 || false, p.arq_pago_e1_at),
+          mkPagoP('e1', 'E1 · Levantamiento',   clp * 0.20, p.arq_pago_e1 || false, p.arq_pago_e1_at),
           mkPagoP('e2', 'E2 · Elaboración',     clp * 0.30, p.arq_pago_e2 || false, p.arq_pago_e2_at),
           mkPagoP('e3', 'E3 · Ingreso DOM',     clp * 0.30, p.arq_pago_e3 || false, p.arq_pago_e3_at),
           mkPagoP('e4', 'E4 · Recepción final', clp * 0.20, p.arq_pago_e4 || false, p.arq_pago_e4_at),
