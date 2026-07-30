@@ -355,8 +355,7 @@
       <div class="price-label">Total del trámite</div>
       <div class="price-total" id="p2Total">—</div>
       <div class="price-uf" id="p2UF"></div>
-      <div class="divider"></div>
-      <div class="stages-grid" id="p2Stages"></div>
+      <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted);">Hasta 12 cuotas sin interés con Mercado Pago</div>
     </div>
 
     <div class="field">
@@ -669,19 +668,10 @@ document.getElementById('btn1').addEventListener('click', () => {
 /* ── PASO 2: precio ── */
 function fillStep2() {
   const { uf, clp } = calcTotal();
-  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
-  const stages = S.svc === 'informe' ? STAGES_INFORME : S.svc === 'declaracion-jurada' ? STAGES_DJ : STAGES_NORMAL;
-
   document.getElementById('p2Total').textContent = clpFmt(clp);
   document.getElementById('p2UF').textContent = uf.toFixed(2) + ' UF · valor hoy';
   document.getElementById('p2Svc').value = SVC_LABELS[S.svc] || S.svc;
   document.getElementById('p2Addr').value = S.address + ', ' + S.commune;
-
-  document.getElementById('p2Stages').innerHTML = stages.map((st, i) => `
-    <div class="stage-item${i === 0 ? ' e1' : ''}">
-      <div class="stage-name">${st.name}</div>
-      <div class="stage-amt">${clpFmt(clp * st.pct)}</div>
-    </div>`).join('');
 }
 
 document.getElementById('btn2').addEventListener('click', () => { goStep(3); });
