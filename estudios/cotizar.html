@@ -452,17 +452,17 @@
   <!-- ════ PASO 4: PAGO ════ -->
   <div id="step4" style="display:none">
     <div class="step-eyebrow">Paso 4 de 4</div>
-    <h2 class="step-h2">Pago inicial del trámite</h2>
-    <p class="step-sub">El primer pago (E1) activa el trámite y la asignación del arquitecto.</p>
+    <h2 class="step-h2">Pago del trámite</h2>
+    <p class="step-sub">El pago activa el trámite y la asignación del arquitecto.</p>
 
     <div class="pay-box">
-      <div class="pay-label">Pago E1 — primer cuota</div>
+      <div class="pay-label">Total del trámite</div>
       <div class="pay-amount" id="p4E1">—</div>
       <div class="pay-desc" id="p4Desc"></div>
     </div>
 
     <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:1.5rem;font-size:.82rem;color:var(--muted);line-height:1.6;">
-      El pago se procesa de forma segura vía Mercado Pago. Las etapas restantes (E2, E3, E4) se pagan al alcanzar cada hito del trámite.
+      El pago se procesa de forma segura vía Mercado Pago. Hasta 12 cuotas sin interés con Mercado Pago.
     </div>
 
     <div class="error-msg" id="err4"></div>
@@ -775,12 +775,9 @@ document.getElementById('btn3').addEventListener('click', () => {
 /* ── PASO 4: pago ── */
 function fillStep4() {
   const { clp } = calcTotal();
-  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
-  const e1 = Math.round(clp * e1pct);
-  document.getElementById('p4E1').textContent = clpFmt(e1);
+  document.getElementById('p4E1').textContent = clpFmt(clp);
   document.getElementById('p4Desc').innerHTML =
-    `${SVC_LABELS[S.svc] || S.svc} · ${S.address}, ${S.commune}` +
-    `<br>Total del trámite: <strong>${clpFmt(clp)}</strong> · Pago hoy: <strong>${clpFmt(e1)}</strong>`;
+    `${SVC_LABELS[S.svc] || S.svc} · ${S.address}, ${S.commune}`;
 }
 
 document.getElementById('btnPagar').addEventListener('click', async () => {
@@ -799,8 +796,7 @@ document.getElementById('btnPagar').addEventListener('click', async () => {
   const notas       = document.getElementById('ctcNotas').value.trim();
 
   const { clp } = calcTotal();
-  const e1pct = (S.svc === 'informe' || S.svc === 'declaracion-jurada') ? 0.50 : 0.20;
-  const e1 = Math.round(clp * e1pct);
+  const e1 = clp; /* cliente paga el total */
 
   const resetBtn = () => {
     btn.disabled = false;
