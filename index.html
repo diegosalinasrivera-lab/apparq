@@ -1673,6 +1673,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="uf-pill" id="ufPill">UF —</div>
           </div>
+          <div id="priceInstallments" style="margin-top:0.55rem;font-size:0.78rem;color:var(--muted);text-align:center;"></div>
         </div>
 
         <!-- Lead capture — aparece junto con el precio -->
@@ -3923,6 +3924,7 @@ function recalc() {
   const m2Suffix = S.m2 && S.svc !== 'informe' ? ' — ' + S.m2 + ' m²' : '';
   document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
+  document.getElementById('priceInstallments').textContent = '≈ ' + clpFmt(Math.ceil(clp / 12)) + '/mes · hasta 12 cuotas sin interés con Mercado Pago';
 
   box.classList.remove('hidden');
   cta.disabled = false;
