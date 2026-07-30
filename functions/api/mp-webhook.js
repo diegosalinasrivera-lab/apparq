@@ -120,7 +120,7 @@ export async function onRequest(context) {
   const SUPABASE_URL    = env.SUPABASE_URL || 'https://ibdafnzlsufsshczqvoa.supabase.co';
   const SERVICE_KEY     = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC;
   const SUPABASE_KEY    = SERVICE_KEY || env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
-  const RESEND_API_KEY  = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
+  const RESEND_API_KEY  = env.RESEND_API_KEY;
 
   /* MP envía GET para verificar y POST con la notificación */
   if (request.method === 'GET') {
@@ -242,8 +242,9 @@ export async function onRequest(context) {
               /* E1: 50% para DJ e Informe, 20% para el resto */
               const esDJ = lead.svc === 'declaracion-jurada' || lead.svc === 'informe';
               const e1   = lead.clp * (esDJ ? 0.50 : 0.20);
-              /* Tolerancia ±10% para cubrir redondeos y ajustes de UF */
-              const coincide = Math.abs(amount - e1) / e1 <= 0.10;
+              /* Coincide si paga E1 parcial (modelo antiguo) O el total (modelo nuevo) — tolerancia ±10% */
+              const coincide = Math.abs(amount - e1) / e1 <= 0.10 ||
+                               Math.abs(amount - lead.clp) / lead.clp <= 0.10;
               if (coincide) {
                 await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${lead.id}`, {
                   method:  'PATCH',
@@ -703,7 +704,7 @@ export async function onRequest(context) {
                           <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0">
                             <p style="margin:0 0 6px;font-size:13px"><strong>✓ Servicio:</strong> ${svcName}</p>
                             <p style="margin:0 0 6px;font-size:13px"><strong>✓ Dirección:</strong> ${p.address || '—'}, ${p.commune}</p>
-                            <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago E1 recibido:</strong> ${clpFmt(e1Real)}</p>
+                            <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago recibido:</strong> ${clpFmt(e1Real)}</p>
                             <p style="margin:0 0 6px;font-size:13px"><strong>✓ Total del proyecto:</strong> ${clpFmt(clp)}</p>
                             <p style="margin:4px 0 0;font-size:11px;color:#718096">ID comprobante: ${payment.id}</p>
                           </div>
@@ -747,7 +748,7 @@ export async function onRequest(context) {
                           <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0">
                             <p style="margin:0 0 6px;font-size:13px"><strong>✓ Servicio:</strong> ${svcName}</p>
                             <p style="margin:0 0 6px;font-size:13px"><strong>✓ Dirección:</strong> ${p.address || '—'}, ${p.commune}</p>
-                            <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago E1 recibido:</strong> ${clpFmt(e1Real)}</p>
+                            <p style="margin:0 0 6px;font-size:13px"><strong>✓ Pago recibido:</strong> ${clpFmt(e1Real)}</p>
                             <p style="margin:0 0 6px;font-size:13px"><strong>✓ Total del proyecto:</strong> ${clpFmt(clp)}</p>
                             <p style="margin:4px 0 0;font-size:11px;color:#718096">ID comprobante: ${payment.id}</p>
                           </div>
@@ -811,14 +812,16 @@ export async function onRequest(context) {
                 const COM_PCT      = arqObj.patente ? 20 : 30;
                 const RETENCION    = 0.1525; /* 15,25% — Ley 21.133 vigente 2026 */
                 const APP_PCT      = 1 - ARQ_PCT;
+                const esInforme  = p.service_type === 'informe';
+                const esDJ       = p.service_type === 'declaracion-jurada';
+                /* E1 que APPARQ paga al arquitecto: siempre basado en % del total, no en lo que pagó el cliente */
+                const e1Frac     = (esInforme || esDJ) ? 0.50 : 0.20;
                 const arqTotal     = Math.round((clp || 0) * ARQ_PCT);
-                const arqE1        = Math.round((e1Real || 0) * ARQ_PCT);
+                const arqE1        = Math.round((clp || 0) * e1Frac * ARQ_PCT);
                 const arqTotalRet  = Math.round(arqTotal * RETENCION);
                 const arqTotalNeto = arqTotal - arqTotalRet;
                 const arqE1Ret     = Math.round(arqE1 * RETENCION);
                 const arqE1Neto    = arqE1 - arqE1Ret;
-                const esInforme  = p.service_type === 'informe';
-                const esDJ       = p.service_type === 'declaracion-jurada';
                 const isDemolicion = p.servicio_subtipo === 'demolicion';
                 const e2DJLabel  = isDemolicion ? 'Ingreso DOM y ejecución' : 'Archivo DJTE ante la DOM';
                 const fecha      = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });

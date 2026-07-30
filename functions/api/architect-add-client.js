@@ -199,7 +199,7 @@ export async function onRequest(context) {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${MP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: [{ title: `APPARQ · ${projectNumber} · Pago E1 · ${svcName}`, quantity: 1, unit_price: Math.round(e1_clp), currency_id: 'CLP' }],
+            items: [{ title: `APPARQ · ${projectNumber} · Pago total · ${svcName}`, quantity: 1, unit_price: Math.round(clp_total), currency_id: 'CLP' }],
             payer: { email: client_email.trim().toLowerCase() },
             back_urls: { success: 'https://apparq.cl/?pago=aprobado', pending: 'https://apparq.cl/?pago=pendiente', failure: 'https://apparq.cl/?pago=rechazado' },
             auto_return: 'approved',

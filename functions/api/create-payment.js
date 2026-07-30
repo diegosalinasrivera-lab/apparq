@@ -74,7 +74,7 @@ export async function onRequest(context) {
       statement_descriptor: 'APPARQ',
       payment_methods: {
         excluded_payment_types: [],   /* acepta todos: WebPay, tarjetas, etc. */
-        installments: 1,              /* sin cuotas — pago único */
+        installments: 12,             /* hasta 12 cuotas precio contado */
       },
     };
 
