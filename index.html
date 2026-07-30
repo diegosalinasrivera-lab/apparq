@@ -3924,7 +3924,7 @@ function recalc() {
   const m2Suffix = S.m2 && S.svc !== 'informe' ? ' — ' + S.m2 + ' m²' : '';
   document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
-  document.getElementById('priceInstallments').textContent = '≈ ' + clpFmt(Math.ceil(clp / 12)) + '/mes · hasta 12 cuotas sin interés con Mercado Pago';
+  document.getElementById('priceInstallments').textContent = 'Hasta 12 cuotas sin interés con Mercado Pago';
 
   box.classList.remove('hidden');
   cta.disabled = false;
