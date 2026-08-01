@@ -1637,31 +1637,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
         </div>
 
-        <!-- Material -->
-        <div class="calc-group hidden" id="grp-mat">
-          <label class="calc-label">🧱 Tipo de construcción</label>
-          <div class="chip-row">
-            <button class="chip" data-mat="metalcon">Metalcon</button>
-            <button class="chip" data-mat="madera">Madera</button>
-            <button class="chip" data-mat="albanileria">Albañilería</button>
-            <button class="chip" data-mat="hormigon">Hormigón</button>
-          </div>
-        </div>
-
-        <!-- Destino -->
-        <div class="calc-group hidden" id="grp-dest">
-          <label class="calc-label">🏡 Destino <span style="font-size:0.7rem;font-weight:400;color:var(--muted);margin-left:4px;">Puedes seleccionar varios</span></label>
-          <div class="chip-row">
-            <button class="chip" data-dest="dormitorio">Dormitorio</button>
-            <button class="chip" data-dest="baño">Baño</button>
-            <button class="chip" data-dest="cocina">Cocina</button>
-            <button class="chip" data-dest="living">Living/Comedor</button>
-            <button class="chip" data-dest="bodega">Bodega</button>
-            <button class="chip" data-dest="garage">Garaje</button>
-            <button class="chip" data-dest="oficina">Oficina</button>
-            <button class="chip" data-dest="casa">Casa completa</button>
-          </div>
-        </div>
 
         <!-- Price -->
         <div class="price-box hidden" id="priceBox">
@@ -1730,7 +1705,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="jstep-num">2</div>
             <div class="jstep-ico">🧮</div>
             <div class="jstep-title">Cotización automática</div>
-            <div class="jstep-sub">Ingresas dirección, trámite, m² y materialidad.</div>
+            <div class="jstep-sub">Ingresas dirección, trámite y m².</div>
             <span class="jstep-tag green">Instantáneo</span>
           </div>
 
@@ -2872,7 +2847,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </ul>
 
       <h4>4. Precios y cotización</h4>
-      <p>Los precios se calculan automáticamente en la plataforma en función de la superficie (m²), materialidad, tipo de trámite y destino del inmueble. Los valores se expresan en Pesos Chilenos (CLP) y tienen como referencia el valor de la Unidad de Fomento (UF) del día de la cotización.</p>
+      <p>Los precios se calculan automáticamente en la plataforma en función de la superficie (m²) y el tipo de trámite. Los valores se expresan en Pesos Chilenos (CLP) y tienen como referencia el valor de la Unidad de Fomento (UF) del día de la cotización.</p>
       <p>El precio informado en la cotización tiene validez de <strong>7 días corridos</strong> desde su generación. Pasado ese plazo, el valor de la UF puede variar y la cotización deberá actualizarse.</p>
 
       <h4>5. Forma de pago</h4>
@@ -2961,7 +2936,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <p>Al usar la plataforma, recopilamos los siguientes datos:</p>
       <ul>
         <li><strong>Datos de identificación:</strong> nombre, apellido, RUT, correo electrónico, teléfono.</li>
-        <li><strong>Datos del inmueble:</strong> dirección, comuna, superficie, materialidad y tipo de trámite.</li>
+        <li><strong>Datos del inmueble:</strong> dirección, comuna, superficie y tipo de trámite.</li>
         <li><strong>Datos de pago:</strong> método de pago seleccionado. No almacenamos datos de tarjetas de crédito/débito; el procesamiento es realizado por proveedores certificados.</li>
         <li><strong>Firma digital:</strong> imagen de la firma electrónica del contrato.</li>
         <li><strong>Datos técnicos:</strong> dirección IP, tipo de navegador, páginas visitadas y tiempo de uso (con fines estadísticos y de mejora del servicio).</li>
@@ -3714,17 +3689,7 @@ document.querySelectorAll('.sbtn').forEach(b => {
     }
     S.djElig = null; S.djObra = null;
 
-    /* material/destino: ocultar para informe, ley del mono y DJ */
-    const hideMat = isInf || isLeyMono || isDJ;
-    document.getElementById('grp-mat').classList.toggle('hidden', hideMat);
-    document.getElementById('grp-dest').classList.toggle('hidden', hideMat);
-
-    if (hideMat) { S.mat = 'none'; S.dest = []; }
-    else {
-      S.mat = null; S.dest = [];
-      document.querySelectorAll('.chip[data-mat]').forEach(x => x.classList.remove('on'));
-      document.querySelectorAll('.chip[data-dest]').forEach(x => x.classList.remove('on'));
-    }
+    S.mat = 'none'; S.dest = [];
     recalc();
   };
 });
@@ -3827,25 +3792,6 @@ function updateObraMenorChip() {
 }
 
 /* ── Chips ────────────────────────────────── */
-document.querySelectorAll('.chip[data-mat]').forEach(c => {
-  c.onclick = () => {
-    document.querySelectorAll('.chip[data-mat]').forEach(x => x.classList.remove('on'));
-    c.classList.add('on'); S.mat = c.dataset.mat; recalc();
-  };
-});
-document.querySelectorAll('.chip[data-dest]').forEach(c => {
-  c.onclick = () => {
-    const val = c.dataset.dest;
-    if (c.classList.contains('on')) {
-      c.classList.remove('on');
-      S.dest = S.dest.filter(d => d !== val);
-    } else {
-      c.classList.add('on');
-      S.dest = [...(S.dest || []), val];
-    }
-    recalc();
-  };
-});
 
 /* ── Precargar cotizador desde parámetros URL (?svc=&sub=&commune=&m2=) ── */
 (function preloadFromURL() {
@@ -3960,8 +3906,6 @@ function highlightMissing() {
   } else if (S.svc === 'regularizacion' && !S.svcSub) {
     flash(document.getElementById('grp-sub-reg'));
   } else if (S.svc === 'obra-nueva') {
-    if (!S.mat) flash(document.getElementById('grp-mat'));
-    if (!S.dest || !S.dest.length) flash(document.getElementById('grp-dest'));
   }
   if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -4090,9 +4034,7 @@ document.addEventListener('keydown', e => {
 /* ── prefill from cotizador state ─────────────── */
 function prefillWizard() {
   const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
-  const MAT_LABELS = { metalcon:'Metalcon', madera:'Madera', albanileria:'Albañilería', hormigon:'Hormigón' };
-  const DEST_LABELS = { dormitorio:'Dormitorio', living:'Living/Comedor', bodega:'Bodega', baño:'Baño', cocina:'Cocina', garage:'Garaje', oficina:'Oficina', casa:'Casa completa' };
-  const destText = Array.isArray(S.dest) && S.dest.length ? S.dest.map(d => DEST_LABELS[d] || d).join(', ') : '—';
+
 
   const { uf: ufVal, clp } = calcTotal();
   const e1 = clp; /* cliente paga el total del trámite al inicio */
@@ -4107,8 +4049,6 @@ function prefillWizard() {
       <span class="wiz-sum-lbl">Superficie</span>
       <span class="wiz-sum-val">${S.m2 || '—'} m²</span>
     </div>
-    ${S.mat !== 'none' ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Construcción</span><span class="wiz-sum-val">${MAT_LABELS[S.mat]||'—'}</span></div>` : ''}
-    ${S.dest && S.dest.length ? `<div class="wiz-sum-item"><span class="wiz-sum-lbl">Destino</span><span class="wiz-sum-val">${destText}</span></div>` : ''}
     <div class="wiz-sum-price">${clpFmt(clp)}</div>`;
 
   /* address field */
@@ -4135,7 +4075,7 @@ function prefillWizard() {
     <strong>9. Notificaciones de avance:</strong> APPARQ notificará al cliente por correo electrónico cada vez que el arquitecto registre un avance de etapa en la plataforma. El cliente podrá revisar el estado actualizado de su trámite en cualquier momento a través de <strong>apparq.cl → Mi trámite</strong>.<br>
     <strong>10. Factibilidad técnica y regularizabilidad:</strong> APPARQ no garantiza la regularizabilidad, aprobación municipal ni resultado favorable de ningún trámite. La viabilidad solo puede determinarse una vez iniciado el proceso. En caso de inviabilidad técnica o rechazo definitivo municipal, APPARQ retendrá el 20% del total pagado como compensación por el diagnóstico y trabajo ejecutado, y reembolsará el 80% restante al Cliente dentro de los 10 días hábiles siguientes a la declaración de inviabilidad. APPARQ emitirá un Informe de Inviabilidad documentando las causas. Los rechazos municipales por cambios normativos, condiciones del terreno o incumplimiento de la OGUC son riesgos propios del proceso y no constituyen incumplimiento de APPARQ ni del Arquitecto.<br>
     <strong>11. Cambio o reasignación de arquitecto:</strong> Si el arquitecto asignado no puede continuar el proyecto por cualquier causa, APPARQ reasignará el proyecto a otro profesional habilitado en un plazo máximo de <strong>5 días hábiles</strong>, sin costo adicional para el cliente. Los avances y documentos quedarán disponibles en la plataforma para el nuevo arquitecto. APPARQ no será responsable por los retrasos derivados del cambio cuando sean imputables al arquitecto cesante.<br>
-    <strong>12. Responsabilidad por información falsa o incompleta:</strong> El cliente es responsable de la veracidad de los datos declarados (superficie, materialidad, dirección, uso del inmueble). Si se detectan diferencias significativas durante la ejecución, APPARQ podrá: (a) ajustar el valor del servicio proporcionalmente; (b) emitir una cotización complementaria; o (c) terminar el contrato reteniendo los pagos correspondientes al trabajo ejecutado. No procederá reembolso alguno cuando la inviabilidad sea causada por información falsa o incompleta del cliente.<br>
+    <strong>12. Responsabilidad por información falsa o incompleta:</strong> El cliente es responsable de la veracidad de los datos declarados (superficie, dirección, tipo de trámite). Si se detectan diferencias significativas durante la ejecución, APPARQ podrá: (a) ajustar el valor del servicio proporcionalmente; (b) emitir una cotización complementaria; o (c) terminar el contrato reteniendo los pagos correspondientes al trabajo ejecutado. No procederá reembolso alguno cuando la inviabilidad sea causada por información falsa o incompleta del cliente.<br>
     <strong>13. Acceso a la propiedad:</strong> El cliente deberá facilitar el acceso al inmueble para el levantamiento en terreno en la fecha coordinada. La negativa o imposibilidad de acceso por causas imputables al cliente suspenderá el proyecto sin derecho a reembolso de etapas pagadas. Si el acceso es imposible por más de <strong>30 días corridos</strong> por causas del cliente, APPARQ podrá dar por terminado el contrato sin reembolso.<br>
     <strong>14. Fuerza mayor y demoras municipales:</strong> Ninguna de las partes será responsable por demoras o incumplimientos causados por fuerza mayor (sismos, catástrofes, pandemias, actos de autoridad). Las demoras en tramitación municipal que superen los plazos estimados por causas ajenas a APPARQ no darán derecho al cliente a exigir reembolsos, compensaciones ni indemnizaciones de ningún tipo.<br><br>
     Al firmar, el cliente declara haber leído, comprendido y aceptado íntegramente estas condiciones, incluyendo la obligatoriedad de realizar todos los pagos y gestiones exclusivamente a través de la plataforma apparq.cl, y reconoce los riesgos propios de los procesos de tramitación municipal descritos en las cláusulas 10 a 14.`;
@@ -7314,8 +7254,6 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     ["¿Cómo obtengo el CIP?","Se solicita en la Dirección de Obras Municipales correspondiente al rol de la propiedad. Puede solicitarlo el propietario o un arquitecto."],
     ["¿Qué es una ampliación?","Es el aumento de la superficie construida de una propiedad existente. Ejemplos:<ul><li>Cerrar terraza</li><li>Agregar dormitorio</li><li>Construir segundo piso</li><li>Ampliar living</li></ul>"],
     ["¿Qué se considera obra nueva?","Es una construcción completamente nueva en un terreno sin edificación previa o independiente de la existente."],
-    ["¿Qué es la materialidad de la construcción?","Se refiere al sistema constructivo utilizado, por ejemplo:<ul><li>Hormigón armado</li><li>Albañilería</li><li>Metalcón</li><li>Madera</li><li>Material liviano</li></ul>"],
-    ["¿Qué es material liviano?","Construcción realizada con estructura liviana como:<ul><li>Metalcón</li><li>Madera</li><li>Panel SIP</li><li>Steel frame</li></ul>"],
     ["¿Qué es metalcón?","Sistema constructivo de perfiles de acero galvanizado liviano utilizado para muros y techumbres."],
     ["¿Qué es hormigón?","Sistema constructivo estructural sólido formado por cemento, arena, grava y acero de refuerzo."],
     ["¿Qué es albañilería?","Sistema constructivo de muros hechos con ladrillo o bloques unidos con mortero."],
@@ -7324,7 +7262,6 @@ function communeMatchLabel(targetCommune, assignedCommune) {
     ["¿Qué es un permiso de obra?","Es la autorización otorgada por la DOM para construir, ampliar o modificar una edificación."],
     ["¿Qué es la recepción final?","Es el documento que certifica que la construcción fue ejecutada correctamente y cumple con la normativa. Sin recepción final, la propiedad no está regularizada."],
     ["¿Cómo calcular los metros cuadrados?","Se calcula multiplicando Largo × Ancho. Ejemplo: 5 m × 4 m = 20 m²."],
-    ["¿Qué es el destino de la construcción?","Es el uso autorizado del inmueble:<ul><li>Vivienda</li><li>Comercial</li><li>Oficina</li><li>Bodega</li><li>Industrial</li></ul>"],
     ["¿Qué son los derechos municipales?","Son los pagos que exige la municipalidad por revisar y aprobar el trámite. Los paga el propietario."],
     ["¿Quiénes deben firmar los trámites?","Firman:<ul><li>Propietario</li><li>Arquitecto</li><li>Profesional responsable (si aplica)</li></ul>"],
     ["¿Cuánto demora regularizar una propiedad?","Depende de la municipalidad, pero normalmente:<ul><li>Evaluación: 1 a 3 días</li><li>Desarrollo de planos: 3 a 10 días</li><li>Revisión municipal: 2 a 8 semanas</li></ul>"],

@@ -109,6 +109,6 @@ function isReady() {
   if (S.svc === 'ley-del-mono')   return true;
   if (S.svc === 'regularizacion') return !!S.svcSub;
   if (S.svc === 'ampliacion')     return true;
-  if (S.svc === 'obra-nueva')     return S.mat && S.dest && S.dest.length > 0;
+  if (S.svc === 'obra-nueva')     return true;
   return false;
 }
