@@ -54,7 +54,7 @@ const SUBTIPO_LABELS = {
 
 export async function onRequest(context) {
   const { request, env } = context;
-  const RESEND_API_KEY = env.RESEND_API_KEY || 're_RRVTgGik_GtaRwK2p9jimrkemYTY4Uew6';
+  const RESEND_API_KEY = env.RESEND_API_KEY;
   const SUPABASE_URL   = env.SUPABASE_URL   || 'https://ibdafnzlsufsshczqvoa.supabase.co';
   /* Usar service key para bypassear RLS en el INSERT de leads */
   const SUPABASE_KEY   = env.SUPABASE_SERVICE_KEY || env.SUPABASE_SVC || env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZGFmbnpsc3Vmc3NoY3pxdm9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njg0NjYsImV4cCI6MjA4OTU0NDQ2Nn0.ucEjCcnSbaz-OeMrLbUbgcKacvg9J2Csg2VzrWVtVHA';
@@ -101,26 +101,7 @@ export async function onRequest(context) {
     const m2Str      = m2 ? `${m2} m²` : null;
     const fechaLeg   = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
 
-    /* Etapas de pago según servicio */
-    const esDJ      = svc === 'declaracion-jurada';
-    const esInforme = svc === 'informe';
-    const etapas    = esDJ || esInforme
-      ? [
-          { label: 'E1 — Inicio',  pct: 0.50 },
-          { label: 'E2 — Cierre',  pct: 0.50 },
-        ]
-      : [
-          { label: 'E1 — Inicio (20%)',       pct: 0.20 },
-          { label: 'E2 — Elaboración (30%)',  pct: 0.30 },
-          { label: 'E3 — Ingreso DOM (20%)',  pct: 0.20 },
-          { label: 'E4 — Recepción (30%)',    pct: 0.30 },
-        ];
-
-    const etapasHTML = etapas.map((e, i) => `
-      <tr style="background:${i % 2 ? '#f7fafc' : '#fff'}">
-        <td style="padding:7px 12px;color:#718096;font-size:13px;">${e.label}</td>
-        <td style="padding:7px 12px;font-weight:700;font-size:13px;color:#1a1a2e;">${clpFmt(clp * e.pct)}</td>
-      </tr>`).join('');
+    /* Forma de pago: total al inicio, hasta 12 cuotas sin interés */
 
     await sendEmail({
       to:      email,
@@ -176,18 +157,12 @@ export async function onRequest(context) {
               </tr>
             </table>
 
-            <!-- Etapas de pago -->
-            <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:8px;">Forma de pago</div>
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:28px;">
-              ${etapasHTML}
-            </table>
-
-            <!-- Cuotas reminder -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+            <!-- Forma de pago -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
               <tr>
-                <td style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;padding:14px 24px;text-align:center;">
-                  <p style="margin:0;font-size:13px;font-weight:700;color:#15803D;">💡 Puedes pagar en cuotas con Mercado Pago</p>
-                  <p style="margin:5px 0 0;font-size:12px;color:#166534;line-height:1.5;">Al iniciar el trámite, selecciona la opción de <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+                <td style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;padding:16px 24px;text-align:center;">
+                  <p style="margin:0;font-size:14px;font-weight:700;color:#15803D;">💳 Paga el total en hasta 12 cuotas sin interés</p>
+                  <p style="margin:6px 0 0;font-size:13px;color:#166534;line-height:1.5;">Al iniciar tu trámite, elige pagar con tarjeta de crédito en <strong>hasta 12 cuotas sin interés</strong> directamente en Mercado Pago. Sin costos adicionales.</p>
                 </td>
               </tr>
             </table>
