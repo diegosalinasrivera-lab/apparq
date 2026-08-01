@@ -26,7 +26,7 @@ export async function onRequest(context) {
 
   try {
     const body = await request.json();
-    const { event_type, svc, commune, clp, email } = body;
+    const { event_type, svc, commune, clp, m2, email } = body;
 
     if (!event_type) return new Response('{}', { status: 200, headers: CORS });
 
@@ -44,6 +44,7 @@ export async function onRequest(context) {
         svc:     svc     || null,
         commune: commune || null,
         clp:     clp     || null,
+        m2:      m2      || null,
       }),
     });
   } catch (_) {

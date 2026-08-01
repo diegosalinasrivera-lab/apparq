@@ -3863,7 +3863,7 @@ function recalc() {
   if (!recalc._tracked || recalc._lastKey !== S.svc + S.commune) {
     recalc._lastKey = S.svc + S.commune;
     recalc._tracked = true;
-    try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'precio_calculado', svc: S.svc, commune: S.commune, clp }) }); } catch(_) {}
+    try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'precio_calculado', svc: S.svc, commune: S.commune, clp, m2: S.m2||null }) }); } catch(_) {}
   }
 
   /* Mostrar captura de lead junto con el precio */
@@ -3942,7 +3942,7 @@ document.getElementById('btnCta').onclick = () => {
   } catch(_) {}
 
   /* Tracking CTA */
-  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp }) }); } catch(_) {}
+  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp, m2: S.m2||null }) }); } catch(_) {}
 
   openWizard();
 };
@@ -4396,7 +4396,7 @@ function setupPaymentStep() {
       }
 
       /* Tracking silencioso */
-      try { fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'inscripcion_iniciada', email, svc: S.svc, commune, clp }) }); } catch(_) {}
+      try { fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'inscripcion_iniciada', email, svc: S.svc, commune, clp, m2: S.m2||null }) }); } catch(_) {}
 
       /* Redirigir al checkout de Mercado Pago */
       window.location.href = data.init_point;
