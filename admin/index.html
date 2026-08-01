@@ -969,9 +969,15 @@
                 <span class="card-title">Funnel de conversión</span>
               </div>
               <div class="card-body" style="padding:20px 24px;">
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;">
+                  <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;transition:box-shadow .15s;" onclick="showFunnelDetail('precio_calculado')" title="Ver cotizaciones calculadas" onmouseover="this.style.boxShadow='0 2px 12px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">① Cotizó</div>
+                    <div style="font-size:28px;font-weight:900;color:#1a1a2e;" id="funnel-precio">—</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">este mes · <span id="funnel-precio-total" style="color:#64748b;">— total</span></div>
+                    <div style="font-size:10px;color:#667eea;margin-top:6px;font-weight:600;">Ver lista →</div>
+                  </div>
                   <div style="text-align:center;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;transition:box-shadow .15s;" onclick="showFunnelDetail('cta_click')" title="Ver quiénes hicieron click" onmouseover="this.style.boxShadow='0 2px 12px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
-                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">① Click CTA</div>
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">② Click CTA</div>
                     <div style="font-size:28px;font-weight:900;color:#1a1a2e;" id="funnel-cta">—</div>
                     <div style="font-size:10px;color:#94a3b8;margin-top:2px;">este mes · <span id="funnel-cta-total" style="color:#64748b;">— total</span></div>
                     <div style="font-size:10px;color:#667eea;margin-top:6px;font-weight:600;">Ver lista →</div>
@@ -2108,6 +2114,8 @@ async function loadDashboard() {
     }
 
     /* Funnel — número grande = este mes, subtexto = total histórico */
+    document.getElementById('funnel-precio').textContent         = d.precioCalculadoMes    ?? '—';
+    document.getElementById('funnel-precio-total').textContent  = (d.precioCalculado      ?? '—') + ' total';
     document.getElementById('funnel-cta').textContent            = d.ctaClicksMes          ?? '—';
     document.getElementById('funnel-cta-total').textContent      = (d.ctaClicks         ?? '—') + ' total';
     document.getElementById('funnel-inscripcion').textContent    = d.inscripIniciadasMes   ?? '—';

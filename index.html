@@ -3860,6 +3860,13 @@ function recalc() {
   cta.disabled = false;
   sub.textContent = '¡Listo! Tu cotización';
 
+  /* Registrar evento de precio calculado (una vez por combinación) */
+  if (!recalc._tracked || recalc._lastKey !== S.svc + S.commune) {
+    recalc._lastKey = S.svc + S.commune;
+    recalc._tracked = true;
+    try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'precio_calculado', svc: S.svc, commune: S.commune, clp }) }); } catch(_) {}
+  }
+
   /* Mostrar captura de lead junto con el precio */
   const leadBox = document.getElementById('leadBox');
   const leadMsg = document.getElementById('leadMsg');

@@ -975,6 +975,8 @@ export async function onRequest(context) {
 
       /* Funnel — totales históricos + este mes */
       const funnelMes             = funnelEvents.filter(e => e.created_at >= monthStart);
+      const precioCalculado       = funnelEvents.filter(e => e.event_type === 'precio_calculado').length;
+      const precioCalculadoMes    = funnelMes.filter(e => e.event_type === 'precio_calculado').length;
       const ctaClicks             = funnelEvents.filter(e => e.event_type === 'cta_click').length;
       const ctaClicksMes          = funnelMes.filter(e => e.event_type === 'cta_click').length;
       const inscripIniciadas      = funnelEvents.filter(e => e.event_type === 'inscripcion_iniciada').length;
@@ -990,7 +992,7 @@ export async function onRequest(context) {
       const recentProjects = projects.slice(0, 10);
       const recentPayments = payments.slice(0, 5);
 
-      return json({ totalArchitectos, tramitesActivos, cobrosAdicionalesPendientes, recaudadoTotal, pendienteClientes, tramitesMes, totalLeads, leadsNoConvertidos, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
+      return json({ totalArchitectos, tramitesActivos, cobrosAdicionalesPendientes, recaudadoTotal, pendienteClientes, tramitesMes, totalLeads, leadsNoConvertidos, precioCalculado, precioCalculadoMes, ctaClicks, ctaClicksMes, inscripIniciadas, inscripIniciadasMes, inscripCompletadas, inscripCompletadasMes, abandonos, abandonosMes, recentProjects, recentPayments });
     }
 
     if (section === 'cobros') {
