@@ -832,7 +832,7 @@ export async function onRequest(context) {
 
     if (section === 'funnel') {
       const { ok, data } = await sb(
-        '/funnel_events?select=id,event_type,svc,commune,clp,email,created_at&order=created_at.desc&limit=500'
+        '/funnel_events?select=id,event_type,svc,commune,clp,m2,email,created_at&order=created_at.desc&limit=500'
       );
       if (!ok) return json({ error: 'Error al obtener funnel' }, 500);
       return json({ events: data });

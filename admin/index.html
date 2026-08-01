@@ -4311,11 +4311,11 @@ async function showFunnelDetail(type) {
       const projEmails = new Set(projects.map(p => (p.client_email || '').toLowerCase()));
       rows = inscritas
         .filter(e => !projEmails.has((e.email || '').toLowerCase()))
-        .map(e => ({ fecha: e.created_at, email: e.email, svc: e.svc, commune: e.commune, clp: e.clp }));
+        .map(e => ({ fecha: e.created_at, email: e.email, svc: e.svc, commune: e.commune, clp: e.clp, m2: e.m2 }));
     } else {
       rows = _funnelCache
         .filter(e => e.event_type === type)
-        .map(e => ({ fecha: e.created_at, email: e.email, svc: e.svc, commune: e.commune, clp: e.clp }));
+        .map(e => ({ fecha: e.created_at, email: e.email, svc: e.svc, commune: e.commune, clp: e.clp, m2: e.m2 }));
     }
 
     if (!rows.length) {
@@ -4332,6 +4332,7 @@ async function showFunnelDetail(type) {
               <th>Email</th>
               <th>Servicio</th>
               <th>Comuna</th>
+              <th>m²</th>
               <th>Presupuesto</th>
               ${showNombre ? '<th>N° Trámite</th>' : ''}
             </tr></thead>
@@ -4343,6 +4344,7 @@ async function showFunnelDetail(type) {
                   <td style="font-size:12.5px;">${r.email || '<span style="color:var(--light)">—</span>'}</td>
                   <td>${FUNNEL_SVC_LABELS[r.svc] || r.svc || '—'}</td>
                   <td>${r.commune || '—'}</td>
+                  <td style="text-align:right;">${r.m2 ? r.m2 + ' m²' : '—'}</td>
                   <td style="font-size:12.5px;">${r.clp ? fmtCLP(r.clp) : '—'}</td>
                   ${showNombre ? `<td style="font-size:12px;color:var(--accent);font-weight:700;">${r.extra || '—'}</td>` : ''}
                 </tr>
