@@ -1651,7 +1651,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div id="priceInstallments" style="margin-top:0.55rem;font-size:0.78rem;color:var(--muted);text-align:center;"></div>
         </div>
 
-        <!-- Lead capture — aparece junto con el precio -->
+        <!-- Lead capture — OBLIGATORIO para continuar -->
         <div id="leadBox" class="hidden" style="
           margin: 0.6rem 0 0;
           background: var(--bg-soft, #f9f6f0);
@@ -1660,17 +1660,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           padding: 0.9rem 1rem;
         ">
           <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:0.5rem;">
-            📩 Recibir esta cotización por email
+            ✉ Tu correo para continuar
           </div>
-          <div id="leadForm" style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+          <div style="font-size:0.72rem;color:var(--muted,#777);margin-bottom:0.55rem;line-height:1.45;">
+            Te enviaremos la cotización y las actualizaciones del trámite.
+          </div>
+          <div id="leadForm">
             <input id="leadEmail" type="email" placeholder="tu@email.com"
-              style="flex:1;min-width:160px;padding:0.45rem 0.7rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.82rem;background:#fff;color:var(--dark);outline:none;" />
-            <button id="leadBtn" type="button"
-              style="background:var(--orange,#E8503A);color:#fff;border:none;border-radius:7px;padding:0.45rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;">
-              Enviarme cotización →
-            </button>
+              style="width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.85rem;background:#fff;color:var(--dark);outline:none;transition:border-color 0.15s;" />
           </div>
-          <div id="leadMsg" style="display:none;font-size:0.78rem;margin-top:0.45rem;"></div>
+          <div id="leadMsg" style="display:none;font-size:0.75rem;margin-top:0.4rem;"></div>
         </div>
 
 
@@ -3917,19 +3916,41 @@ function highlightMissing() {
   if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-/* ── CTA → open wizard ────────────────────── */
+/* ── CTA → validar email, guardar lead y abrir wizard ── */
 document.getElementById('btnCta').onclick = () => {
   if (!isReady()) { highlightMissing(); return; }
-  /* Tracking silencioso — no bloquea el flujo */
+
+  const emailEl = document.getElementById('leadEmail');
+  const msgEl   = document.getElementById('leadMsg');
+  const email   = emailEl ? emailEl.value.trim() : '';
+
+  if (!email || !email.includes('@')) {
+    emailEl.style.borderColor = '#E8503A';
+    emailEl.focus();
+    emailEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (msgEl) { msgEl.style.display = 'block'; msgEl.style.color = '#E8503A'; msgEl.textContent = 'Ingresa tu correo para continuar.'; }
+    return;
+  }
+  emailEl.style.borderColor = '';
+  if (msgEl) msgEl.style.display = 'none';
+
+  /* Guardar lead silenciosamente */
+  try {
+    const { uf, clp } = calcTotal();
+    const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
+    fetch('/api/save-lead', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, svc: S.svc, servicio_subtipo: S.svcSub||null, m2: S.m2||null, commune: S.commune||null, uf, clp, svc_label: SVC_LABELS[S.svc]||S.svc }) });
+  } catch(_) {}
+
+  /* Tracking CTA */
   try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp }) }); } catch(_) {}
+
   openWizard();
 };
 
-/* ── Lead capture — enviar cotización por email ── */
-document.getElementById('leadBtn').onclick = async () => {
+/* ── Lead capture legacy (sin uso) ── */
+document.getElementById('leadBtn')?.addEventListener('click', () => {
   const emailEl = document.getElementById('leadEmail');
   const msgEl   = document.getElementById('leadMsg');
-  const btn     = document.getElementById('leadBtn');
   const form    = document.getElementById('leadForm');
   const email   = emailEl.value.trim();
 
@@ -3981,6 +4002,19 @@ document.getElementById('leadBtn').onclick = async () => {
     msgEl.textContent   = 'No pudimos enviar el email. Intenta nuevamente.';
   }
 };
+
+/* ── Email input — limpiar error al escribir y Enter para continuar ── */
+const _leadEmailEl = document.getElementById('leadEmail');
+if (_leadEmailEl) {
+  _leadEmailEl.addEventListener('input', () => {
+    _leadEmailEl.style.borderColor = '';
+    const msgEl = document.getElementById('leadMsg');
+    if (msgEl) msgEl.style.display = 'none';
+  });
+  _leadEmailEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnCta')?.click(); }
+  });
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
