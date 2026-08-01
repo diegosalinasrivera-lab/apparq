@@ -770,18 +770,15 @@ export async function onRequest(context) {
                             ${esInforme
                               ? (p.servicio_subtipo === 'evaluacion'
                                   ? `<li><strong>Etapa 1 · Análisis normativo:</strong> Envía a tu arquitecto el <strong>número de rol</strong> y dirección de la propiedad para comenzar. No se requiere visita ni documentos adicionales</li>
-                                     <li><strong>Etapa 2 · Entrega del informe:</strong> Recibirás el informe con todas las condicionantes normativas de tu predio. Plazo estimado: <strong>5 a 7 días hábiles</strong></li>
-                                     <li>APPARQ te notificará para completar el <strong>Pago E2 (50%)</strong> al momento de la entrega</li>`
+                                     <li><strong>Etapa 2 · Entrega del informe:</strong> Recibirás el informe con todas las condicionantes normativas de tu predio. Plazo estimado: <strong>5 a 7 días hábiles</strong></li>`
                                   : p.servicio_subtipo === 'factibilidad'
                                     ? `<li><strong>Etapa 1 · Visita a terreno:</strong> Tu arquitecto te contactará para coordinar la visita. Reúne todos los <strong>documentos y planos existentes</strong> de la propiedad para entregárselos</li>
-                                       <li><strong>Etapa 2 · Elaboración y entrega del informe:</strong> El arquitecto evaluará si tus documentos sirven para regularizar o deben rehacerse, y te entregará el diagnóstico. Plazo estimado: <strong>aproximadamente 2 semanas desde la visita</strong></li>
-                                       <li>APPARQ te notificará para completar el <strong>Pago E2 (50%)</strong> al momento de la entrega</li>`
+                                       <li><strong>Etapa 2 · Elaboración y entrega del informe:</strong> El arquitecto evaluará si tus documentos sirven para regularizar o deben rehacerse, y te entregará el diagnóstico. Plazo estimado: <strong>aproximadamente 2 semanas desde la visita</strong></li>`
                                     : `<li><strong>Etapa 1 · Visita a terreno:</strong> Tu arquitecto te contactará para coordinar la visita. Facilita el acceso a la propiedad para la inspección del estado físico</li>
-                                       <li><strong>Etapa 2 · Elaboración y entrega del informe:</strong> El arquitecto documentará superficies, terminaciones, ventanas, instalaciones y condiciones generales. Plazo estimado: <strong>aproximadamente 1 semana desde la visita</strong></li>
-                                       <li>APPARQ te notificará para completar el <strong>Pago E2 (50%)</strong> al momento de la entrega</li>`)
+                                       <li><strong>Etapa 2 · Elaboración y entrega del informe:</strong> El arquitecto documentará superficies, terminaciones, ventanas, instalaciones y condiciones generales. Plazo estimado: <strong>aproximadamente 1 semana desde la visita</strong></li>`)
                               : esDJ
                                 ? `<li>Tu arquitecto elaborará y presentará la Declaración Jurada ante la DOM</li><li>Plazo DOM: <strong>3 días hábiles</strong> para emitir el giro de derechos</li>`
-                                : '<li>Una vez entregados los planos, recibirás el aviso del pago E2</li><li>El trámite completo toma entre <strong>3 y 6 meses</strong></li>'
+                                : '<li>El trámite completo toma entre <strong>3 y 6 meses</strong> desde el ingreso a la DOM</li>'
                             }
                           </ol>
                           <div style="background:#EEF2FF;border:1.5px solid #C7D2FE;border-radius:8px;padding:14px 18px;margin-top:16px;text-align:center">
@@ -789,8 +786,8 @@ export async function onRequest(context) {
                             <a href="https://apparq.cl" style="display:inline-block;background:#E8503A;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 28px;border-radius:6px;">apparq.cl → Mi trámite</a>
                           </div>
                           <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:14px;text-align:center">
-                            <p style="margin:0;font-size:13px;font-weight:700;color:#15803D">💡 Recuerda: puedes pagar en cuotas con Mercado Pago</p>
-                            <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">En tus próximos pagos del trámite (E2, E3…) puedes seleccionar <strong>cuotas con tu tarjeta de crédito</strong> directamente en Mercado Pago.</p>
+                            <p style="margin:0;font-size:13px;font-weight:700;color:#15803D">💳 Pagaste en cuotas sin interés con Mercado Pago</p>
+                            <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">Tu pago total quedó registrado. Si elegiste cuotas, tu banco las procesará automáticamente — no necesitas hacer nada más.</p>
                           </div>
                           <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:14px">
                             <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
