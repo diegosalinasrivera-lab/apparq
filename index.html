@@ -3947,61 +3947,6 @@ document.getElementById('btnCta').onclick = () => {
   openWizard();
 };
 
-/* ── Lead capture legacy (sin uso) ── */
-document.getElementById('leadBtn')?.addEventListener('click', () => {
-  const emailEl = document.getElementById('leadEmail');
-  const msgEl   = document.getElementById('leadMsg');
-  const form    = document.getElementById('leadForm');
-  const email   = emailEl.value.trim();
-
-  if (!email || !email.includes('@')) {
-    emailEl.style.borderColor = '#E8503A';
-    emailEl.focus();
-    return;
-  }
-  emailEl.style.borderColor = '';
-
-  btn.disabled = true;
-  btn.textContent = 'Enviando…';
-
-  try {
-    const { uf, clp } = calcTotal();
-    const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
-    const payload = {
-      email,
-      svc:             S.svc,
-      servicio_subtipo: S.svcSub || null,
-      m2:              S.m2     || null,
-      commune:         S.commune || null,
-      uf,
-      clp,
-      svc_label:       SVC_LABELS[S.svc] || S.svc,
-    };
-
-    const res = await fetch('/api/save-lead', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      form.dataset.sent = '1';
-      emailEl.style.display = 'none';
-      btn.style.display     = 'none';
-      msgEl.style.display   = 'block';
-      msgEl.style.color     = '#059669';
-      msgEl.textContent     = '✓ ¡Listo! Revisa tu email — te enviamos el resumen de tu cotización.';
-    } else {
-      throw new Error('server error');
-    }
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'Enviarme cotización →';
-    msgEl.style.display = 'block';
-    msgEl.style.color   = '#E8503A';
-    msgEl.textContent   = 'No pudimos enviar el email. Intenta nuevamente.';
-  }
-};
 
 /* ── Email input — limpiar error al escribir y Enter para continuar ── */
 const _leadEmailEl = document.getElementById('leadEmail');
