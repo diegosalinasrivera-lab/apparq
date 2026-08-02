@@ -4373,6 +4373,7 @@ function showModal(id) {
 }
 function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
+  if (id === 'modal-funnel-detail') _funnelCache = null;
 }
 
 function openPhotoLightbox(src) {

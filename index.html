@@ -4013,7 +4013,7 @@ function openWizard() {
   prefillWizard();
   if (recalc._email) {
     const wizEmailEl = document.getElementById('wizEmail');
-    if (wizEmailEl && !wizEmailEl.value) wizEmailEl.value = recalc._email;
+    if (wizEmailEl) wizEmailEl.value = recalc._email;
   }
   renderWizStep(0, false);
 
