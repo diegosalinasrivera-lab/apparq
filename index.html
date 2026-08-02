@@ -3951,7 +3951,7 @@ document.getElementById('leadBtn').onclick = async () => {
 /* ── CTA → abrir wizard (email ya capturado) ── */
 document.getElementById('btnCta').onclick = () => {
   if (!isReady()) { highlightMissing(); return; }
-  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp, m2: S.m2||null }) }); } catch(_) {}
+  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp, m2: S.m2||null, email: recalc._email||null }) }); } catch(_) {}
   openWizard();
 };
 
@@ -4011,6 +4011,10 @@ function openWizard() {
 
   /* pre-fill summary & fields */
   prefillWizard();
+  if (recalc._email) {
+    const wizEmailEl = document.getElementById('wizEmail');
+    if (wizEmailEl && !wizEmailEl.value) wizEmailEl.value = recalc._email;
+  }
   renderWizStep(0, false);
 
   wizOverlay.classList.add('open');
