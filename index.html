@@ -1651,7 +1651,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div id="priceInstallments" style="margin-top:0.55rem;font-size:0.78rem;color:var(--muted);text-align:center;"></div>
         </div>
 
-        <!-- Lead capture — OBLIGATORIO para continuar -->
+        <!-- Lead capture — GATE: email requerido para ver el precio -->
         <div id="leadBox" class="hidden" style="
           margin: 0.6rem 0 0;
           background: var(--bg-soft, #f9f6f0);
@@ -1659,22 +1659,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           border-radius: 10px;
           padding: 0.9rem 1rem;
         ">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--dark);margin-bottom:0.5rem;">
-            ✉ Tu correo para continuar
+          <div style="font-size:0.82rem;font-weight:700;color:var(--dark);margin-bottom:0.3rem;">
+            📩 Ingresa tu email para ver el precio
           </div>
           <div style="font-size:0.72rem;color:var(--muted,#777);margin-bottom:0.55rem;line-height:1.45;">
-            Te enviaremos la cotización y las actualizaciones del trámite.
+            Te enviamos la cotización exacta. Sin spam.
           </div>
-          <div id="leadForm">
+          <div id="leadForm" style="display:flex;gap:0.45rem;flex-wrap:wrap;">
             <input id="leadEmail" type="email" placeholder="tu@email.com"
-              style="width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.85rem;background:#fff;color:var(--dark);outline:none;transition:border-color 0.15s;" />
+              style="flex:1;min-width:150px;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.85rem;background:#fff;color:var(--dark);outline:none;transition:border-color 0.15s;" />
+            <button id="leadBtn" type="button"
+              style="background:var(--orange,#E8503A);color:#fff;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;">
+              Ver precio →
+            </button>
           </div>
           <div id="leadMsg" style="display:none;font-size:0.75rem;margin-top:0.4rem;"></div>
         </div>
 
-
-
-        <button class="btn-cta" id="btnCta">Comenzar mi trámite →</button>
+        <button class="btn-cta hidden" id="btnCta">Comenzar mi trámite →</button>
 
       </div>
 
@@ -3837,46 +3839,41 @@ function updateObraMenorChip() {
 const clpFmt = n => '$' + Math.round(n).toLocaleString('es-CL');
 
 function recalc() {
-  const cta   = document.getElementById('btnCta');
-  const box   = document.getElementById('priceBox');
-  const sub   = document.getElementById('calcSubtitle');
+  const box = document.getElementById('priceBox');
+  const sub = document.getElementById('calcSubtitle');
+  const leadBox = document.getElementById('leadBox');
 
   if (!isReady()) {
     box.classList.add('hidden');
-    document.getElementById('leadBox')?.classList.add('hidden');
-      sub.textContent = 'Completa los campos';
+    document.getElementById('btnCta').classList.add('hidden');
+    leadBox?.classList.add('hidden');
+    sub.textContent = 'Completa los campos';
     return;
   }
 
+  /* Email ya verificado → actualizar precio directamente */
+  if (recalc._emailVerified) {
+    _showPrice();
+    return;
+  }
+
+  /* Mostrar gate de email */
+  sub.textContent = 'Ingresa tu email para ver el precio';
+  leadBox?.classList.remove('hidden');
+  box.classList.add('hidden');
+  document.getElementById('btnCta').classList.add('hidden');
+}
+
+function _showPrice() {
   const { uf, clp } = calcTotal();
   document.getElementById('priceTotal').textContent = clpFmt(clp);
   const m2Suffix = S.m2 && S.svc !== 'informe' ? ' — ' + S.m2 + ' m²' : '';
   document.getElementById('priceUFRow').textContent = uf.toFixed(2) + ' UF' + m2Suffix;
   document.getElementById('ufPill').textContent = 'UF $' + Math.round(S.uf).toLocaleString('es-CL');
   document.getElementById('priceInstallments').textContent = 'Hasta 12 cuotas sin interés con Mercado Pago';
-
-  box.classList.remove('hidden');
-  cta.disabled = false;
-  sub.textContent = '¡Listo! Tu cotización';
-
-  /* Registrar evento de precio calculado (una vez por combinación) */
-  if (!recalc._tracked || recalc._lastKey !== S.svc + S.commune) {
-    recalc._lastKey = S.svc + S.commune;
-    recalc._tracked = true;
-    try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'precio_calculado', svc: S.svc, commune: S.commune, clp, m2: S.m2||null }) }); } catch(_) {}
-  }
-
-  /* Mostrar captura de lead junto con el precio */
-  const leadBox = document.getElementById('leadBox');
-  const leadMsg = document.getElementById('leadMsg');
-  if (leadBox) {
-    leadBox.classList.remove('hidden');
-    /* Resetear si ya había enviado anteriormente al cambiar los parámetros */
-    const leadForm = document.getElementById('leadForm');
-    if (leadForm && leadForm.dataset.sent !== '1') {
-      leadMsg.style.display = 'none';
-    }
-  }
+  document.getElementById('priceBox').classList.remove('hidden');
+  document.getElementById('btnCta').classList.remove('hidden');
+  document.getElementById('calcSubtitle').textContent = '¡Listo! Tu cotización';
 }
 
 
@@ -3916,39 +3913,49 @@ function highlightMissing() {
   if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-/* ── CTA → validar email, guardar lead y abrir wizard ── */
-document.getElementById('btnCta').onclick = () => {
-  if (!isReady()) { highlightMissing(); return; }
-
+/* ── leadBtn → verificar email, guardar lead, revelar precio ── */
+document.getElementById('leadBtn').onclick = async () => {
   const emailEl = document.getElementById('leadEmail');
   const msgEl   = document.getElementById('leadMsg');
-  const email   = emailEl ? emailEl.value.trim() : '';
+  const btn     = document.getElementById('leadBtn');
+  const email   = emailEl.value.trim();
 
   if (!email || !email.includes('@')) {
     emailEl.style.borderColor = '#E8503A';
     emailEl.focus();
-    emailEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (msgEl) { msgEl.style.display = 'block'; msgEl.style.color = '#E8503A'; msgEl.textContent = 'Ingresa tu correo para continuar.'; }
+    if (msgEl) { msgEl.style.display = 'block'; msgEl.style.color = '#E8503A'; msgEl.textContent = 'Ingresa un email válido.'; }
     return;
   }
   emailEl.style.borderColor = '';
   if (msgEl) msgEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Calculando…';
 
-  /* Guardar lead silenciosamente */
+  /* Guardar lead */
   try {
     const { uf, clp } = calcTotal();
     const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
     fetch('/api/save-lead', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, svc: S.svc, servicio_subtipo: S.svcSub||null, m2: S.m2||null, commune: S.commune||null, uf, clp, svc_label: SVC_LABELS[S.svc]||S.svc }) });
   } catch(_) {}
 
-  /* Tracking CTA */
-  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp, m2: S.m2||null }) }); } catch(_) {}
+  /* Tracking precio_calculado con email */
+  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'precio_calculado', svc: S.svc, commune: S.commune, clp, m2: S.m2||null, email }) }); } catch(_) {}
 
+  /* Revelar precio */
+  recalc._emailVerified = true;
+  recalc._email = email;
+  document.getElementById('leadBox').classList.add('hidden');
+  _showPrice();
+};
+
+/* ── CTA → abrir wizard (email ya capturado) ── */
+document.getElementById('btnCta').onclick = () => {
+  if (!isReady()) { highlightMissing(); return; }
+  try { const { clp } = calcTotal(); fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ event_type:'cta_click', svc: S.svc, commune: S.commune, clp, m2: S.m2||null }) }); } catch(_) {}
   openWizard();
 };
 
-
-/* ── Email input — limpiar error al escribir y Enter para continuar ── */
+/* ── Email input — limpiar error y Enter inteligente ── */
 const _leadEmailEl = document.getElementById('leadEmail');
 if (_leadEmailEl) {
   _leadEmailEl.addEventListener('input', () => {
@@ -3957,7 +3964,11 @@ if (_leadEmailEl) {
     if (msgEl) msgEl.style.display = 'none';
   });
   _leadEmailEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnCta')?.click(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (recalc._emailVerified) document.getElementById('btnCta')?.click();
+      else document.getElementById('leadBtn')?.click();
+    }
   });
 }
 
