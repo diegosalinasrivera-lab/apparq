@@ -4001,7 +4001,7 @@ function renderEstudios() {
   document.getElementById('kpi-est-total').textContent = estudios.length;
   document.getElementById('kpi-est-tramites').textContent = tramites.length;
   const gmv = tramites.reduce((s, t) => s + (t.total_clp || 0), 0);
-  document.getElementById('kpi-est-gmv').textContent = gmv > 0 ? clpFmt(gmv) : '$0';
+  document.getElementById('kpi-est-gmv').textContent = gmv > 0 ? fmtCLP(gmv) : '$0';
   document.getElementById('kpi-est-leads').textContent = leads_cotizador.length;
 
   // Contar trámites por email de estudio
@@ -4049,7 +4049,7 @@ function renderEstudios() {
         <td style="font-size:12px;color:#4a5568;">${t.address ? t.address + ', ' : ''}${t.commune || '—'}</td>
         <td style="font-size:12px;">${arq}</td>
         <td>${stageBadge}</td>
-        <td style="text-align:right;font-weight:700;">${t.total_clp ? clpFmt(t.total_clp) : '—'}</td>
+        <td style="text-align:right;font-weight:700;">${t.total_clp ? fmtCLP(t.total_clp) : '—'}</td>
         <td style="font-size:12px;color:#718096;">${t.created_at ? new Date(t.created_at).toLocaleDateString('es-CL') : '—'}</td>
       </tr>`;
     }).join('');
@@ -4072,7 +4072,7 @@ function renderEstudios() {
         <td style="font-size:12px;">${SVC_LABEL_LEADS[l.svc] || l.svc || '—'}</td>
         <td style="font-size:12px;color:#4a5568;">${l.commune || '—'}</td>
         <td style="text-align:right;font-size:12px;color:#718096;">${l.m2 ? l.m2 + ' m²' : '—'}</td>
-        <td style="text-align:right;font-weight:700;">${l.clp ? clpFmt(l.clp) : '—'}</td>
+        <td style="text-align:right;font-weight:700;">${l.clp ? fmtCLP(l.clp) : '—'}</td>
         <td style="font-size:12px;color:#718096;">${l.created_at ? new Date(l.created_at).toLocaleDateString('es-CL') : '—'}</td>
       </tr>
     `).join('');
