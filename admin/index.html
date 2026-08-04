@@ -1591,7 +1591,7 @@
           </div>
 
           <!-- KPIs -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.5rem;">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem;">
             <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
               <div style="font-size:2.4rem;line-height:1;">🏛️</div>
               <div>
@@ -1613,12 +1613,20 @@
                 <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">GMV B2B</div>
               </div>
             </div>
+            <div style="background:#fff;border:1.5px solid #FDE68A;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">🎯</div>
+              <div>
+                <div id="kpi-est-leads" style="font-size:2.2rem;font-weight:900;color:#92400E;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Leads cotizador</div>
+              </div>
+            </div>
           </div>
 
           <!-- Sub-tabs -->
           <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.25rem;">
             <button id="estab-cuentas" onclick="switchEstudioTab('cuentas')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid #E8503A;color:#E8503A;margin-bottom:-2px;">🏛️ Estudios inscritos</button>
             <button id="estab-tramites" onclick="switchEstudioTab('tramites')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">📋 Trámites B2B</button>
+            <button id="estab-leads" onclick="switchEstudioTab('leads')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">🎯 Leads del cotizador</button>
           </div>
 
           <div id="est-loading" class="loading-state">
@@ -1663,6 +1671,27 @@
                     </tr>
                   </thead>
                   <tbody id="est-tramites-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- TAB: Leads del cotizador -->
+          <div id="estab-content-leads" style="display:none;">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Estudio</th>
+                      <th>Email</th>
+                      <th>Servicio</th>
+                      <th>Comuna</th>
+                      <th style="text-align:right;">m²</th>
+                      <th style="text-align:right;">Precio estimado</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="est-leads-tbody"></tbody>
                 </table>
               </div>
             </div>
@@ -3966,13 +3995,14 @@ async function loadEstudios() {
 
 function renderEstudios() {
   if (!estudiosData) return;
-  const { estudios = [], tramites = [] } = estudiosData;
+  const { estudios = [], tramites = [], leads_cotizador = [] } = estudiosData;
 
   // KPIs
   document.getElementById('kpi-est-total').textContent = estudios.length;
   document.getElementById('kpi-est-tramites').textContent = tramites.length;
   const gmv = tramites.reduce((s, t) => s + (t.total_clp || 0), 0);
   document.getElementById('kpi-est-gmv').textContent = gmv > 0 ? clpFmt(gmv) : '$0';
+  document.getElementById('kpi-est-leads').textContent = leads_cotizador.length;
 
   // Contar trámites por email de estudio
   const tramPorEmail = {};
@@ -4025,12 +4055,35 @@ function renderEstudios() {
     }).join('');
   }
 
+  // Tabla leads del cotizador
+  const SVC_LABEL_LEADS = {
+    regularizacion: 'Regularización', ampliacion: 'Ampliación',
+    'declaracion-jurada': 'Decl. Jurada', 'obra-nueva': 'Obra Nueva',
+    informe: 'Informe', 'ley-del-mono': 'Ley del Mono',
+  };
+  const tbLeads = document.getElementById('est-leads-tbody');
+  if (!leads_cotizador.length) {
+    tbLeads.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">Sin leads aún. Los estudios que coticen aparecerán aquí.</td></tr>';
+  } else {
+    tbLeads.innerHTML = leads_cotizador.map(l => `
+      <tr>
+        <td><strong>${l.estudio_nombre || '—'}</strong></td>
+        <td style="color:#4a5568;font-size:12px;">${l.email || '—'}</td>
+        <td style="font-size:12px;">${SVC_LABEL_LEADS[l.svc] || l.svc || '—'}</td>
+        <td style="font-size:12px;color:#4a5568;">${l.commune || '—'}</td>
+        <td style="text-align:right;font-size:12px;color:#718096;">${l.m2 ? l.m2 + ' m²' : '—'}</td>
+        <td style="text-align:right;font-weight:700;">${l.clp ? clpFmt(l.clp) : '—'}</td>
+        <td style="font-size:12px;color:#718096;">${l.created_at ? new Date(l.created_at).toLocaleDateString('es-CL') : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
   switchEstudioTab(estudioTabActual);
 }
 
 function switchEstudioTab(tab) {
   estudioTabActual = tab;
-  const tabs = ['cuentas', 'tramites'];
+  const tabs = ['cuentas', 'tramites', 'leads'];
   tabs.forEach(t => {
     const btn = document.getElementById(`estab-${t}`);
     const content = document.getElementById(`estab-content-${t}`);

@@ -222,6 +222,21 @@
     .error-msg { background:#FEF2F2; border:1px solid #FECACA; border-radius:var(--radius); padding:.75rem 1rem; font-size:.85rem; color:#B91C1C; margin-bottom:1rem; display:none; }
     .error-msg.visible { display:block; }
 
+    /* ── LEAD GATE MODAL ── */
+    .lead-gate-overlay {
+      display:none; position:fixed; inset:0; z-index:500;
+      background:rgba(17,24,39,.55); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .lead-gate-overlay.open { display:flex; }
+    .lead-gate-box {
+      background:#fff; border-radius:18px; padding:2rem;
+      max-width:420px; width:100%;
+      box-shadow:0 24px 64px rgba(0,0,0,.22);
+      animation:gateIn .2s ease;
+    }
+    @keyframes gateIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
     /* ── DIVIDER ── */
     .divider { height:1px; background:var(--border); margin:1.5rem 0; }
 
@@ -490,6 +505,26 @@
 
 </div><!-- /page-wrap -->
 
+<!-- ── LEAD GATE MODAL ── -->
+<div class="lead-gate-overlay" id="leadGateOverlay">
+  <div class="lead-gate-box">
+    <div class="step-eyebrow">Tu cotización exacta</div>
+    <h2 class="step-h2" style="font-size:1.25rem;margin-bottom:.35rem;">¿A qué estudio le mostramos el precio?</h2>
+    <p class="step-sub" style="margin-bottom:1.4rem;">Para guardar tu cotización como referencia y mostrarte el valor exacto.</p>
+
+    <div class="field">
+      <label>Nombre del estudio</label>
+      <input type="text" id="gate-nombre" placeholder="Ej: Estudio García Arquitectos" autocomplete="organization" />
+    </div>
+    <div class="field">
+      <label>Email del estudio</label>
+      <input type="email" id="gate-email" placeholder="hola@tuestudio.cl" autocomplete="email" />
+    </div>
+    <div class="error-msg" id="gate-err"></div>
+    <button class="btn-primary" id="gate-submit">Ver precio exacto</button>
+  </div>
+</div>
+
 <script src="/js/prices.js"></script>
 <script>
 /* ── Estado global ── */
@@ -661,8 +696,45 @@ document.getElementById('btn1').addEventListener('click', () => {
   if (!isReady() || !S.commune || !S.address) {
     showErr('err1', 'Completa todos los campos antes de continuar.'); return;
   }
+  /* Mostrar gate de captura de lead antes de revelar precio */
+  document.getElementById('leadGateOverlay').classList.add('open');
+  document.getElementById('gate-nombre').focus();
+});
+
+/* ── Gate modal: guardar lead y avanzar al precio ── */
+document.getElementById('gate-submit').addEventListener('click', async () => {
+  const nombre = document.getElementById('gate-nombre').value.trim();
+  const email  = document.getElementById('gate-email').value.trim();
+  clearErr('gate-err');
+
+  if (!nombre) { showErr('gate-err', 'Ingresa el nombre del estudio.'); return; }
+  if (!email || !email.includes('@')) { showErr('gate-err', 'Ingresa un email válido.'); return; }
+
+  /* Pre-llenar step 3 */
+  document.getElementById('estNombre').value = nombre;
+  document.getElementById('ctcEmail').value  = email;
+
+  /* Guardar lead (fire-and-forget) */
+  const { clp } = calcTotal();
+  fetch('/api/capture-estudio-lead', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email, estudio_nombre: nombre,
+      svc: S.svc, commune: S.commune, m2: S.m2, clp,
+    }),
+  }).catch(() => {});
+
+  document.getElementById('leadGateOverlay').classList.remove('open');
   fillStep2();
   goStep(2);
+});
+
+/* Enter en campos del gate */
+['gate-nombre', 'gate-email'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('gate-submit').click();
+  });
 });
 
 /* ── PASO 2: precio ── */

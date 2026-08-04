@@ -1090,7 +1090,14 @@ export async function onRequest(context) {
       tramites.forEach(t => { if (t.client_email) tramPorEmail[t.client_email] = (tramPorEmail[t.client_email] || 0) + 1; });
       estudios.forEach(e => { e.tramite_count = tramPorEmail[e.email] || 0; });
 
-      return json({ estudios, tramites });
+      /* Leads del cotizador de estudios — servicio_subtipo comienza con 'estlead:' */
+      const leadsEstRes = await sb('/leads?servicio_subtipo=like.estlead%3A%25&order=created_at.desc&limit=500');
+      const leads_cotizador = (leadsEstRes.ok ? (leadsEstRes.data || []) : []).map(l => ({
+        ...l,
+        estudio_nombre: l.servicio_subtipo ? l.servicio_subtipo.substring(8) : '—',
+      }));
+
+      return json({ estudios, tramites, leads_cotizador });
     }
 
     if (section === 'project-detail') {
