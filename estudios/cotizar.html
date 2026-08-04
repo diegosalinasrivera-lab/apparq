@@ -342,12 +342,6 @@
       <input type="number" id="m2Input" min="1" max="9999" placeholder="Ej: 85" />
     </div>
 
-    <!-- Dirección -->
-    <div class="field">
-      <label>Dirección de la propiedad</label>
-      <input type="text" id="addrInput" placeholder="Ej: Av. Providencia 1234" />
-    </div>
-
     <!-- Comuna -->
     <div class="field">
       <label>Comuna</label>
@@ -378,7 +372,7 @@
       <input type="text" id="p2Svc" readonly style="background:var(--bg-soft);color:var(--muted);" />
     </div>
     <div class="field">
-      <label>Propiedad</label>
+      <label>Comuna</label>
       <input type="text" id="p2Addr" readonly style="background:var(--bg-soft);color:var(--muted);" />
     </div>
 
@@ -530,7 +524,7 @@
 /* ── Estado global ── */
 let S = {
   svc: null, svcSub: null, m2: null,
-  commune: '', address: '',
+  commune: '',
   uf: 40823,
   mat: null, dest: [], djElig: null, djObra: null,
 };
@@ -650,10 +644,6 @@ document.getElementById('m2Input').addEventListener('input', e => {
   S.m2 = parseInt(e.target.value) || null; checkStep1Ready();
 });
 
-document.getElementById('addrInput').addEventListener('input', e => {
-  S.address = e.target.value.trim(); checkStep1Ready();
-});
-
 /* Commune search */
 const communeSearch = document.getElementById('communeSearch');
 const communeList   = document.getElementById('communeList');
@@ -687,13 +677,13 @@ document.addEventListener('click', e => {
 });
 
 function checkStep1Ready() {
-  const ready = isReady() && !!S.commune && !!S.address;
+  const ready = isReady() && !!S.commune;
   document.getElementById('btn1').disabled = !ready;
 }
 
 document.getElementById('btn1').addEventListener('click', () => {
   clearErr('err1');
-  if (!isReady() || !S.commune || !S.address) {
+  if (!isReady() || !S.commune) {
     showErr('err1', 'Completa todos los campos antes de continuar.'); return;
   }
   /* Mostrar gate de captura de lead antes de revelar precio */
@@ -743,7 +733,7 @@ function fillStep2() {
   document.getElementById('p2Total').textContent = clpFmt(clp);
   document.getElementById('p2UF').textContent = uf.toFixed(2) + ' UF · valor hoy';
   document.getElementById('p2Svc').value = SVC_LABELS[S.svc] || S.svc;
-  document.getElementById('p2Addr').value = S.address + ', ' + S.commune;
+  document.getElementById('p2Addr').value = S.commune;
 }
 
 document.getElementById('btn2').addEventListener('click', () => { goStep(3); });
@@ -839,7 +829,7 @@ function fillStep4() {
   const { clp } = calcTotal();
   document.getElementById('p4E1').textContent = clpFmt(clp);
   document.getElementById('p4Desc').innerHTML =
-    `${SVC_LABELS[S.svc] || S.svc} · ${S.address}, ${S.commune}`;
+    `${SVC_LABELS[S.svc] || S.svc} · ${S.commune}`;
 }
 
 document.getElementById('btnPagar').addEventListener('click', async () => {
@@ -875,7 +865,7 @@ document.getElementById('btnPagar').addEventListener('click', async () => {
         apellido:       '',
         email:          ctcEmail,
         telefono:       ctcTel,
-        direccion:      S.address,
+        direccion:      '',
         estudio_nombre: estNombre,
         estudio_rut:    estRut,
         password:       ctcPassword,
