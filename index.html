@@ -3920,10 +3920,10 @@ document.getElementById('leadBtn').onclick = async () => {
   const btn     = document.getElementById('leadBtn');
   const email   = emailEl.value.trim();
 
-  if (!email || !email.includes('@')) {
+  if (!emailValid(email)) {
     emailEl.style.borderColor = '#E8503A';
     emailEl.focus();
-    if (msgEl) { msgEl.style.display = 'block'; msgEl.style.color = '#E8503A'; msgEl.textContent = 'Ingresa un email válido.'; }
+    if (msgEl) { msgEl.style.display = 'block'; msgEl.style.color = '#E8503A'; msgEl.textContent = 'Ingresa un email válido (ej: nombre@dominio.com).'; }
     return;
   }
   emailEl.style.borderColor = '';

@@ -599,6 +599,8 @@ function goStep(n) {
 
 /* ── Helpers ── */
 const clpFmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+function emailValid(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim()); }
+
 function showErr(id, msg) {
   const el = document.getElementById(id);
   el.textContent = msg; el.classList.add('visible');
@@ -698,7 +700,7 @@ document.getElementById('gate-submit').addEventListener('click', async () => {
   clearErr('gate-err');
 
   if (!nombre) { showErr('gate-err', 'Ingresa el nombre del estudio.'); return; }
-  if (!email || !email.includes('@')) { showErr('gate-err', 'Ingresa un email válido.'); return; }
+  if (!emailValid(email)) { showErr('gate-err', 'Ingresa un email válido (ej: nombre@dominio.com).'); return; }
 
   /* Pre-llenar step 3 */
   document.getElementById('estNombre').value = nombre;
@@ -755,7 +757,7 @@ function resetPasswordSection() {
 
 async function checkEstudioEmail() {
   const email = document.getElementById('ctcEmail').value.trim();
-  if (!email || !email.includes('@')) return;
+  if (!emailValid(email)) return;
   const status = document.getElementById('email-check-status');
   status.textContent = 'Verificando cuenta…';
   status.style.display = 'block';
@@ -810,7 +812,7 @@ document.getElementById('btn3').addEventListener('click', () => {
   if (!estRut)    { showErr('err3', 'Ingresa el RUT del estudio.'); return; }
   if (!ctcTipo)   { showErr('err3', 'Selecciona el tipo de contacto.'); return; }
   if (!ctcNombre) { showErr('err3', 'Ingresa el nombre del contacto.'); return; }
-  if (!ctcEmail || !ctcEmail.includes('@')) { showErr('err3', 'Ingresa un email válido.'); return; }
+  if (!emailValid(ctcEmail)) { showErr('err3', 'Ingresa un email válido (ej: nombre@dominio.com).'); return; }
   const ctcPwd = document.getElementById('ctcPassword').value;
   if (!ctcPwd) { showErr('err3', 'Ingresa tu contraseña.'); return; }
   if (!estudioHasAccount) {
