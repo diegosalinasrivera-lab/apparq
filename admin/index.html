@@ -1489,6 +1489,121 @@
           </div><!-- /cobros-content -->
         </div><!-- /section-cobros -->
 
+        <!-- ESTUDIOS -->
+        <div id="section-estudios" class="section">
+          <div class="section-header">
+            <h2>Estudios de Arquitectura</h2>
+          </div>
+
+          <!-- KPIs -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem;">
+            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">🏛️</div>
+              <div>
+                <div id="kpi-est-total" style="font-size:2.2rem;font-weight:900;color:#1a1a2e;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Estudios inscritos</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #BFDBFE;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">📋</div>
+              <div>
+                <div id="kpi-est-tramites" style="font-size:2.2rem;font-weight:900;color:#1D4ED8;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Trámites B2B</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #D1FAE5;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">💰</div>
+              <div>
+                <div id="kpi-est-gmv" style="font-size:2.2rem;font-weight:900;color:#059669;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">GMV B2B</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1.5px solid #FDE68A;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
+              <div style="font-size:2.4rem;line-height:1;">🎯</div>
+              <div>
+                <div id="kpi-est-leads" style="font-size:2.2rem;font-weight:900;color:#92400E;line-height:1.1;">—</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Leads cotizador</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-tabs -->
+          <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.25rem;">
+            <button id="estab-cuentas" onclick="switchEstudioTab('cuentas')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid #E8503A;color:#E8503A;margin-bottom:-2px;">🏛️ Estudios inscritos</button>
+            <button id="estab-tramites" onclick="switchEstudioTab('tramites')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">📋 Trámites B2B</button>
+            <button id="estab-leads" onclick="switchEstudioTab('leads')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">🎯 Leads del cotizador</button>
+          </div>
+
+          <div id="est-loading" class="loading-state">
+            <div class="spinner spinner-dark"></div> Cargando…
+          </div>
+
+          <!-- TAB: Estudios inscritos -->
+          <div id="estab-content-cuentas" style="display:none;">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Estudio</th>
+                      <th>Email</th>
+                      <th>RUT</th>
+                      <th style="text-align:center;">Trámites</th>
+                      <th>Inscrito</th>
+                    </tr>
+                  </thead>
+                  <tbody id="est-cuentas-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Trámites B2B -->
+          <div id="estab-content-tramites" style="display:none;">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>N° Trámite</th>
+                      <th>Estudio</th>
+                      <th>Tipo</th>
+                      <th>Dirección / Comuna</th>
+                      <th>Arquitecto</th>
+                      <th>Etapa</th>
+                      <th style="text-align:right;">Total</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="est-tramites-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: Leads del cotizador -->
+          <div id="estab-content-leads" style="display:none;">
+            <div class="card">
+              <div class="card-body table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Estudio</th>
+                      <th>Email</th>
+                      <th>Servicio</th>
+                      <th>Comuna</th>
+                      <th style="text-align:right;">m²</th>
+                      <th style="text-align:right;">Precio estimado</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="est-leads-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div><!-- /section-estudios -->
+
       </div><!-- /content -->
     </div><!-- /main-area -->
   </div><!-- /app-shell -->
@@ -1583,122 +1698,6 @@
       <button class="btn btn-accent" id="btn-save-arch">
         Guardar Arquitecto
       </button>
-    </div>
-        <!-- ESTUDIOS -->
-        <div id="section-estudios" class="section">
-          <div class="section-header">
-            <h2>Estudios de Arquitectura</h2>
-          </div>
-
-          <!-- KPIs -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem;">
-            <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
-              <div style="font-size:2.4rem;line-height:1;">🏛️</div>
-              <div>
-                <div id="kpi-est-total" style="font-size:2.2rem;font-weight:900;color:#1a1a2e;line-height:1.1;">—</div>
-                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Estudios inscritos</div>
-              </div>
-            </div>
-            <div style="background:#fff;border:1.5px solid #BFDBFE;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
-              <div style="font-size:2.4rem;line-height:1;">📋</div>
-              <div>
-                <div id="kpi-est-tramites" style="font-size:2.2rem;font-weight:900;color:#1D4ED8;line-height:1.1;">—</div>
-                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Trámites B2B</div>
-              </div>
-            </div>
-            <div style="background:#fff;border:1.5px solid #D1FAE5;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
-              <div style="font-size:2.4rem;line-height:1;">💰</div>
-              <div>
-                <div id="kpi-est-gmv" style="font-size:2.2rem;font-weight:900;color:#059669;line-height:1.1;">—</div>
-                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">GMV B2B</div>
-              </div>
-            </div>
-            <div style="background:#fff;border:1.5px solid #FDE68A;border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;">
-              <div style="font-size:2.4rem;line-height:1;">🎯</div>
-              <div>
-                <div id="kpi-est-leads" style="font-size:2.2rem;font-weight:900;color:#92400E;line-height:1.1;">—</div>
-                <div style="font-size:0.78rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;">Leads cotizador</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sub-tabs -->
-          <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.25rem;">
-            <button id="estab-cuentas" onclick="switchEstudioTab('cuentas')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid #E8503A;color:#E8503A;margin-bottom:-2px;">🏛️ Estudios inscritos</button>
-            <button id="estab-tramites" onclick="switchEstudioTab('tramites')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">📋 Trámites B2B</button>
-            <button id="estab-leads" onclick="switchEstudioTab('leads')" style="padding:0.55rem 1.2rem;font-size:0.82rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#718096;margin-bottom:-2px;">🎯 Leads del cotizador</button>
-          </div>
-
-          <div id="est-loading" class="loading-state">
-            <div class="spinner spinner-dark"></div> Cargando…
-          </div>
-
-          <!-- TAB: Estudios inscritos -->
-          <div id="estab-content-cuentas" style="display:none;">
-            <div class="card">
-              <div class="card-body table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Estudio</th>
-                      <th>Email</th>
-                      <th>RUT</th>
-                      <th style="text-align:center;">Trámites</th>
-                      <th>Inscrito</th>
-                    </tr>
-                  </thead>
-                  <tbody id="est-cuentas-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- TAB: Trámites B2B -->
-          <div id="estab-content-tramites" style="display:none;">
-            <div class="card">
-              <div class="card-body table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>N° Trámite</th>
-                      <th>Estudio</th>
-                      <th>Tipo</th>
-                      <th>Dirección / Comuna</th>
-                      <th>Arquitecto</th>
-                      <th>Etapa</th>
-                      <th style="text-align:right;">Total</th>
-                      <th>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody id="est-tramites-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <!-- TAB: Leads del cotizador -->
-          <div id="estab-content-leads" style="display:none;">
-            <div class="card">
-              <div class="card-body table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Estudio</th>
-                      <th>Email</th>
-                      <th>Servicio</th>
-                      <th>Comuna</th>
-                      <th style="text-align:right;">m²</th>
-                      <th style="text-align:right;">Precio estimado</th>
-                      <th>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody id="est-leads-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div><!-- /section-estudios -->
-
-      </div>
     </div>
   </div>
 </div>
