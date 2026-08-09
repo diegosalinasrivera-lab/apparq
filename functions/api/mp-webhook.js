@@ -787,7 +787,7 @@ export async function onRequest(context) {
                           </div>
                           <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-top:14px;text-align:center">
                             <p style="margin:0;font-size:13px;font-weight:700;color:#15803D">💳 Pagaste en cuotas sin interés con Mercado Pago</p>
-                            <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">Tu pago total quedó registrado. Si elegiste cuotas, tu banco las procesará automáticamente — no necesitas hacer nada más.</p>
+                            <p style="margin:4px 0 0;font-size:12px;color:#166534;line-height:1.5">Tu Etapa 1 quedó registrada. Si elegiste cuotas, tu banco las procesará automáticamente — no necesitas hacer nada más. El cobro de la Etapa 2 llegará al completar el levantamiento.</p>
                           </div>
                           <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:14px 18px;margin-top:14px">
                             <p style="margin:0;font-size:12px;color:#92400E;font-weight:700">⚠️ Importante</p>
