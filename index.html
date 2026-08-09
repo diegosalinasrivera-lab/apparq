@@ -2029,7 +2029,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="wiz-step" id="wiz-s3">
         <div class="wiz-ico">💳</div>
         <div class="wiz-title">Pago del servicio</div>
-        <div class="wiz-sub" id="wizPaySub3">Paga el 30% ahora para iniciar. El 70% restante se cobra al completar el levantamiento.</div>
+        <div class="wiz-sub" id="wizPaySub3">Paga el 30% ahora para iniciar. El 70% restante se cobra al completar el levantamiento. Ambos pagos hasta en 12 cuotas sin interés.</div>
 
         <div class="pay-amount-box">
           <div class="pay-amount-lbl" id="wizPayAmtLbl">Total del servicio · precio contado</div>
@@ -4084,7 +4084,7 @@ function prefillWizard() {
 
   /* payment amounts */
   document.getElementById('wizPayAmt').textContent = clpFmt(e1);
-  document.getElementById('wizPaySub').textContent = '30% ahora · 70% al completar el levantamiento (' + clpFmt(e2) + ')';
+  document.getElementById('wizPaySub').textContent = '30% ahora · 70% al completar el levantamiento (' + clpFmt(e2) + ') · Ambos hasta en 12 cuotas sin interés';
 
   /* dynamic labels */
   const isInforme = S.svc === 'informe';
@@ -4092,7 +4092,7 @@ function prefillWizard() {
   const payLbl    = document.getElementById('wizPayAmtLbl');
   const paySub3   = document.getElementById('wizPaySub3');
   if (payLbl)  payLbl.textContent  = 'Total del servicio · precio contado';
-  if (paySub3) paySub3.textContent = 'Paga el 30% ahora para iniciar. El 70% restante se cobra al completar el levantamiento.';
+  if (paySub3) paySub3.textContent = 'Paga el 30% ahora para iniciar. El 70% restante se cobra al completar el levantamiento. Ambos pagos hasta en 12 cuotas sin interés.';
 
   /* tracking step 5 */
   const trackList = document.getElementById('wizTrackList');
