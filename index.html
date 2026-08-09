@@ -4038,7 +4038,8 @@ function prefillWizard() {
 
 
   const { uf: ufVal, clp } = calcTotal();
-  const e1 = clp; /* cliente paga el total del trámite al inicio */
+  const e1 = Math.round(clp * 0.30); /* E1: 30% del total */
+  const e2 = clp - e1; /* E2: 70% restante, se cobra al aprobar descarte */
 
   /* summary card on step 1 */
   document.getElementById('wiz-sum1').innerHTML = `
@@ -4063,7 +4064,7 @@ function prefillWizard() {
     Entre <strong>APPARQ SpA</strong>, RUT 78.441.391-8, en adelante "APPARQ", y el cliente que firma este documento (en adelante "el Cliente"), se acuerda:<br><br>
     <strong>1. Servicio contratado:</strong> ${svcName} · ${S.m2} m² · ${commune}.<br>
     <strong>2. Honorarios:</strong> ${clpFmt(clp)} (${ufVal.toFixed(2)} UF al valor del día).<br>
-    <strong>3. Forma de pago:</strong> Pago único del total del servicio al inicio del trámite. El Cliente puede fraccionar el pago hasta en 12 cuotas sin interés mediante Mercado Pago con tarjeta de crédito.<br>
+    <strong>3. Forma de pago:</strong> El pago se realiza en dos etapas: <strong>Etapa 1</strong> — ${clpFmt(e1)} (30% del total) al contratar, para financiar la visita técnica y levantamiento de información. <strong>Etapa 2</strong> — ${clpFmt(e2)} (70% restante) una vez que el arquitecto complete el levantamiento y APPARQ valide que el trámite está correctamente tomado. Ambos pagos pueden fraccionarse hasta en 12 cuotas sin interés mediante Mercado Pago con tarjeta de crédito.<br>
     <strong>4. Plazo estimado:</strong> ${
       S.svc === 'informe' ? 'Aproximadamente 2 semanas desde la visita a terreno.' :
       S.svc === 'declaracion-jurada' ? 'Entre 5 y 15 días hábiles. Plazo DOM: 3 días hábiles para emitir giro de derechos.' :
@@ -4083,7 +4084,7 @@ function prefillWizard() {
 
   /* payment amounts */
   document.getElementById('wizPayAmt').textContent = clpFmt(e1);
-  document.getElementById('wizPaySub').textContent = '≈ ' + clpFmt(Math.ceil(clp / 12)) + '/mes en 12 cuotas';
+  document.getElementById('wizPaySub').textContent = '30% ahora · 70% al completar el levantamiento (' + clpFmt(e2) + ')';
 
   /* dynamic labels */
   const isInforme = S.svc === 'informe';
@@ -4325,7 +4326,7 @@ function setupPaymentStep() {
 
     try {
       const { clp } = calcTotal();
-      const e1      = Math.round(clp); /* cliente paga el total */
+      const e1      = Math.round(clp * 0.30); /* E1: 30% del total */
       const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
       const svcName = SVC_LABELS[S.svc] || 'Trámite';
       const commune = S.commune || 'Santiago';

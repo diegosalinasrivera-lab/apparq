@@ -1565,8 +1565,8 @@ export async function onRequest(context) {
       });
       if (!patchResult.ok) return json({ error: 'Error al actualizar descarte', detail: patchResult.data }, 500);
 
-      /* Obtener datos del proyecto para notificar al arquitecto */
-      const projResult = await sb(`/projects?id=eq.${project_id}&select=project_number,architect_email,architect_nombre,architect_apellido,service_type,commune,descarte_via_propuesta&limit=1`);
+      /* Obtener datos del proyecto para notificar al arquitecto y disparar E2 */
+      const projResult = await sb(`/projects?id=eq.${project_id}&select=project_number,architect_email,architect_nombre,architect_apellido,service_type,commune,descarte_via_propuesta,client_email,client_nombre,client_apellido,total_clp,e1_clp&limit=1`);
       const p = projResult.ok && Array.isArray(projResult.data) && projResult.data[0] ? projResult.data[0] : null;
 
       if (p && p.architect_email) {
@@ -1577,6 +1577,75 @@ export async function onRequest(context) {
         const viaLabel = viaLabels[p.descarte_via_propuesta] || p.descarte_via_propuesta || '—';
 
         if (decision === 'aprobado') {
+          /* ── Disparar cobro E2 al cliente (70% restante) ── */
+          const RESEND_API_KEY_E2 = env.RESEND_API_KEY;
+          const MP_TOKEN_E2 = env.MP_ACCESS_TOKEN || 'APP_USR-8464091449756756-032117-1cb0461b0053151dd99159498a8ebb3c-3280513372';
+          const e2_clp = Math.round((p.total_clp || 0) - (p.e1_clp || 0));
+          const svcLabelsE2 = { regularizacion:'Regularización', ampliacion:'Ampliación', 'ley-del-mono':'Ley del Mono', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad', 'declaracion-jurada':'Declaración Jurada' };
+          const svcNameE2 = svcLabelsE2[p.service_type] || p.service_type;
+          const clpFmtE2 = n => '$' + Math.round(n).toLocaleString('es-CL');
+
+          if (e2_clp > 0 && p.client_email) {
+            let mpInitPoint = null;
+            try {
+              const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${MP_TOKEN_E2}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  items: [{ title: `APPARQ — ${svcNameE2} ${p.commune} · Etapa 2`, quantity: 1, unit_price: e2_clp, currency_id: 'CLP' }],
+                  payer: { email: p.client_email },
+                  back_urls: { success: 'https://apparq.cl/?pago=aprobado', pending: 'https://apparq.cl/?pago=pendiente', failure: 'https://apparq.cl/?pago=rechazado' },
+                  auto_return: 'approved',
+                  external_reference: `${p.project_number}-e2`,
+                  notification_url: 'https://apparq.cl/api/mp-webhook',
+                  statement_descriptor: 'APPARQ',
+                  payment_methods: { installments: 12 },
+                }),
+              });
+              if (mpRes.ok) { const mpData = await mpRes.json(); mpInitPoint = mpData.init_point; }
+            } catch (mpErr) { console.error('Error creando preferencia E2:', mpErr); }
+
+            if (mpInitPoint) {
+              await sendEmail({
+                to: p.client_email,
+                from: 'no-reply@apparq.cl',
+                subject: `Pago Etapa 2 disponible — ${p.project_number}`,
+                html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f1eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1eb;padding:32px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+  <tr><td style="background:#E8503A;padding:24px 32px;"><span style="font-size:17px;font-weight:900;letter-spacing:0.1em;color:#fff;">APPARQ</span></td></tr>
+  <tr><td style="padding:32px 32px 24px;">
+    <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:#111827;">¡Tu levantamiento está listo!</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.7;">Hola <strong>${p.client_nombre}</strong>, el arquitecto completó la visita técnica de tu trámite <strong>${p.project_number}</strong> y APPARQ validó que todo está correctamente tomado. Ya puedes pagar la Etapa 2 para continuar.</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;background:#F9FAFB;border-radius:10px;margin-bottom:24px;">
+      <tr><td style="padding:20px 24px;">
+        <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9CA3AF;">Detalle del pago</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="padding:5px 0;font-size:14px;color:#6B7280;">Trámite</td><td style="padding:5px 0;font-size:14px;font-weight:700;color:#111827;text-align:right;">${p.project_number}</td></tr>
+          <tr><td style="padding:5px 0;font-size:14px;color:#6B7280;">Servicio</td><td style="padding:5px 0;font-size:14px;font-weight:700;color:#111827;text-align:right;">${svcNameE2} · ${p.commune}</td></tr>
+          <tr><td colspan="2" style="padding:10px 0 0;"><hr style="border:none;border-top:1px solid #E5E7EB;margin:0;"/></td></tr>
+          <tr><td style="padding:10px 0 0;font-size:15px;font-weight:700;color:#111827;">Etapa 2 — 70%</td><td style="padding:10px 0 0;font-size:18px;font-weight:900;color:#E8503A;text-align:right;">${clpFmtE2(e2_clp)}</td></tr>
+          <tr><td colspan="2" style="padding:6px 0 0;"><span style="display:inline-block;background:#ECFDF5;color:#065F46;font-size:11.5px;font-weight:700;border-radius:6px;padding:4px 10px;">✓ Pago hasta en 12 cuotas sin interés</span></td></tr>
+        </table>
+      </td></tr>
+    </table>
+    <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr><td style="background:#E8503A;border-radius:999px;">
+        <a href="${mpInitPoint}" style="display:inline-block;padding:14px 28px;color:#fff;text-decoration:none;font-size:15px;font-weight:700;">Pagar Etapa 2 →</a>
+      </td></tr>
+    </table>
+    <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.6;">Una vez realizado el pago, el arquitecto continuará con la elaboración del proyecto y el ingreso a la DOM.</p>
+  </td></tr>
+  <tr><td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:18px 32px;">
+    <p style="margin:0;font-size:12px;color:#9CA3AF;">Equipo APPARQ · <a href="https://apparq.cl" style="color:#9CA3AF;">apparq.cl</a> · hola@apparq.cl</p>
+  </td></tr>
+</table></td></tr></table></body></html>`,
+              }, RESEND_API_KEY_E2);
+            }
+          }
+
           await sendEmail({
             to: p.architect_email,
             subject: `✅ Descarte aprobado — ${p.project_number}`,

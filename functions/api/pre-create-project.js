@@ -130,7 +130,7 @@ export async function onRequest(context) {
       architect_apellido: '',
       service_type:       svc      || '',
       servicio_subtipo:   servicio_subtipo || null,
-      num_etapas_pago:    (svc === 'declaracion-jurada' || svc === 'informe') ? 2 : 4,
+      num_etapas_pago:    2,
       address:            direccion || '',
       commune:            commune   || '',
       m2:                 m2        || 0,
