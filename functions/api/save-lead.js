@@ -70,6 +70,17 @@ export async function onRequest(context) {
       return corsResponse({ error: 'Email inválido' }, 400);
     }
 
+    /* ── Bloquear emails con 3+ cotizaciones previas (arquitectos) ── */
+    const countRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/leads?select=id&email=eq.${encodeURIComponent(email.trim().toLowerCase())}`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    const existing = await countRes.json();
+    if (Array.isArray(existing) && existing.length >= 3) {
+      console.log(`Lead bloqueado (${existing.length} cotizaciones previas): ${email}`);
+      return corsResponse({ ok: true });
+    }
+
     /* ── Guardar lead en Supabase ─────────────────── */
     const fecha = new Date().toISOString();
     await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
