@@ -78,7 +78,7 @@ export async function onRequest(context) {
     const existing = await countRes.json();
     if (Array.isArray(existing) && existing.length >= 3) {
       console.log(`Lead bloqueado (${existing.length} cotizaciones previas): ${email}`);
-      return corsResponse({ ok: true });
+      return corsResponse({ error: 'limite_cotizaciones' }, 429);
     }
 
     /* ── Guardar lead en Supabase ─────────────────── */

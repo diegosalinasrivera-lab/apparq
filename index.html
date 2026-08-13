@@ -3935,7 +3935,14 @@ document.getElementById('leadBtn').onclick = async () => {
   try {
     const { uf, clp } = calcTotal();
     const SVC_LABELS = { 'ley-del-mono':'Ley del Mono', regularizacion:'Regularización', ampliacion:'Ampliación', 'declaracion-jurada':'Declaración Jurada', 'obra-nueva':'Obra Nueva', informe:'Informe de Propiedad' };
-    fetch('/api/save-lead', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, svc: S.svc, servicio_subtipo: S.svcSub||null, m2: S.m2||null, commune: S.commune||null, uf, clp, svc_label: SVC_LABELS[S.svc]||S.svc }) });
+    const leadRes = await fetch('/api/save-lead', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, svc: S.svc, servicio_subtipo: S.svcSub||null, m2: S.m2||null, commune: S.commune||null, uf, clp, svc_label: SVC_LABELS[S.svc]||S.svc }) });
+    if (leadRes.status === 429) {
+      btn.disabled = false;
+      btn.textContent = 'Ver precio';
+      emailEl.style.borderColor = '#E8503A';
+      if (msgEl) { msgEl.style.display = 'block'; msgEl.style.color = '#E8503A'; msgEl.textContent = 'Este correo ya alcanzó el límite de cotizaciones. Por favor usa otro correo.'; }
+      return;
+    }
   } catch(_) {}
 
   /* Tracking precio_calculado con email */
