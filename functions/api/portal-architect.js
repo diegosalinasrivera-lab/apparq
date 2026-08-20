@@ -1046,6 +1046,33 @@ export async function onRequest(context) {
       return corsResponse({ ok: true });
     }
 
+    /* ── UPDATE-COMUNAS ──────────────────────────── */
+    if (action === 'update-comunas') {
+      const { comunas } = rest;
+      if (!Array.isArray(comunas)) {
+        return corsResponse({ error: 'comunas debe ser un array' }, 400);
+      }
+      if (comunas.length > 50) {
+        return corsResponse({ error: 'Máximo 50 comunas permitidas' }, 400);
+      }
+      const updRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/architects?email=eq.${encodeURIComponent(email)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify({ comunas }),
+        }
+      );
+      if (!updRes.ok) {
+        return corsResponse({ error: 'Error al guardar comunas' }, 500);
+      }
+      return corsResponse({ ok: true });
+    }
+
     /* ── UPDATE-PHOTO ─────────────────────────── */
     if (action === 'update-photo') {
       const { foto_url } = rest;

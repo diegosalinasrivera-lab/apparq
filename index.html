@@ -2643,6 +2643,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div id="paNotifBanner" style="display:none;"></div>
 
+      <!-- Mis comunas -->
+      <div style="background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:0.85rem;overflow:hidden;">
+        <button id="paComunasToggleBtn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.85rem;background:none;border:none;cursor:pointer;text-align:left;">
+          <div>
+            <span style="font-size:0.78rem;font-weight:700;color:var(--dark);">📍 Mis comunas</span>
+            <span id="paComunasCounter" style="font-size:0.67rem;color:var(--muted);margin-left:0.5rem;font-weight:600;">0 / 50</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span id="paComunasSaveMsg" style="font-size:0.68rem;color:#059669;font-weight:700;display:none;">✓ Guardado</span>
+            <span id="paComunasChevron" style="font-size:0.7rem;color:var(--muted);transition:transform 0.2s;">▼</span>
+          </div>
+        </button>
+        <div id="paComunasPanel" style="display:none;padding:0 0.85rem 0.85rem;">
+          <div style="font-size:0.67rem;color:var(--muted);margin-bottom:0.6rem;">Selecciona hasta 50 comunas. Solo recibirás trámites de las comunas activas.</div>
+          <div id="paComunasRegiones" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+        </div>
+      </div>
+
       <!-- ── TRAER MI PROPIO CLIENTE ──────────────── -->
       <div style="margin-bottom:0.85rem;">
         <button id="paAddClientBtn" style="width:100%;background:linear-gradient(135deg,#1a1a2e,#2d2d5e);color:#fff;border:none;border-radius:var(--radius);padding:0.7rem 1rem;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
@@ -5545,6 +5563,9 @@ function communeMatchLabel(targetCommune, assignedCommune) {
       /* Sync servicios chips */
       renderTramitesChips(data.architect?.tramites || [], token);
 
+      /* Sync comunas panel */
+      renderComunasPanel(data.architect?.comunas || [], token);
+
       renderArqProjects(projects, token);
     } catch(e) {
       document.getElementById('paProjects').innerHTML = '<div style="color:#DC2626;font-size:0.82rem;">Error de conexión.</div>';
@@ -5600,6 +5621,99 @@ function communeMatchLabel(targetCommune, assignedCommune) {
         }, 400);
       };
       container.appendChild(chip);
+    });
+  }
+
+  const MAX_COMUNAS_PORTAL = 50;
+
+  function renderComunasPanel(currentComunas, token) {
+    const regionesEl  = document.getElementById('paComunasRegiones');
+    const counterEl   = document.getElementById('paComunasCounter');
+    const saveMsg     = document.getElementById('paComunasSaveMsg');
+    const toggleBtn   = document.getElementById('paComunasToggleBtn');
+    const panel       = document.getElementById('paComunasPanel');
+    const chevron     = document.getElementById('paComunasChevron');
+    if (!regionesEl) return;
+
+    const active = new Set(Array.isArray(currentComunas) ? currentComunas : []);
+    let saveTimer = null;
+
+    const updateCounter = () => {
+      const n = active.size;
+      counterEl.textContent = `${n} / ${MAX_COMUNAS_PORTAL}`;
+      counterEl.style.color = n >= MAX_COMUNAS_PORTAL ? '#DC2626' : n >= 40 ? '#D97706' : 'var(--muted)';
+    };
+    updateCounter();
+
+    toggleBtn.onclick = () => {
+      const open = panel.style.display === 'none';
+      panel.style.display = open ? 'block' : 'none';
+      chevron.style.transform = open ? 'rotate(180deg)' : '';
+    };
+
+    const doSave = () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        try {
+          await fetch('/api/portal-architect', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update-comunas', token, comunas: Array.from(active) }),
+          });
+          saveMsg.style.display = 'inline';
+          setTimeout(() => { saveMsg.style.display = 'none'; }, 2000);
+        } catch(e) { console.warn('Error guardando comunas:', e); }
+      }, 500);
+    };
+
+    regionesEl.innerHTML = '';
+    Object.entries(REGIONES_COMUNAS).forEach(([region, comunas]) => {
+      const regionDiv = document.createElement('div');
+
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;';
+      header.innerHTML = `<span style="font-size:0.72rem;font-weight:700;color:var(--dark);">${region}</span>`;
+
+      const selAllBtn = document.createElement('button');
+      selAllBtn.type = 'button';
+      selAllBtn.textContent = 'Todas';
+      selAllBtn.style.cssText = 'font-size:0.65rem;color:var(--orange);background:none;border:none;cursor:pointer;font-weight:700;padding:0;';
+      selAllBtn.onclick = () => {
+        let changed = false;
+        comunas.forEach(c => {
+          if (!active.has(c) && active.size < MAX_COMUNAS_PORTAL) { active.add(c); changed = true; }
+        });
+        if (changed) { renderChips(); updateCounter(); doSave(); }
+      };
+      header.appendChild(selAllBtn);
+      regionDiv.appendChild(header);
+
+      const chipsDiv = document.createElement('div');
+      chipsDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.25rem;';
+
+      const renderChips = () => {
+        chipsDiv.innerHTML = '';
+        comunas.forEach(c => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.textContent = c;
+          const isActive = active.has(c);
+          chip.style.cssText = `padding:0.18rem 0.5rem;font-size:0.67rem;font-weight:600;border-radius:20px;cursor:pointer;border:1.5px solid;transition:all 0.12s;background:${isActive ? 'var(--orange)' : '#fff'};color:${isActive ? '#fff' : 'var(--muted)'};border-color:${isActive ? 'var(--orange)' : 'var(--border)'};`;
+          chip.onclick = () => {
+            if (active.has(c)) {
+              active.delete(c);
+            } else {
+              if (active.size >= MAX_COMUNAS_PORTAL) return;
+              active.add(c);
+            }
+            renderChips(); updateCounter(); doSave();
+          };
+          chipsDiv.appendChild(chip);
+        });
+      };
+      renderChips();
+
+      regionDiv.appendChild(chipsDiv);
+      regionesEl.appendChild(regionDiv);
     });
   }
 
