@@ -1043,6 +1043,22 @@ export async function onRequest(context) {
       if (!updRes.ok) {
         return corsResponse({ error: 'Error al guardar servicios' }, 500);
       }
+      try {
+        await sendEmail({
+          to: 'hola@apparq.cl',
+          subject: `🛠 Servicios actualizados — ${architect.nombre} ${architect.apellido}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:#1a1a2e;padding:22px 32px;border-radius:8px 8px 0 0"><h2 style="color:#fff;margin:0;font-size:17px">APPARQ — Servicios actualizados</h2></div>
+            <div style="background:#fff;padding:22px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Arquitecto</td><td style="padding:8px 10px;font-weight:700">${architect.nombre} ${architect.apellido}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Email</td><td style="padding:8px 10px">${email}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Servicios activos</td><td style="padding:8px 10px">${tramites.length ? tramites.join(', ') : '(ninguno)'}</td></tr>
+              </table>
+            </div>
+          </div>`,
+        }, RESEND_API_KEY);
+      } catch(e) { console.warn('Error email update-tramites:', e); }
       return corsResponse({ ok: true });
     }
 
@@ -1070,6 +1086,23 @@ export async function onRequest(context) {
       if (!updRes.ok) {
         return corsResponse({ error: 'Error al guardar comunas' }, 500);
       }
+      try {
+        await sendEmail({
+          to: 'hola@apparq.cl',
+          subject: `📍 Comunas actualizadas — ${architect.nombre} ${architect.apellido}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:#1a1a2e;padding:22px 32px;border-radius:8px 8px 0 0"><h2 style="color:#fff;margin:0;font-size:17px">APPARQ — Comunas actualizadas</h2></div>
+            <div style="background:#fff;padding:22px 32px;border:1px solid #e2e8f0;border-radius:0 0 8px 8px">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096;width:40%">Arquitecto</td><td style="padding:8px 10px;font-weight:700">${architect.nombre} ${architect.apellido}</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Email</td><td style="padding:8px 10px">${email}</td></tr>
+                <tr style="background:#f7fafc"><td style="padding:8px 10px;color:#718096">Total comunas</td><td style="padding:8px 10px;font-weight:700">${comunas.length} / 50</td></tr>
+                <tr><td style="padding:8px 10px;color:#718096">Comunas</td><td style="padding:8px 10px;line-height:1.6">${comunas.length ? comunas.join(', ') : '(ninguna)'}</td></tr>
+              </table>
+            </div>
+          </div>`,
+        }, RESEND_API_KEY);
+      } catch(e) { console.warn('Error email update-comunas:', e); }
       return corsResponse({ ok: true });
     }
 
